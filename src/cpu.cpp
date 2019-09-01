@@ -1115,6 +1115,7 @@ uint8_t CPU::TYA()
 
 // Disassembler
 // Heavily based on OLC's work
+// TODO: for indirect/indexed addressing show actual values as well!
 
 std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
 {

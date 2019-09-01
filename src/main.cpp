@@ -12,6 +12,7 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
+#include <bitset>
 
 #include "machine.h"
 
@@ -30,6 +31,13 @@ std::string hex(uint32_t n, uint8_t d)
         s[i] = "0123456789ABCDEF"[n & 0xF];
     return s;
 };
+
+// u8 -> binary string
+std::string bin(uint8_t n)
+{
+    std::bitset<8> b = n;
+    return b.to_string();
+}
 
 class Nessy : public olc::PixelGameEngine
 {
@@ -75,9 +83,9 @@ class Nessy : public olc::PixelGameEngine
             DrawString(x + (xs + space * 8), y, "C", nes->cpu->GetFlag(CPU::C) ? olc::GREEN : olc::RED);
             DrawString(x, y + 10, " PC: $" + hex(nes->cpu->pc, 4));
             DrawString(x, y + 20, " SP: $" + hex(nes->cpu->sp, 4));
-            DrawString(x, y + 30, "  A: $" + hex(nes->cpu->a,  2));
-            DrawString(x, y + 40, "  X: $" + hex(nes->cpu->x,  2));
-            DrawString(x, y + 50, "  Y: $" + hex(nes->cpu->y,  2));
+            DrawString(x, y + 30, "  A: $" + hex(nes->cpu->a,  2) + "  [" + bin(nes->cpu->a) + "]");
+            DrawString(x, y + 40, "  X: $" + hex(nes->cpu->x,  2) + "  [" + bin(nes->cpu->x) + "]");
+            DrawString(x, y + 50, "  Y: $" + hex(nes->cpu->y,  2) + "  [" + bin(nes->cpu->y) + "]");
             DrawString(x, y + 80, "Total cycles: " + std::to_string(nes->cpu->total_cycles));
         }
 
@@ -142,7 +150,7 @@ class Nessy : public olc::PixelGameEngine
             if (GetKey(olc::Key::ESCAPE).bReleased)
                 return false;
 
-            if (GetKey(olc::Key::S).bReleased) {
+            if (GetKey(olc::Key::S).bPressed) {
                 do {
                     nes->cpu->clock();
                 } while(!nes->cpu->complete());
@@ -262,7 +270,7 @@ int main(int argc, char *argv[])
 
     Nessy test(TheNES);
 
-    if (test.Construct(640, 480, 2, 2)) {
+    if (test.Construct(720, 480, 2, 2)) {
         test.Start();
     }
 

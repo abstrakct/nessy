@@ -12,6 +12,6 @@ nmap <F10> :wa<CR>:cd ..<CR>:!nemiver ./asdc<CR>:cd src<CR>
 let g:ycm_confirm_extra_conf = 0
 let g:ycm_min_num_of_chars_for_completion = 1
 let g:ycm_key_invoke_completion = '<C-b>'
-let g:ycm_server_python_interpreter = "/usr/bin/python2"
+let g:ycm_server_python_interpreter = "/usr/bin/python"
 
 set cino=N-s

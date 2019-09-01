@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 #include <cstdint>
 #include <bitset>
@@ -57,7 +57,6 @@ class CPU {
 
         uint64_t total_cycles = 0;
 
-        //std::unordered_map<int, Opcode> CreateOpcodes();
         void ConnectBus(Bus *n) { bus = n; }
         void clock();
         void TestOpcodes();
@@ -77,7 +76,11 @@ class CPU {
         void SetFlag(Flag f, bool v = true);
 
         void reset();
+        //void irq();
+        //void nmi();
         bool complete();
+
+        std::map<uint16_t, std::string> disassemble(uint16_t start, uint16_t end);
 
     private:
         Bus *bus = nullptr;

@@ -35,6 +35,7 @@ class Nessy : public olc::PixelGameEngine
 {
     public:
         std::shared_ptr<Machine> nes;
+        std::map<uint16_t, std::string> disasm;
         uint16_t ram2start = 0x8000;
 
         Nessy(std::shared_ptr<Machine> m)
@@ -80,6 +81,33 @@ class Nessy : public olc::PixelGameEngine
             DrawString(x, y + 80, "Total cycles: " + std::to_string(nes->cpu->total_cycles));
         }
 
+        void DrawDisasm(int x, int y, int lines)
+        {
+            auto it = disasm.find(nes->cpu->pc);
+            int liney = (lines >> 1) * 10 + y;
+            if (it != disasm.end()) {
+                DrawString(x, liney, (*it).second, olc::CYAN);
+                while (liney < (lines * 10) + y) {
+                    liney += 10;
+                    if (++it != disasm.end()) {
+                        DrawString(x, liney, (*it).second);
+                    }
+                }
+            }
+
+            it = disasm.find(nes->cpu->pc);
+            liney = (lines >> 1) * 10 + y;
+            if (it != disasm.end()) {
+                //DrawString(x, liney, (*it).second, olc::CYAN);
+                while (liney > y) {
+                    liney -= 10;
+                    if (--it != disasm.end()) {
+                        DrawString(x, liney, (*it).second);
+                    }
+                }
+            }
+        }
+
         bool OnUserCreate() override
         {
             // Called once at start
@@ -98,7 +126,10 @@ class Nessy : public olc::PixelGameEngine
                 nes->bus.write(offset++, (uint8_t)std::stoul(b, nullptr, 16));
             }
 
+            disasm = nes->cpu->disassemble(0x0000, 0xFFFF);
+
             nes->cpu->reset();
+
             return true;
         }
 
@@ -107,10 +138,6 @@ class Nessy : public olc::PixelGameEngine
             // Called once per frame
             
             Clear(olc::DARK_BLUE);
-            DrawRAM(2, 2, 0x0000, 16, 16);
-            DrawRAM(2, 182, ram2start, 16, 16);
-            DrawCPU(448, 2);
-
 
             if (GetKey(olc::Key::ESCAPE).bReleased)
                 return false;
@@ -139,6 +166,13 @@ class Nessy : public olc::PixelGameEngine
             if (GetKey(olc::Key::DOWN).bPressed) {
                 ram2start -= 0x1000;
             }
+
+            DrawRAM(2, 2, 0x0000, 16, 16);
+            DrawRAM(2, 182, ram2start, 16, 16);
+            DrawCPU(448, 2);
+            DrawDisasm(448, 102, 23);
+
+            DrawString(10, 460, "s = step, r = reset, up/down/pgup/pgdn = change ram view, ESC = quit");
 
             return true;
         }

@@ -1113,7 +1113,86 @@ uint8_t CPU::TYA()
 }
 
 
+// Disassembler
+// Heavily based on OLC's work
 
+std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
+{
+    uint32_t addr = start;
+    uint16_t line = 0;
+    uint8_t value = 0, lo = 0, hi = 0;
+    std::map<uint16_t, std::string> lines;
+
+    auto hex = [](uint32_t n, uint8_t d)
+    {
+        std::string s(d, '0');
+		for (int i = d - 1; i >= 0; i--, n >>= 4)
+			s[i] = "0123456789ABCDEF"[n & 0xF];
+		return s;
+    };
+
+    while (addr <= (uint32_t) end) {
+        line = addr;
+        std::string inst = "$" + hex(addr, 4) + ": ";
+        uint8_t opcode = bus->read(addr, true);
+        addr++;
+        inst += lookup[opcode].mnemonic + " ";
+
+        if (lookup[opcode].addrmode == &CPU::Implied) {
+            inst += " ";
+        } else if (lookup[opcode].addrmode == &CPU::Immediate) {
+            value = bus->read(addr, true);
+            addr++;
+            inst += "#$"+ hex(value, 2);
+        } else if (lookup[opcode].addrmode == &CPU::ZeroPage) {
+            lo = bus->read(addr, true);
+            addr++;
+            inst += "$" + hex(lo, 2);
+        } else if (lookup[opcode].addrmode == &CPU::ZeroPageX) {
+            lo = bus->read(addr, true);
+            addr++;
+            inst += "$" + hex(lo, 2) + ", X";
+        } else if (lookup[opcode].addrmode == &CPU::ZeroPageY) {
+            lo = bus->read(addr, true);
+            addr++;
+            inst += "$" + hex(lo, 2) + ", Y";
+        } else if (lookup[opcode].addrmode == &CPU::IndirectX) {
+            lo = bus->read(addr, true);
+            addr++;
+            inst += "($" + hex(lo, 2) + ", X)";
+        } else if (lookup[opcode].addrmode == &CPU::IndirectY) {
+            lo = bus->read(addr, true);
+            addr++;
+            inst += "($" + hex(lo, 2) + "), Y";
+        } else if (lookup[opcode].addrmode == &CPU::Absolute) {
+            lo = bus->read(addr, true); addr++;
+            hi = bus->read(addr, true); addr++;
+            inst += "$" + hex((uint16_t)(hi << 8) | lo, 4);
+        } else if (lookup[opcode].addrmode == &CPU::AbsoluteX) {
+            lo = bus->read(addr, true); addr++;
+            hi = bus->read(addr, true); addr++;
+            inst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X";
+        } else if (lookup[opcode].addrmode == &CPU::AbsoluteY) {
+            lo = bus->read(addr, true); addr++;
+            hi = bus->read(addr, true); addr++;
+            inst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y";
+        } else if (lookup[opcode].addrmode == &CPU::Indirect) {
+            lo = bus->read(addr, true); addr++;
+            hi = bus->read(addr, true); addr++;
+            inst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ")";
+        } else if (lookup[opcode].addrmode == &CPU::Relative) {
+            value = bus->read(addr, true);
+            addr++;
+            inst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "]";
+        } else {
+            inst += "ERROR: Unknown addressing mode!";
+        }
+
+        lines[line] = inst;
+    }
+
+    return lines;
+}
 
 
 

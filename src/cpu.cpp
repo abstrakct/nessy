@@ -368,6 +368,32 @@ void CPU::reset()
     cycles = 8;
 }
 
+void CPU::interrupt(uint16_t addr)
+{
+    push16(pc);
+    SetFlag(B, 0);
+    SetFlag(U, 1);
+    SetFlag(I, 1);
+    push(flags);
+    pc = ((((uint16_t)read(addr + 1)) << 8) | (uint16_t)read(addr));
+    cycles = 7;
+}
+
+void CPU::irq()
+{
+    // Are interrupts not disabled?
+    if (!GetFlag(I)) {
+        interrupt(0xFFFE);
+    }
+}
+
+void CPU::nmi()
+{
+    // NMI cannot be ignored. Reads new PC from 0xFFFA
+    interrupt(0xFFFA);
+}
+
+
 bool CPU::complete()
 {
     return (cycles == 0);

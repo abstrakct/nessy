@@ -76,8 +76,9 @@ class CPU {
         void SetFlag(Flag f, bool v = true);
 
         void reset();
-        //void irq();
-        //void nmi();
+        void irq();
+        void nmi();
+        void interrupt(uint16_t addr);
         bool complete();
 
         std::map<uint16_t, std::string> disassemble(uint16_t start, uint16_t end);

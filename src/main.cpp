@@ -156,8 +156,14 @@ class Nessy : public olc::PixelGameEngine
                 } while(!nes->cpu->complete());
             }
 
-            if (GetKey(olc::Key::R).bReleased)
+            if (GetKey(olc::Key::R).bPressed)
                 nes->cpu->reset();
+
+            if (GetKey(olc::Key::I).bPressed)
+                nes->cpu->irq();
+
+            if (GetKey(olc::Key::N).bPressed)
+                nes->cpu->nmi();
 
             if (GetKey(olc::Key::PGDN).bPressed) {
                 ram2start += 0x100;
@@ -180,7 +186,7 @@ class Nessy : public olc::PixelGameEngine
             DrawCPU(448, 2);
             DrawDisasm(448, 102, 23);
 
-            DrawString(10, 460, "s = step, r = reset, up/down/pgup/pgdn = change ram view, ESC = quit");
+            DrawString(10, 460, "s = step, r = reset, i = irq, n = nmi, up/down/pgup/pgdn = change ram view, ESC = quit");
 
             return true;
         }

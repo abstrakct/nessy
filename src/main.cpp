@@ -45,11 +45,13 @@ class Nessy : public olc::PixelGameEngine
         std::shared_ptr<Machine> nes;
         std::map<uint16_t, std::string> disasm;
         uint16_t ram2start = 0x8000;
+        bool debugmode;
 
-        Nessy(std::shared_ptr<Machine> m)
+        Nessy(std::shared_ptr<Machine> m, bool d = false)
         { 
             sAppName = "Nessy"; 
             nes = m;
+            debugmode = d;
         }
 
         void DrawRAM(int x, int y, uint16_t addr, int rows, int cols)
@@ -116,22 +118,24 @@ class Nessy : public olc::PixelGameEngine
             }
         }
 
+        // Called once at start
         bool OnUserCreate() override
         {
-            // Called once at start
             
             // Set reset vector to 0x8000
             nes->bus.write(0xFFFC, 0x00);
             nes->bus.write(0xFFFD, 0x80);
 
-            // put some instructions in ram
-            std::stringstream ss;
-            ss << "A2 05 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
-            uint16_t offset = 0x8000;
-            while(!ss.eof()) {
-                std::string b;
-                ss >> b;
-                nes->bus.write(offset++, (uint8_t)std::stoul(b, nullptr, 16));
+            // put some instructions in ram if we are in debug/development mode
+            if (debugmode) {
+                std::stringstream ss;
+                ss << "A2 05 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
+                uint16_t offset = 0x8000;
+                while(!ss.eof()) {
+                    std::string b;
+                    ss >> b;
+                    nes->bus.write(offset++, (uint8_t)std::stoul(b, nullptr, 16));
+                }
             }
 
             disasm = nes->cpu->disassemble(0x0000, 0xFFFF);
@@ -165,19 +169,19 @@ class Nessy : public olc::PixelGameEngine
             if (GetKey(olc::Key::N).bPressed)
                 nes->cpu->nmi();
 
-            if (GetKey(olc::Key::PGDN).bPressed) {
+            if (GetKey(olc::Key::UP).bPressed) {
                 ram2start += 0x100;
             }
 
-            if (GetKey(olc::Key::UP).bPressed) {
+            if (GetKey(olc::Key::PGDN).bPressed) {
                 ram2start += 0x1000;
             }
 
-            if (GetKey(olc::Key::PGUP).bPressed) {
+            if (GetKey(olc::Key::DOWN).bPressed) {
                 ram2start -= 0x100;
             }
 
-            if (GetKey(olc::Key::DOWN).bPressed) {
+            if (GetKey(olc::Key::PGUP).bPressed) {
                 ram2start -= 0x1000;
             }
 
@@ -186,7 +190,7 @@ class Nessy : public olc::PixelGameEngine
             DrawCPU(448, 2);
             DrawDisasm(448, 102, 23);
 
-            DrawString(10, 460, "s = step, r = reset, i = irq, n = nmi, up/down/pgup/pgdn = change ram view, ESC = quit");
+            DrawString(10, 460, "s = step  r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view   ESC = quit");
 
             return true;
         }
@@ -272,9 +276,9 @@ int main(int argc, char *argv[])
 
     TheNES = make_shared<Machine>();
     TheNES->init();
-    TheNES->load_rom(data, 0x8000, 0x7000);
+    TheNES->load_rom(data, 0x8000, prgromsize);
 
-    Nessy test(TheNES);
+    Nessy test(TheNES, (size <= 0));
 
     if (test.Construct(720, 480, 2, 2)) {
         test.Start();

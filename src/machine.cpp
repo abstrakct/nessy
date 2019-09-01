@@ -36,14 +36,18 @@ uint8_t Bus::read(uint16_t addr, bool readonly)
 // TODO: error checking
 void Machine::load_rom(std::vector<uint8_t> data, uint16_t offset, uint16_t length)
 {
-    uint16_t addr = offset;
-
-    for (auto i : data) {
-        bus.write(addr, i);
-        addr++;
-        if (addr > (offset + length))
-            return;
+    for (int i = 0; i < length; i++) {
+        bus.write(offset + i, data[i]);
     }
+    //for (auto i : data) {
+    //    printf("writing %02x to %04x\n", i, addr);
+    //    if (addr > (offset + length)) {
+    //        break;
+    //    } else {
+    //        bus.write(addr, i);
+    //        addr++;
+    //    }
+    //}
 }
 
 void Machine::init()

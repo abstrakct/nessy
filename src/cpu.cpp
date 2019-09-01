@@ -594,7 +594,7 @@ uint8_t CPU::ADC()
     SetFlag(Z, (temp & 0x00FF) == 0);
     // I have no idea what's going on here lol
     SetFlag(V, (~((uint16_t) a ^ (uint16_t) operand) & ((uint16_t) a ^ (uint16_t) temp)) & 0x0080);
-    SetFlag(N, temp & 0x80);
+    SetFlag(N, temp & 0x0080);
     a = temp & 0x00FF;
     return 1;
 }
@@ -1043,14 +1043,14 @@ uint8_t CPU::SBC()
 
     // Invert the bottom 8 bits (makes the operand negative)
     uint16_t value = ((uint16_t) operand) ^ 0x00FF;
-    // After that it's exactly the same as ADC ?!
+    // After that it's exactly the same as ADC ?!??
     // (adding a negative number is equal to subtracting the positive equivalent of that number)
-    temp = (uint16_t) a + (uint16_t) operand + (uint16_t) GetFlag(C);
-    SetFlag(C, temp > 255);
+    temp = (uint16_t) a + value + (uint16_t) GetFlag(C);
+    SetFlag(C, temp & 0xFF00);
     SetFlag(Z, (temp & 0x00FF) == 0);
     // I have no idea what's going on here lol
-    SetFlag(V, (~((uint16_t) a ^ (uint16_t) operand) & ((uint16_t) a ^ (uint16_t) temp)) & 0x0080);
-    SetFlag(N, temp & 0x80);
+    SetFlag(V, (temp ^ (uint16_t) a) & (temp ^ value) & 0x0080);
+    SetFlag(N, temp & 0x0080);
     a = temp & 0x00FF;
     
     return 1;

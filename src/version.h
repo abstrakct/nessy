@@ -1,8 +1,8 @@
 #ifndef VERSION_H
 #define VERSION_H
-#define VERSION_MAJOR ef9b919-dirty
+#define VERSION_MAJOR c0fdaab-dirty
 #define VERSION_MINOR 
 #define VERSION_REVISION 
 #define VERSION_HASH ""
-#define VERSION_STRING "ef9b919-dirty..."
+#define VERSION_STRING "c0fdaab-dirty..."
 #endif

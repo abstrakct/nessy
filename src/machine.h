@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "cpu.h"
+#include "ppu.h"
 
 class Bus {
     public:
@@ -12,6 +13,7 @@ class Bus {
         // Devices connected to the bus
         std::array<uint8_t, 64*1024> ram;
         CPU cpu;
+        PPU ppu;
 
         // Bus read and write
         void write(uint16_t addr, uint8_t data);

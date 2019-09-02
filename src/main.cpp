@@ -142,6 +142,11 @@ class Nessy : public olc::PixelGameEngine
 
             nes->cpu->reset();
 
+            // run the clock one cycle so the reset executes
+            do {
+                nes->cpu->clock();
+            } while(!nes->cpu->complete());
+
             return true;
         }
 

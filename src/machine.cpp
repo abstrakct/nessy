@@ -4,6 +4,7 @@
 Bus::Bus()
 {
     cpu.ConnectBus(this);
+    ppu.ConnectBus(this);
 
     uint8_t v = 0x00;
     for (auto &i : ram) {

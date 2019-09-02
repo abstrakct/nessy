@@ -576,12 +576,12 @@ uint8_t CPU::IndirectY()
 ////////////////
 uint8_t CPU::NOP()
 {
-    // TODO: add all unofficial NOPs
     return 0;
 }
 
 uint8_t CPU::XXX()
 {
+    // TODO: add all unofficial opcodes that make sense to add (e.g. some 2-byte NOPs)
     return 0;
 }
 

@@ -94,9 +94,16 @@ class Nessy : public olc::PixelGameEngine
         void DrawDisasm(int x, int y, int lines)
         {
             auto it = disasm.find(nes->cpu->pc);
+            std::map<uint16_t, std::string> next;
+            next = nes->cpu->disassemble(nes->cpu->pc, nes->cpu->pc);
+
             int liney = (lines >> 1) * 10 + y;
+
+            // Draw "live" disassembly of next instruction
+            DrawString(x, liney, next[nes->cpu->pc], olc::CYAN);
+
             if (it != disasm.end()) {
-                DrawString(x, liney, (*it).second, olc::CYAN);
+                //DrawString(x, liney, (*it).second, olc::CYAN);
                 while (liney < (lines * 10) + y) {
                     liney += 10;
                     if (++it != disasm.end()) {
@@ -129,7 +136,7 @@ class Nessy : public olc::PixelGameEngine
             // put some instructions in ram if we are in debug/development mode
             if (debugmode) {
                 std::stringstream ss;
-                ss << "A2 05 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
+                ss << "A2 05 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 B5 01 EA EA EA";
                 uint16_t offset = 0x8000;
                 while(!ss.eof()) {
                     std::string b;
@@ -162,6 +169,7 @@ class Nessy : public olc::PixelGameEngine
             if (GetKey(olc::Key::S).bPressed) {
                 do {
                     nes->cpu->clock();
+                    nes->ppu->clock();
                 } while(!nes->cpu->complete());
             }
 

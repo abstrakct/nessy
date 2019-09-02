@@ -28,6 +28,7 @@ class Machine {
 
         Bus bus;
         CPU *cpu;
+        PPU *ppu;
 
         void init();
         void load_rom(std::vector<uint8_t> data, uint16_t offset, uint16_t length);

@@ -570,6 +570,13 @@ uint8_t CPU::IndirectY()
 }
 
 
+uint16_t CPU::GetAddrZPX(uint16_t addr)
+{
+    uint16_t ret = 0;
+    ret = (read(addr) + x) & 0x00FF;
+    return ret;
+}
+
 
 ////////////////
 // Operations //
@@ -1146,7 +1153,7 @@ uint8_t CPU::TYA()
 std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
 {
     uint32_t addr = start;
-    uint16_t line = 0;
+    uint16_t line = 0, effective_address = 0;
     uint8_t value = 0, lo = 0, hi = 0;
     std::map<uint16_t, std::string> lines;
 
@@ -1177,8 +1184,11 @@ std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
             inst += "$" + hex(lo, 2);
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageX) {
             lo = bus->read(addr, true);
+            // this obviously doesn't work because the disasm doesn't know what X will be at any given point...
+            // therefore we should disassemble the current (next) instruction just before we execute it!
+            effective_address = GetAddrZPX(lo);
             addr++;
-            inst += "$" + hex(lo, 2) + ", X";
+            inst += "$" + hex(lo, 2) + ", X [" + hex(effective_address, 4) + "]";
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageY) {
             lo = bus->read(addr, true);
             addr++;

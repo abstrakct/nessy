@@ -215,9 +215,11 @@ class Nessy : public olc::PixelGameEngine
             DrawDisasm(448, 102, 23);
 
             DrawString(10, 460, "s = step  r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view   ESC = quit");
+            DrawString(10, 470, "space = run");
 
             if (runmode)
-                usleep(2000);
+                usleep(5 * 10000);
+
             return true;
         }
 };

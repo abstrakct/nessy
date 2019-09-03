@@ -13,7 +13,8 @@
 #include <memory>
 #include <cstdint>
 #include <bitset>
-#include <unistd.h>
+#include <chrono>
+#include <thread>
 
 #include "machine.h"
 
@@ -217,8 +218,10 @@ class Nessy : public olc::PixelGameEngine
             DrawString(10, 460, "s = step  r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view   ESC = quit");
             DrawString(10, 470, "space = run");
 
+            // TODO: adjust speed with keys
             if (runmode)
-                usleep(5 * 10000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                //usleep(5 * 10000);
 
             return true;
         }

@@ -135,7 +135,7 @@ class CPU {
         // Utility functions
         void push(uint8_t data, uint16_t offset = 0x100);
         void push16(uint16_t data);
-        uint8_t pop();
+        uint8_t pop(uint16_t offset = 0x100);
         uint16_t pop16();
         
         // Operations

@@ -13,6 +13,7 @@
 #include <memory>
 #include <cstdint>
 #include <bitset>
+#include <unistd.h>
 
 #include "machine.h"
 
@@ -45,7 +46,7 @@ class Nessy : public olc::PixelGameEngine
         std::shared_ptr<Machine> nes;
         std::map<uint16_t, std::string> disasm;
         uint16_t ram2start = 0x8000;
-        bool debugmode;
+        bool debugmode, runmode = false;
 
         Nessy(std::shared_ptr<Machine> m, bool d = false)
         { 
@@ -56,6 +57,7 @@ class Nessy : public olc::PixelGameEngine
 
         void DrawRAM(int x, int y, uint16_t addr, int rows, int cols)
         {
+            // TODO: highlight current PC (også read/writes????!!!!) !!!
             int ramx = x, ramy = y;
             for (int row = 0; row < rows; row++) {
                 std::string s = "$" + hex(addr, 4) + ":";
@@ -63,7 +65,11 @@ class Nessy : public olc::PixelGameEngine
                     s += " " + hex(nes->bus.read(addr, true), 2);
                     addr++;
                 }
-                DrawString(ramx, ramy, s);
+                //if (addr == nes->cpu->pc) {
+                //    DrawString(ramx, ramy, s, olc::GREEN);
+                //} else {
+                    DrawString(ramx, ramy, s);
+                //}
                 ramy += 10;
             }
         }
@@ -152,21 +158,26 @@ class Nessy : public olc::PixelGameEngine
             // run the clock one cycle so the reset executes
             do {
                 nes->cpu->clock();
+                nes->ppu->clock();
             } while(!nes->cpu->complete());
 
             return true;
         }
 
+        // Called once per frame
         bool OnUserUpdate(float fElapsedTime) override
         {
-            // Called once per frame
-            
             Clear(olc::DARK_BLUE);
 
             if (GetKey(olc::Key::ESCAPE).bReleased)
                 return false;
 
-            if (GetKey(olc::Key::S).bPressed) {
+            if (GetKey(olc::Key::SPACE).bPressed) {
+                // Run Mode! Run machine until stopped!
+                runmode = !runmode;
+            }
+
+            if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::ENTER).bPressed || runmode) {
                 do {
                     nes->cpu->clock();
                     nes->ppu->clock();
@@ -205,6 +216,8 @@ class Nessy : public olc::PixelGameEngine
 
             DrawString(10, 460, "s = step  r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view   ESC = quit");
 
+            if (runmode)
+                usleep(2000);
             return true;
         }
 };

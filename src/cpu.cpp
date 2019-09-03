@@ -330,9 +330,9 @@ void CPU::push16(uint16_t data)
 }
 
 // pop a value from the stack
-uint8_t CPU::pop()
+uint8_t CPU::pop(uint16_t offset)
 {
-    return read(++sp);
+    return read(++sp + offset);
 }
 
 // pop 16 bits from the stack
@@ -1064,6 +1064,7 @@ uint8_t CPU::RTI()
 uint8_t CPU::RTS()
 {
     pc = pop16() + 1;
+    printf("RTS: pc set to %04x\n", pc);
     return 0;
 }
 

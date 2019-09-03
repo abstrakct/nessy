@@ -129,7 +129,8 @@ class CPU {
 
         // Utility functions for getting effective address for indexed/indirect addressing modes
         // These are used in the disassembler
-        uint16_t GetAddrZPX(uint16_t addr);
+        uint16_t GetAddrZPX(uint16_t addr); uint16_t GetAddrZPY(uint16_t addr);
+        uint16_t GetAddrIDX(uint16_t addr); uint16_t GetAddrIDY(uint16_t addr);
 
         // Utility functions
         void push(uint8_t data, uint16_t offset = 0x100);

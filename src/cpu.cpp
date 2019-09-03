@@ -560,8 +560,9 @@ uint8_t CPU::IndirectY()
     temp = read(pc);
     pc++;
 
+    uint16_t lo = read(temp & 0x00FF);
     uint16_t hi = read((temp + 1) & 0x00FF);
-    address = ((hi << 8) | read(temp & 0x00FF)) + y;
+    address = ((hi << 8) | lo) + y;
 
     if ((address & 0xFF00) != (hi << 8))
         return 1;
@@ -573,10 +574,33 @@ uint8_t CPU::IndirectY()
 uint16_t CPU::GetAddrZPX(uint16_t addr)
 {
     uint16_t ret = 0;
-    ret = (read(addr) + x) & 0x00FF;
+    ret = (addr + x) & 0x00FF;
     return ret;
 }
 
+uint16_t CPU::GetAddrZPY(uint16_t addr)
+{
+    uint16_t ret = 0;
+    ret = (addr + y) & 0x00FF;
+    return ret;
+}
+
+uint16_t CPU::GetAddrIDX(uint16_t addr)
+{
+    uint16_t ret = 0;
+    temp = read(addr) + x;
+    ret = read(temp & 0x00FF) | (read((temp + 1) & 0x00FF) << 8);
+    return ret;
+}
+
+uint16_t CPU::GetAddrIDY(uint16_t addr)
+{
+    uint16_t ret = 0;
+    uint16_t lo = read(addr & 0x00FF);
+    uint16_t hi = read((addr + 1) & 0x00FF);
+    ret = ((hi << 8) | lo) + y;
+    return ret;
+}
 
 ////////////////
 // Operations //
@@ -1184,23 +1208,24 @@ std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
             inst += "$" + hex(lo, 2);
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageX) {
             lo = bus->read(addr, true);
-            // this obviously doesn't work because the disasm doesn't know what X will be at any given point...
-            // therefore we should disassemble the current (next) instruction just before we execute it!
             effective_address = GetAddrZPX(lo);
             addr++;
-            inst += "$" + hex(lo, 2) + ", X [" + hex(effective_address, 4) + "]";
+            inst += "$" + hex(lo, 2) + ", X   [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageY) {
             lo = bus->read(addr, true);
+            effective_address = GetAddrZPY(lo);
             addr++;
-            inst += "$" + hex(lo, 2) + ", Y";
+            inst += "$" + hex(lo, 2) + ", Y [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::IndirectX) {
             lo = bus->read(addr, true);
+            effective_address = GetAddrIDX(lo);
             addr++;
-            inst += "($" + hex(lo, 2) + ", X)";
+            inst += "($" + hex(lo, 2) + ", X) [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::IndirectY) {
             lo = bus->read(addr, true);
+            effective_address = GetAddrIDY(lo);
             addr++;
-            inst += "($" + hex(lo, 2) + "), Y";
+            inst += "($" + hex(lo, 2) + "), Y [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::Absolute) {
             lo = bus->read(addr, true); addr++;
             hi = bus->read(addr, true); addr++;
@@ -1220,7 +1245,7 @@ std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
         } else if (lookup[opcode].addrmode == &CPU::Relative) {
             value = bus->read(addr, true);
             addr++;
-            inst += "$" + hex(value, 2) + " [$" + hex(addr + value, 4) + "]";
+            inst += "$" + hex(value, 2) + "   [$" + hex(addr + value, 4) + "]";
         } else {
             inst += "ERROR: Unknown addressing mode!";
         }

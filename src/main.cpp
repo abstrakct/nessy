@@ -131,12 +131,12 @@ class Nessy : public olc::PixelGameEngine
             
             // Set reset vector to 0x8000
             nes->bus.write(0xFFFC, 0x00);
-            nes->bus.write(0xFFFD, 0x80);
+            nes->bus.write(0xFFFD, 0xC0);
 
             // put some instructions in ram if we are in debug/development mode
             if (debugmode) {
                 std::stringstream ss;
-                ss << "A2 05 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 B5 01 EA EA EA";
+                ss << "A2 02 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 B4 00 A1 01 B1 02 EA EA EA";
                 uint16_t offset = 0x8000;
                 while(!ss.eof()) {
                     std::string b;
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 
     TheNES = make_shared<Machine>();
     TheNES->init();
-    TheNES->load_rom(data, 0x8000, prgromsize);
+    TheNES->load_rom(data, 0xC000, prgromsize);
 
     Nessy test(TheNES, (size <= 0));
 

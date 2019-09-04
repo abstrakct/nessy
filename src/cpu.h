@@ -52,7 +52,7 @@ class CPU {
         uint8_t  a     = 0x00;
         uint8_t  x     = 0x00;
         uint8_t  y     = 0x00;
-        uint8_t  flags = 0x00;      // aka processor status - use c++ bitfield?
+        uint8_t  flags = 0x00;      // aka processor status
         uint8_t  sp    = 0x00;      // stack pointer
 
         uint64_t total_cycles = 0;

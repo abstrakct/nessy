@@ -2,40 +2,14 @@
  * 6502 cpu stuff
  */
 
+#include <stdio.h>
+
 #include "cpu.h"
 #include "machine.h"
+#include "logger.h"
 
-//uint8_t Memory::read(uint16_t address)
-//{
-//    if (address < 0x2000) {
-//        return ram[address & 0x7ff];
-//    } else {
-//        return rom[address];
-//    }
-//}
-//
-//void Memory::write(uint16_t address, uint8_t value)
-//{
-//    if (address < 0x2000) {
-//        ram[address & 0x7ff] = value;
-//    } else {
-//        rom[address] = value;
-//    }
-//}
-//
-//void Memory::resizeRom(int size)
-//{
-//    rom.resize(size, 0);
-//}
+extern Logger l;
 
-
-// TEORI:
-// bit 1 = indirect x
-// bit 3 = zero page
-// bit 4 = immediate
-// bit 5 (& bit 1) = indirect y
-//
-//
 CPU::CPU()
 {
     using c = CPU;
@@ -401,7 +375,10 @@ bool CPU::complete()
 
 void CPU::clock()
 {
+    uint16_t log_pc;
+    char log[100];
     if (cycles == 0) {
+        log_pc = pc;
         // We are ready for the next instruction!
         // Read next opcode:
         opcode = read(pc);
@@ -419,6 +396,10 @@ void CPU::clock()
         int add2 = (this->*lookup[opcode].operate)();
 
         cycles += (add1 & add2);
+#if LOG_LEVEL > LOG_LEVEL_NOP
+        sprintf(log, "%10ld: PC:%04X A:%02X X:%02X Y:%02X", total_cycles, pc, a, x, y);
+        l.w(std::string(log));
+#endif
     }
 
     total_cycles++;
@@ -433,6 +414,7 @@ uint8_t CPU::fetch()
 
     return operand;
 }
+
 
 // Addressing modes
 // These should set up stuff for use later...
@@ -570,7 +552,7 @@ uint8_t CPU::IndirectY()
         return 0;
 }
 
-
+// Get effective addresses for various modes (for the disassembler)
 uint16_t CPU::GetAddrZPX(uint16_t addr)
 {
     uint16_t ret = 0;
@@ -613,6 +595,7 @@ uint8_t CPU::NOP()
 uint8_t CPU::XXX()
 {
     // TODO: add all unofficial opcodes that make sense to add (e.g. some 2-byte NOPs)
+    l.w("Illegal opcode encountered!");
     return 0;
 }
 
@@ -1506,3 +1489,4 @@ void CPU::TestOpcodes()
 //    return opcodes;
 //}
 
+// vim: foldmethod=syntax

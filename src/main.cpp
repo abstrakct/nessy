@@ -16,6 +16,7 @@
 #include <chrono>
 #include <thread>
 
+#include "logger.h"
 #include "machine.h"
 
 #define OLC_PGE_APPLICATION
@@ -24,6 +25,7 @@
 using namespace std;
 
 std::shared_ptr<Machine> TheNES;
+Logger l;
 
 // from OLC
 std::string hex(uint32_t n, uint8_t d)
@@ -138,7 +140,7 @@ class Nessy : public olc::PixelGameEngine
             
             // Set reset vector to 0x8000
             nes->bus.write(0xFFFC, 0x00);
-            nes->bus.write(0xFFFD, 0xC0);
+            nes->bus.write(0xFFFD, 0x80);
 
             // put some instructions in ram if we are in debug/development mode
             if (debugmode) {
@@ -307,7 +309,7 @@ int main(int argc, char *argv[])
 
     TheNES = make_shared<Machine>();
     TheNES->init();
-    TheNES->load_rom(data, 0xC000, prgromsize);
+    TheNES->load_rom(data, 0x8000, prgromsize);
 
     Nessy test(TheNES, (size <= 0));
 

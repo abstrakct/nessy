@@ -14,6 +14,10 @@ class Bus;
 #define PPUData    7
 #define OAMDMA     0x4014
 
+#define PPU_SPRITE_OVERFLOW (1 << 5)
+#define PPU_SPRITE_HIT      (1 << 6)
+#define PPU_VBLANK          (1 << 7)
+
 class PPU {
     public:
         PPU();
@@ -49,6 +53,13 @@ class PPU {
         bool frame_complete();
         void render_scanline();
         void clock();
+
+        uint8_t cpuRead(uint16_t addr, bool readOnly = false);
+        void cpuWrite(uint16_t addr, uint8_t data);
+
+        uint8_t ppuRead(uint16_t addr, bool readOnly = false);
+        void ppuWrite(uint16_t addr, uint8_t data);
+
     private:
         int scanline = 0, cycles = 0;
 };

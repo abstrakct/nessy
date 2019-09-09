@@ -50,6 +50,7 @@ class Nessy : public olc::PixelGameEngine
         std::map<uint16_t, std::string> disasm;
         uint16_t ram2start = 0x8000;
         bool debugmode, runmode = false;
+        int execspeed = 100;
 
         Nessy(std::shared_ptr<Machine> m, bool d = false)
         { 
@@ -212,18 +213,26 @@ class Nessy : public olc::PixelGameEngine
                 ram2start -= 0x1000;
             }
 
+            if (GetKey(olc::Key::L).bPressed) {
+                // increase execution speed which means decrease sleep time
+                if (execspeed >= 5)
+                    execspeed -= 5;
+            }
+
+            if (GetKey(olc::Key::P).bPressed) {
+                execspeed += 5;
+            }
+
             DrawRAM(2, 2, 0x0000, 16, 16);
             DrawRAM(2, 182, ram2start, 16, 16);
             DrawCPU(448, 2);
             DrawDisasm(448, 102, 23);
 
             DrawString(10, 460, "s = step  r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view   ESC = quit");
-            DrawString(10, 470, "space = run");
+            DrawString(10, 470, "space = run  p/l = dec/inc delay (" + std::to_string(execspeed) + "ms)");
 
-            // TODO: adjust speed with keys
             if (runmode)
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                //usleep(5 * 10000);
+                std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
 
             return true;
         }

@@ -367,7 +367,6 @@ void CPU::nmi()
     interrupt(0xFFFA);
 }
 
-
 bool CPU::complete()
 {
     return (cycles == 0);
@@ -375,10 +374,12 @@ bool CPU::complete()
 
 void CPU::clock()
 {
-    uint16_t log_pc;
-    char log[100];
     if (cycles == 0) {
+#if LOG_LEVEL > LOG_LEVEL_NOP
+        uint16_t log_pc;
+        char log[100];
         log_pc = pc;
+#endif
         // We are ready for the next instruction!
         // Read next opcode:
         opcode = read(pc);
@@ -397,7 +398,7 @@ void CPU::clock()
 
         cycles += (add1 & add2);
 #if LOG_LEVEL > LOG_LEVEL_NOP
-        sprintf(log, "%10ld: PC:%04X A:%02X X:%02X Y:%02X", total_cycles, pc, a, x, y);
+        sprintf(log, "%10ld: PC:%04X A:%02X X:%02X Y:%02X", total_cycles, log_pc, a, x, y);
         l.w(std::string(log));
 #endif
     }
@@ -417,7 +418,7 @@ uint8_t CPU::fetch()
 
 
 // Addressing modes
-// These should set up stuff for use later...
+// These set up stuff for use later.
 uint8_t CPU::Implied()
 {
     operand = a;

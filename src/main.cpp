@@ -66,7 +66,7 @@ class Nessy : public olc::PixelGameEngine
             for (int row = 0; row < rows; row++) {
                 std::string s = "$" + hex(addr, 4) + ":";
                 for (int col = 0; col < cols; col++) {
-                    s += " " + hex(nes->bus.read(addr, true), 2);
+                    s += " " + hex(nes->cpuRead(addr, true), 2);
                     addr++;
                 }
                 //if (addr == nes->cpu->pc) {
@@ -85,32 +85,32 @@ class Nessy : public olc::PixelGameEngine
             int xs = 32;
             int space = 8;
             DrawString(x, y, "CPU:", olc::WHITE);
-            DrawString(x + (xs + space * 1), y, "N", nes->cpu->GetFlag(CPU::N) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 2), y, "V", nes->cpu->GetFlag(CPU::V) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 3), y, "-", nes->cpu->GetFlag(CPU::U) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 4), y, "B", nes->cpu->GetFlag(CPU::B) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 5), y, "D", nes->cpu->GetFlag(CPU::D) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 6), y, "I", nes->cpu->GetFlag(CPU::I) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 7), y, "Z", nes->cpu->GetFlag(CPU::Z) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 8), y, "C", nes->cpu->GetFlag(CPU::C) ? olc::GREEN : olc::RED);
-            DrawString(x, y + 10, " PC: $" + hex(nes->cpu->pc, 4));
-            DrawString(x, y + 20, " SP: $" + hex(nes->cpu->sp, 4));
-            DrawString(x, y + 30, "  A: $" + hex(nes->cpu->a,  2) + "  [" + bin(nes->cpu->a) + "]");
-            DrawString(x, y + 40, "  X: $" + hex(nes->cpu->x,  2) + "  [" + bin(nes->cpu->x) + "]");
-            DrawString(x, y + 50, "  Y: $" + hex(nes->cpu->y,  2) + "  [" + bin(nes->cpu->y) + "]");
-            DrawString(x, y + 80, "Total cycles: " + std::to_string(nes->cpu->total_cycles));
+            DrawString(x + (xs + space * 1), y, "N", nes->cpu.GetFlag(CPU::N) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 2), y, "V", nes->cpu.GetFlag(CPU::V) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 3), y, "-", nes->cpu.GetFlag(CPU::U) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 4), y, "B", nes->cpu.GetFlag(CPU::B) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 5), y, "D", nes->cpu.GetFlag(CPU::D) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 6), y, "I", nes->cpu.GetFlag(CPU::I) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 7), y, "Z", nes->cpu.GetFlag(CPU::Z) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 8), y, "C", nes->cpu.GetFlag(CPU::C) ? olc::GREEN : olc::RED);
+            DrawString(x, y + 10, " PC: $" + hex(nes->cpu.pc, 4));
+            DrawString(x, y + 20, " SP: $" + hex(nes->cpu.sp, 4));
+            DrawString(x, y + 30, "  A: $" + hex(nes->cpu.a,  2) + "  [" + bin(nes->cpu.a) + "]");
+            DrawString(x, y + 40, "  X: $" + hex(nes->cpu.x,  2) + "  [" + bin(nes->cpu.x) + "]");
+            DrawString(x, y + 50, "  Y: $" + hex(nes->cpu.y,  2) + "  [" + bin(nes->cpu.y) + "]");
+            DrawString(x, y + 80, "Total cycles: " + std::to_string(nes->cpu.total_cycles));
         }
 
         void DrawDisasm(int x, int y, int lines)
         {
-            auto it = disasm.find(nes->cpu->pc);
+            auto it = disasm.find(nes->cpu.pc);
             std::map<uint16_t, std::string> next;
-            next = nes->cpu->disassemble(nes->cpu->pc, nes->cpu->pc);
+            next = nes->cpu.disassemble(nes->cpu.pc, nes->cpu.pc);
 
             int liney = (lines >> 1) * 10 + y;
 
             // Draw "live" disassembly of next instruction
-            DrawString(x, liney, next[nes->cpu->pc], olc::CYAN);
+            DrawString(x, liney, next[nes->cpu.pc], olc::CYAN);
 
             if (it != disasm.end()) {
                 //DrawString(x, liney, (*it).second, olc::CYAN);
@@ -122,7 +122,7 @@ class Nessy : public olc::PixelGameEngine
                 }
             }
 
-            it = disasm.find(nes->cpu->pc);
+            it = disasm.find(nes->cpu.pc);
             liney = (lines >> 1) * 10 + y;
             if (it != disasm.end()) {
                 //DrawString(x, liney, (*it).second, olc::CYAN);
@@ -140,8 +140,8 @@ class Nessy : public olc::PixelGameEngine
         {
             
             // Set reset vector to 0x8000
-            nes->bus.write(0xFFFC, 0x00);
-            nes->bus.write(0xFFFD, 0x80);
+            nes->cpuWrite(0xFFFC, 0x00);
+            nes->cpuWrite(0xFFFD, 0x80);
 
             // put some instructions in ram if we are in debug/development mode
             if (debugmode) {
@@ -151,19 +151,19 @@ class Nessy : public olc::PixelGameEngine
                 while(!ss.eof()) {
                     std::string b;
                     ss >> b;
-                    nes->bus.write(offset++, (uint8_t)std::stoul(b, nullptr, 16));
+                    nes->cpuWrite(offset++, (uint8_t)std::stoul(b, nullptr, 16));
                 }
             }
 
-            disasm = nes->cpu->disassemble(0x0000, 0xFFFF);
+            disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
 
-            nes->cpu->reset();
+            nes->cpu.reset();
 
             // run the clock one cycle so the reset executes
             do {
-                nes->cpu->clock();
-                nes->ppu->clock();
-            } while(!nes->cpu->complete());
+                nes->cpu.clock();
+                nes->ppu.clock();
+            } while(!nes->cpu.complete());
 
             return true;
         }
@@ -183,19 +183,19 @@ class Nessy : public olc::PixelGameEngine
 
             if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::ENTER).bPressed || runmode) {
                 do {
-                    nes->cpu->clock();
-                    nes->ppu->clock();
-                } while(!nes->cpu->complete());
+                    nes->cpu.clock();
+                    nes->ppu.clock();
+                } while(!nes->cpu.complete());
             }
 
             if (GetKey(olc::Key::R).bPressed)
-                nes->cpu->reset();
+                nes->cpu.reset();
 
             if (GetKey(olc::Key::I).bPressed)
-                nes->cpu->irq();
+                nes->cpu.irq();
 
             if (GetKey(olc::Key::N).bPressed)
-                nes->cpu->nmi();
+                nes->cpu.nmi();
 
             if (GetKey(olc::Key::UP).bPressed) {
                 ram2start += 0x100;
@@ -317,8 +317,7 @@ int main(int argc, char *argv[])
     //}
 
     TheNES = make_shared<Machine>();
-    TheNES->init();
-    TheNES->load_rom(data, 0x8000, prgromsize);
+    //TheNES->load_rom(data, 0x8000, prgromsize);
 
     Nessy test(TheNES, (size <= 0));
 

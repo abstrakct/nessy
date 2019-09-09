@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <bitset>
 
-class Bus;
+class Machine;
 
 //enum eAddressingModes {
 //    Immediate,
@@ -57,7 +57,7 @@ class CPU {
 
         uint64_t total_cycles = 0;
 
-        void ConnectBus(Bus *n) { bus = n; }
+        void ConnectMachine(Machine *n) { nes = n; }
         void clock();
         void TestOpcodes();
 
@@ -84,7 +84,7 @@ class CPU {
         std::map<uint16_t, std::string> disassemble(uint16_t start, uint16_t end);
 
     private:
-        Bus *bus = nullptr;
+        Machine *nes = nullptr;
         void write(uint16_t addr, uint8_t data);
         uint8_t read(uint16_t addr);
 

@@ -3,21 +3,13 @@
 
 Bus::Bus()
 {
-    cpu.ConnectBus(this);
-    ppu.ConnectBus(this);
-
-    uint8_t v = 0x00;
-    for (auto &i : cpuRam) {
-        i = v;
-        //v++;
-    }
 }
 
 Bus::~Bus()
 {
 }
 
-void Bus::cpuWrite(uint16_t addr, uint8_t data)
+void Machine::cpuWrite(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x0000 && addr < 0x2000) {
         cpuRam[addr & 0x07FFF] = data;
@@ -28,7 +20,7 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data)
     }
 }
 
-uint8_t Bus::cpuRead(uint16_t addr, bool readonly)
+uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
 {
     uint8_t data;
 
@@ -43,30 +35,14 @@ uint8_t Bus::cpuRead(uint16_t addr, bool readonly)
     return data;
 }
 
-//void Machine::load_rom(std::vector<uint8_t> data, uint16_t offset, uint16_t length)
-//{
-//    for (int i = 0; i < length; i++) {
-//        bus.write(offset + i, data[i]);
-//    }
-//    //for (auto i : data) {
-//    //    printf("writing %02x to %04x\n", i, addr);
-//    //    if (addr > (offset + length)) {
-//    //        break;
-//    //    } else {
-//    //        bus.write(addr, i);
-//    //        addr++;
-//    //    }
-//    //}
-//}
-
-void Machine::init()
-{
-    cpu = &bus.cpu;
-    ppu = &bus.ppu;
-}
-
 Machine::Machine()
 {
+    cpu.ConnectMachine(this);
+    ppu.ConnectMachine(this);
+
+    for (auto &i : cpuRam) {
+        i = 0x00;
+    }
 }
 
 Machine::~Machine()

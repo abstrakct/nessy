@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-class Bus;
+class Machine;
 
 #define PPUCtrl    0
 #define PPUMask    1
@@ -23,8 +23,8 @@ class PPU {
         PPU();
         ~PPU();
 
-        Bus *bus;
-        void ConnectBus(Bus *n) { bus = n; }
+        Machine *nes;
+        void ConnectMachine(Machine *n) { nes = n; }
 
         uint8_t ppuctrl   = 0;
         uint8_t ppumask   = 0;

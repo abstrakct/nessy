@@ -281,12 +281,12 @@ CPU::~CPU()
 
 void CPU::write(uint16_t addr, uint8_t data)
 {
-    bus->write(addr, data);
+    nes->cpuWrite(addr, data);
 }
 
 uint8_t CPU::read(uint16_t addr)
 {
-    return bus->read(addr, false);
+    return nes->cpuRead(addr, false);
 }
 
 // push a value onto the stack
@@ -1177,58 +1177,58 @@ std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
     while (addr <= (uint32_t) end) {
         line = addr;
         std::string inst = "$" + hex(addr, 4) + ": ";
-        uint8_t opcode = bus->read(addr, true);
+        uint8_t opcode = nes->cpuRead(addr, true);
         addr++;
         inst += lookup[opcode].mnemonic + " ";
 
         if (lookup[opcode].addrmode == &CPU::Implied) {
             inst += " ";
         } else if (lookup[opcode].addrmode == &CPU::Immediate) {
-            value = bus->read(addr, true);
+            value = nes->cpuRead(addr, true);
             addr++;
             inst += "#$"+ hex(value, 2);
         } else if (lookup[opcode].addrmode == &CPU::ZeroPage) {
-            lo = bus->read(addr, true);
+            lo = nes->cpuRead(addr, true);
             addr++;
             inst += "$" + hex(lo, 2);
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageX) {
-            lo = bus->read(addr, true);
+            lo = nes->cpuRead(addr, true);
             effective_address = GetAddrZPX(lo);
             addr++;
-            inst += "$" + hex(lo, 2) + ", X   [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
+            inst += "$" + hex(lo, 2) + ", X   [$" + hex(effective_address, 4) + " = $" + hex(nes->cpuRead(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageY) {
-            lo = bus->read(addr, true);
+            lo = nes->cpuRead(addr, true);
             effective_address = GetAddrZPY(lo);
             addr++;
-            inst += "$" + hex(lo, 2) + ", Y [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
+            inst += "$" + hex(lo, 2) + ", Y [$" + hex(effective_address, 4) + " = $" + hex(nes->cpuRead(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::IndirectX) {
-            lo = bus->read(addr, true);
+            lo = nes->cpuRead(addr, true);
             effective_address = GetAddrIDX(lo);
             addr++;
-            inst += "($" + hex(lo, 2) + ", X) [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
+            inst += "($" + hex(lo, 2) + ", X) [$" + hex(effective_address, 4) + " = $" + hex(nes->cpuRead(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::IndirectY) {
-            lo = bus->read(addr, true);
+            lo = nes->cpuRead(addr, true);
             effective_address = GetAddrIDY(lo);
             addr++;
-            inst += "($" + hex(lo, 2) + "), Y [$" + hex(effective_address, 4) + " = $" + hex(bus->read(effective_address), 2) + "]";
+            inst += "($" + hex(lo, 2) + "), Y [$" + hex(effective_address, 4) + " = $" + hex(nes->cpuRead(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::Absolute) {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = nes->cpuRead(addr, true); addr++;
+            hi = nes->cpuRead(addr, true); addr++;
             inst += "$" + hex((uint16_t)(hi << 8) | lo, 4);
         } else if (lookup[opcode].addrmode == &CPU::AbsoluteX) {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = nes->cpuRead(addr, true); addr++;
+            hi = nes->cpuRead(addr, true); addr++;
             inst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", X";
         } else if (lookup[opcode].addrmode == &CPU::AbsoluteY) {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = nes->cpuRead(addr, true); addr++;
+            hi = nes->cpuRead(addr, true); addr++;
             inst += "$" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y";
         } else if (lookup[opcode].addrmode == &CPU::Indirect) {
-            lo = bus->read(addr, true); addr++;
-            hi = bus->read(addr, true); addr++;
+            lo = nes->cpuRead(addr, true); addr++;
+            hi = nes->cpuRead(addr, true); addr++;
             inst += "($" + hex((uint16_t)(hi << 8) | lo, 4) + ")";
         } else if (lookup[opcode].addrmode == &CPU::Relative) {
-            value = bus->read(addr, true);
+            value = nes->cpuRead(addr, true);
             addr++;
             inst += "$" + hex(value, 2) + "   [$" + hex(addr + value, 4) + "]";
         } else {

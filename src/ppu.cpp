@@ -2,6 +2,7 @@
 //
 
 
+#include "machine.h"
 #include "ppu.h"
 
 PPU::PPU()
@@ -12,10 +13,10 @@ PPU::~PPU()
 {
 }
 
-bool PPU::frame_complete()
-{
-    return (scanline == 262);
-}
+//bool PPU::frame_complete()
+//{
+//    return (scanline == 262);
+//}
 
 void PPU::render_scanline()
 {
@@ -23,18 +24,24 @@ void PPU::render_scanline()
 
 void PPU::clock()
 {
-    // just a simple hack for now
-    if (scanline < 240) {
-        reg[PPUStatus] &= ~PPU_SPRITE_OVERFLOW;
-        render_scanline();
-    } else if (scanline == 241) {
-        reg[PPUStatus] |= PPU_VBLANK;
-    } else if (scanline == 261) {
-        reg[PPUStatus] &= ~PPU_VBLANK;
-        scanline = 0;
-    }
+    cycles++;
 
-    scanline++;
+    if (cycles >= 341) {
+        cycles = 0;
+        scanline++;
+        if (scanline < 240) {
+            //render_scanline();
+        } else if (scanline == 241) {
+            reg[PPUStatus] |= PPU_VBLANK;
+            this->nes->cpu.nmi();
+        } else if (scanline >= 261) {
+            reg[PPUStatus] &= ~PPU_VBLANK;
+            reg[PPUStatus] &= ~PPU_SPRITE_HIT;
+            reg[PPUStatus] &= ~PPU_SPRITE_OVERFLOW;
+            scanline = -1;
+            frame_complete = true;
+        }
+    }
 }
 
 uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
@@ -59,11 +66,20 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 
     addr &= 0x3FFF;
 
+    if (cart->ppuRead(addr, data)) {
+    }
+
     return data;
 }
 
 void PPU::ppuWrite(uint16_t addr, uint8_t data)
 {
     addr &= 0x3FFF;
+    if (cart->ppuWrite(addr, data)) {
+    }
 }
 
+void PPU::connectCartridge(const std::shared_ptr<Cartridge>& cartridge)
+{
+    this->cart = cartridge ;
+}

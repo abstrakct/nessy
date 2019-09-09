@@ -1,6 +1,9 @@
 #pragma once
 
+#include <memory>
 #include <cstdint>
+
+#include "cartridge.h"
 
 class Machine;
 
@@ -19,10 +22,20 @@ class Machine;
 #define PPU_VBLANK          (1 << 7)
 
 class PPU {
+    private:
+        int scanline = 0, cycles = 0;
+        std::shared_ptr<Cartridge> cart;
+
+        uint8_t nametable[2][1024];
+        uint8_t palette[32];
+        // this is something OLC is planning to use in the future...
+        //uint8_t patterntable[2][4096];
+
     public:
         PPU();
         ~PPU();
 
+        // TODO: shared_ptr
         Machine *nes;
         void ConnectMachine(Machine *n) { nes = n; }
 
@@ -37,6 +50,8 @@ class PPU {
         uint8_t oamdma    = 0;
         uint8_t reg[8];
 
+        bool frame_complete = false;
+
         // registers
         //enum PPURegs {
         //    PPUCtrl   = 0x2000,
@@ -50,7 +65,7 @@ class PPU {
         //    OAMDMA    = 0x4014,
         //};
         
-        bool frame_complete();
+        //bool frame_complete();
         void render_scanline();
         void clock();
 
@@ -60,6 +75,5 @@ class PPU {
         uint8_t ppuRead(uint16_t addr, bool readOnly = false);
         void ppuWrite(uint16_t addr, uint8_t data);
 
-    private:
-        int scanline = 0, cycles = 0;
+        void connectCartridge(const std::shared_ptr<Cartridge>& cartridge);
 };

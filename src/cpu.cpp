@@ -398,7 +398,7 @@ void CPU::clock()
 
         cycles += (add1 & add2);
 #if LOG_LEVEL > LOG_LEVEL_NOP
-        sprintf(log, "%10ld: PC:%04X A:%02X X:%02X Y:%02X", total_cycles, log_pc, a, x, y);
+        sprintf(log, "%10ld: PC:%04X [Opcode %02X] A:%02X X:%02X Y:%02X", total_cycles, log_pc, opcode, a, x, y);
         l.w(std::string(log));
 #endif
     }
@@ -554,6 +554,12 @@ uint8_t CPU::IndirectY()
 }
 
 // Get effective addresses for various modes (for the disassembler)
+
+uint16_t CPU::GetAddrZP(uint16_t addr)
+{
+    return (addr & 0x00FF);
+}
+
 uint16_t CPU::GetAddrZPX(uint16_t addr)
 {
     uint16_t ret = 0;
@@ -1048,7 +1054,7 @@ uint8_t CPU::RTI()
 uint8_t CPU::RTS()
 {
     pc = pop16() + 1;
-    printf("RTS: pc set to %04x\n", pc);
+    //printf("RTS: pc set to %04x\n", pc);
     return 0;
 }
 
@@ -1189,8 +1195,9 @@ std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
             inst += "#$"+ hex(value, 2);
         } else if (lookup[opcode].addrmode == &CPU::ZeroPage) {
             lo = nes->cpuRead(addr, true);
+            effective_address = GetAddrZP(lo);
             addr++;
-            inst += "$" + hex(lo, 2);
+            inst += "$" + hex(lo, 2) + "      [$" + hex(effective_address, 4) + " = $" + hex(nes->cpuRead(effective_address), 2) + "]";
         } else if (lookup[opcode].addrmode == &CPU::ZeroPageX) {
             lo = nes->cpuRead(addr, true);
             effective_address = GetAddrZPX(lo);
@@ -1230,7 +1237,7 @@ std::map<uint16_t, std::string> CPU::disassemble(uint16_t start, uint16_t end)
         } else if (lookup[opcode].addrmode == &CPU::Relative) {
             value = nes->cpuRead(addr, true);
             addr++;
-            inst += "$" + hex(value, 2) + "   [$" + hex(addr + value, 4) + "]";
+            inst += "$" + hex(value, 2) + "      [$" + hex(addr + (int8_t) value, 4) + "]";
         } else {
             inst += "ERROR: Unknown addressing mode!";
         }

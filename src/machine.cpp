@@ -3,7 +3,9 @@
 
 void Machine::cpuWrite(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x0000 && addr < 0x2000) {
+    if (cart->cpuWrite(addr, data)) {
+        // cartridge handles this write
+    } else if (addr >= 0x0000 && addr < 0x2000) {
         cpuRam[addr & 0x07FFF] = data;
     } else if (addr >= 0x2000 && addr < 0x4000) {
         ppu.cpuWrite(addr, data);
@@ -16,7 +18,9 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
 {
     uint8_t data;
 
-    if (addr >= 0x0000 && addr <= 0x1FFF) {
+    if (cart->cpuRead(addr, data)) {
+        // cartridge handles this read
+    } else if (addr >= 0x0000 && addr < 0x2000) {
         data = cpuRam[addr & 0x07FFF];
     } else if (addr >= 0x2000 && addr < 0x4000) {
         data = ppu.cpuRead(addr, readonly);
@@ -25,6 +29,28 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
     }
 
     return data;
+}
+
+void Machine::reset()
+{
+    cpu.reset();
+    systemClockCounter = 0;
+}
+
+void Machine::clock()
+{
+    ppu.clock();
+    if (systemClockCounter % 3 == 0) {
+        cpu.clock();
+    }
+
+    systemClockCounter++;
+}
+
+void Machine::insertCartridge(const std::shared_ptr<Cartridge>& cartridge)
+{
+    this->cart = cartridge;
+    ppu.connectCartridge(cartridge);
 }
 
 Machine::Machine()

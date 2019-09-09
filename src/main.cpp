@@ -24,6 +24,7 @@
 
 using namespace std;
 
+// this is silly, move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
 Logger l;
 
@@ -48,15 +49,20 @@ class Nessy : public olc::PixelGameEngine
     public:
         std::shared_ptr<Machine> nes;
         std::map<uint16_t, std::string> disasm;
+        std::string nesFilename;
         uint16_t ram2start = 0x8000;
         bool debugmode, runmode = false;
         int execspeed = 100;
+        float residualTime = 0.0f, targetFPS = 60.0f;
 
-        Nessy(std::shared_ptr<Machine> m, bool d = false)
+        std::shared_ptr<Cartridge> cart;
+
+        Nessy(std::shared_ptr<Machine> m, std::string filename, bool d = false)
         { 
             sAppName = "Nessy"; 
             nes = m;
             debugmode = d;
+            nesFilename = filename;
         }
 
         void DrawRAM(int x, int y, uint16_t addr, int rows, int cols)
@@ -139,31 +145,39 @@ class Nessy : public olc::PixelGameEngine
         bool OnUserCreate() override
         {
             
-            // Set reset vector to 0x8000
-            nes->cpuWrite(0xFFFC, 0x00);
-            nes->cpuWrite(0xFFFD, 0x80);
+            //// Set reset vector to 0x8000
+            //nes->cpuWrite(0xFFFC, 0x00);
+            //nes->cpuWrite(0xFFFD, 0x80);
 
-            // put some instructions in ram if we are in debug/development mode
-            if (debugmode) {
-                std::stringstream ss;
-                ss << "A2 02 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 B4 00 A1 01 B1 02 EA EA EA";
-                uint16_t offset = 0x8000;
-                while(!ss.eof()) {
-                    std::string b;
-                    ss >> b;
-                    nes->cpuWrite(offset++, (uint8_t)std::stoul(b, nullptr, 16));
-                }
-            }
+            //// put some instructions in ram if we are in debug/development mode
+            //if (debugmode) {
+            //    std::stringstream ss;
+            //    ss << "A2 02 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 B4 00 A1 01 B1 02 EA EA EA";
+            //    uint16_t offset = 0x8000;
+            //    while(!ss.eof()) {
+            //        std::string b;
+            //        ss >> b;
+            //        nes->cpuWrite(offset++, (uint8_t)std::stoul(b, nullptr, 16));
+            //    }
+            //}
+
+            //disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
+
+            //nes->cpu.reset();
+
+            //// run the clock one cycle so the reset executes
+            //do {
+            //    nes->cpu.clock();
+            //    nes->ppu.clock();
+            //} while(!nes->cpu.complete());
+
+            cart = std::make_shared<Cartridge>(nesFilename);
+
+            nes->insertCartridge(cart);
 
             disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
 
-            nes->cpu.reset();
-
-            // run the clock one cycle so the reset executes
-            do {
-                nes->cpu.clock();
-                nes->ppu.clock();
-            } while(!nes->cpu.complete());
+            nes->reset();
 
             return true;
         }
@@ -176,16 +190,45 @@ class Nessy : public olc::PixelGameEngine
             if (GetKey(olc::Key::ESCAPE).bReleased)
                 return false;
 
+            if (runmode) {
+                if (residualTime > 0.0f) {
+                    residualTime -= fElapsedTime;
+                } else {
+                    residualTime += (1.0f / targetFPS) - fElapsedTime;
+
+                    do {
+                        nes->clock();
+                    } while (!nes->ppu.frame_complete);
+
+                    nes->ppu.frame_complete = false;
+                }
+            } else {
+                if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::ENTER).bPressed) {
+                    do {
+                        nes->clock();
+                    } while (!nes->cpu.complete());
+
+                    do {
+                        nes->clock();
+                    } while (nes->cpu.complete());
+                }
+
+                if (GetKey(olc::Key::F).bPressed) {
+                    do {
+                        nes->clock();
+                    } while (!nes->ppu.frame_complete);
+
+                    do {
+                        nes->clock();
+                    } while (!nes->cpu.complete());
+
+                    nes->ppu.frame_complete = false;
+                }
+            }
+
             if (GetKey(olc::Key::SPACE).bPressed) {
                 // Run Mode! Run machine until stopped!
                 runmode = !runmode;
-            }
-
-            if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::ENTER).bPressed || runmode) {
-                do {
-                    nes->cpu.clock();
-                    nes->ppu.clock();
-                } while(!nes->cpu.complete());
             }
 
             if (GetKey(olc::Key::R).bPressed)
@@ -215,24 +258,24 @@ class Nessy : public olc::PixelGameEngine
 
             if (GetKey(olc::Key::L).bPressed) {
                 // increase execution speed which means decrease sleep time
-                if (execspeed >= 5)
-                    execspeed -= 5;
+                if (targetFPS >= 5)
+                    targetFPS -= 5;
             }
 
             if (GetKey(olc::Key::P).bPressed) {
-                execspeed += 5;
+                targetFPS += 5;
             }
 
-            DrawRAM(2, 2, 0x0000, 16, 16);
+            DrawRAM(2,   2, 0x0000,    16, 16);
             DrawRAM(2, 182, ram2start, 16, 16);
             DrawCPU(448, 2);
             DrawDisasm(448, 102, 23);
 
-            DrawString(10, 460, "s = step  r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view   ESC = quit");
-            DrawString(10, 470, "space = run  p/l = dec/inc delay (" + std::to_string(execspeed) + "ms)");
+            DrawString(10, 460, "s = step   r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
+            DrawString(10, 470, "f = frame  space = run  p/l = dec/inc fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
 
-            if (runmode)
-                std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
+            //if (runmode)
+            //    std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
 
             return true;
         }
@@ -240,86 +283,75 @@ class Nessy : public olc::PixelGameEngine
 
 int main(int argc, char *argv[])
 {
-    std::vector<uint8_t> data;
-    char *header;
-    int mapper;
-    ifstream file(argv[1], ios::binary);
-    streampos size;
-    streampos headersize = 16;
-    int prgromsize = 0;
+    //std::vector<uint8_t> data;
+    //char *header;
+    //int mapper;
+    //ifstream file(argv[1], ios::binary);
+    //streampos size;
+    //streampos headersize = 16;
+    //int prgromsize = 0;
 
-    file.seekg(headersize, ios::end);
-    size = file.tellg();
-    cout << "ROM size is " << size << " bytes." << endl;
-    file.seekg(0, ios::beg);
-    
-    header = new char[headersize];
-    file.read(header, headersize);
+    //file.seekg(headersize, ios::end);
+    //size = file.tellg();
+    //cout << "ROM size is " << size << " bytes." << endl;
+    //file.seekg(0, ios::beg);
+    //
+    //header = new char[headersize];
+    //file.read(header, headersize);
 
-    std::vector<uint8_t> contents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    for (auto it : contents) {
-        data.push_back(it);
-    }
-    //file.read(data, size);
-    
-    if(header[0] == 'N' && header[1] == 'E' && header[2] == 'S' && header[3] == 0x1A) {
-        cout << "Header OK" << endl;
-        prgromsize = (int) header[4] * 16384;
-        cout << "PRG ROM: " << (int) header[4] << " x 16 KB (" << prgromsize << ")" << endl;
-        if (header[5]) {
-            cout << "CHR ROM: " << (int) header[5] << " x  8 KB" << endl;
-        } else {
-            cout << "Board uses CHR RAM" << endl;
-        }
-     
-        cout << "Byte 6 flags:" << endl;
-        if (header[6] & 0b00000001) {
-            cout << "Mirroring: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)" << endl;
-        } else {
-            cout << "Mirroring: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)" << endl;
-        }
-        if (header[6] & 0b00000010) {
-            cout << "Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory" << endl;
-        }
-        if (header[6] & 0b00000100) {
-            cout << "512-byte trainer at $7000-$71FF (stored before PRG data)" << endl;
-        }
-        if (header[6] & 0b00001000) {
-            cout << "Ignore mirroring control or above mirroring bit; instead provide four-screen VRAM" << endl;
-        }
+    //std::vector<uint8_t> contents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    //for (auto it : contents) {
+    //    data.push_back(it);
+    //}
+    ////file.read(data, size);
+    //
+    //if(header[0] == 'N' && header[1] == 'E' && header[2] == 'S' && header[3] == 0x1A) {
+    //    cout << "Header OK" << endl;
+    //    prgromsize = (int) header[4] * 16384;
+    //    cout << "PRG ROM: " << (int) header[4] << " x 16 KB (" << prgromsize << ")" << endl;
+    //    if (header[5]) {
+    //        cout << "CHR ROM: " << (int) header[5] << " x  8 KB" << endl;
+    //    } else {
+    //        cout << "Board uses CHR RAM" << endl;
+    //    }
+    // 
+    //    cout << "Byte 6 flags:" << endl;
+    //    if (header[6] & 0b00000001) {
+    //        cout << "Mirroring: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)" << endl;
+    //    } else {
+    //        cout << "Mirroring: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)" << endl;
+    //    }
+    //    if (header[6] & 0b00000010) {
+    //        cout << "Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory" << endl;
+    //    }
+    //    if (header[6] & 0b00000100) {
+    //        cout << "512-byte trainer at $7000-$71FF (stored before PRG data)" << endl;
+    //    }
+    //    if (header[6] & 0b00001000) {
+    //        cout << "Ignore mirroring control or above mirroring bit; instead provide four-screen VRAM" << endl;
+    //    }
 
-        mapper = (header[7] & 0xF0) | ((header[6] & 0xF0) >> 4);
-        cout << "Mapper number: " << mapper << endl;
+    //    mapper = (header[7] & 0xF0) | ((header[6] & 0xF0) >> 4);
+    //    cout << "Mapper number: " << mapper << endl;
 
 
-        cout << "Byte 7 flags:" << endl;
-        if (header[7] & 0b00000001) {
-            cout << "VS Unisystem ROM" << endl;
-        }
-        if (header[7] & 0b00000010) {
-            cout << "PlayChoice-10 ROM (8KB of Hint Screen data stored after CHR data)" << endl;
-        }
-    }
-
-/*
-    cout << endl << "DISASSEMBLY" << endl << "***********" << endl << endl;
-    uint8_t *newdata = (uint8_t *) data;
-
-    nes->cpu.pc = 0;::
-    while (nes->cpu.pc < prgromsize) {
-        nes->cpu.pc += disasm(newdata);
-    };
-*/
-
-    //cout << "Testing opcodes..." << endl;
-    //for (int i = 0; i <= 0xFF; i++) {
-    //    nes->bus.cpu.TestOpcodes();
+    //    cout << "Byte 7 flags:" << endl;
+    //    if (header[7] & 0b00000001) {
+    //        cout << "VS Unisystem ROM" << endl;
+    //    }
+    //    if (header[7] & 0b00000010) {
+    //        cout << "PlayChoice-10 ROM (8KB of Hint Screen data stored after CHR data)" << endl;
+    //    }
     //}
 
-    TheNES = make_shared<Machine>();
-    //TheNES->load_rom(data, 0x8000, prgromsize);
 
-    Nessy test(TheNES, (size <= 0));
+    if (argc < 2) {
+        printf("Provide ROM filename.\n");
+        exit(0);
+    }
+
+    TheNES = make_shared<Machine>();
+    Nessy test(TheNES, argv[1]);
 
     if (test.Construct(720, 480, 2, 2)) {
         test.Start();

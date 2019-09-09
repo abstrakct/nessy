@@ -1,14 +1,6 @@
 
 #include "machine.h"
 
-Bus::Bus()
-{
-}
-
-Bus::~Bus()
-{
-}
-
 void Machine::cpuWrite(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x0000 && addr < 0x2000) {

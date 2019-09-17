@@ -5,6 +5,7 @@
 #include "mappers/mapper000.h"
 #include "mappers/mapper001.h"
 #include "mappers/mapper002.h"
+#include "mappers/mapper007.h"
 
 extern Logger l;
 
@@ -63,6 +64,8 @@ Cartridge::Cartridge(const std::string& filename)
                 mapper = std::make_shared<Mapper001>(prgBanks, chrBanks); break;
             case 2:
                 mapper = std::make_shared<Mapper002>(prgBanks, chrBanks); break;
+            case 7:
+                mapper = std::make_shared<Mapper007>(prgBanks, chrBanks); break;
             default:
                 printf("ERROR! Mapper %d is not implemented!\n", mapperNum);
                 mapper = nullptr; 
@@ -121,8 +124,11 @@ bool Cartridge::ppuRead(uint16_t addr, uint8_t &data)
     if (mapper->ppuRead(addr, mapped_addr)) {
         data = chrMem[mapped_addr];
         return true;
-    } else
+    } else if (mapper->ppuReadData(addr, data)) {
+        return true;
+    } else {
         return false;
+    }
 }
 
 bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
@@ -131,7 +137,10 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
     if (mapper->ppuWrite(addr, mapped_addr)) {
         chrMem[mapped_addr] = data;
         return true;
-    } else
+    } else if(mapper->ppuWriteData(addr, data)) {
+        return true;
+    } else {
         return false;
+    }
 }
 

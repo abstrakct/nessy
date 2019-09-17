@@ -13,7 +13,7 @@ class Machine {
         ~Machine();
 
         // Devices connected to the bus
-        std::array<uint8_t, 2*1024> cpuRam;
+        std::array<uint8_t, 2048> cpuRam;
         CPU cpu;
         PPU ppu;
         std::shared_ptr<Cartridge> cart;

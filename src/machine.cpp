@@ -5,8 +5,8 @@ void Machine::cpuWrite(uint16_t addr, uint8_t data)
 {
     if (cart->cpuWrite(addr, data)) {
         // cartridge handles this write
-    } else if (addr >= 0x0000 && addr < 0x2000) {
-        cpuRam[addr & 0x07FFF] = data;
+    } else if (addr < 0x2000) {
+        cpuRam[addr & 0x07FF] = data;
     } else if (addr >= 0x2000 && addr < 0x4000) {
         ppu.cpuWrite(addr, data);
     } else if (addr == 0x4014) {
@@ -20,8 +20,8 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
 
     if (cart->cpuRead(addr, data)) {
         // cartridge handles this read
-    } else if (addr >= 0x0000 && addr < 0x2000) {
-        data = cpuRam[addr & 0x07FFF];
+    } else if (addr < 0x2000) {
+        data = cpuRam[addr & 0x07FF];
     } else if (addr >= 0x2000 && addr < 0x4000) {
         data = ppu.cpuRead(addr, readonly);
     } else {

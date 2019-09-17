@@ -185,7 +185,7 @@ class Nessy : public olc::PixelGameEngine
             }
 
             printf("[ Disassembling code     ]\n");
-            disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
+            disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
 
             printf("[ Resetting NES          ]\n");
             nes->reset();
@@ -212,8 +212,10 @@ class Nessy : public olc::PixelGameEngine
                     } while (!nes->ppu.frame_complete);
 
                     nes->ppu.frame_complete = false;
+                    disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                 }
             } else {
+                // Advance one instruction
                 if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::ENTER).bPressed) {
                     do {
                         nes->clock();
@@ -222,8 +224,11 @@ class Nessy : public olc::PixelGameEngine
                     do {
                         nes->clock();
                     } while (nes->cpu.complete());
+
+                    disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                 }
 
+                // Advance one frame
                 if (GetKey(olc::Key::F).bPressed) {
                     do {
                         nes->clock();
@@ -234,6 +239,7 @@ class Nessy : public olc::PixelGameEngine
                     } while (!nes->cpu.complete());
 
                     nes->ppu.frame_complete = false;
+                    disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                 }
             }
 
@@ -375,6 +381,7 @@ int main(int argc, char *argv[])
     Nessy test(TheNES, argv[1]);
 
     if (test.Construct(720, 480, 2, 2)) {
+        printf("[ Starting Emulation     ]\n");
         test.Start();
     }
 

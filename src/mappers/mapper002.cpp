@@ -56,21 +56,21 @@ bool Mapper002::cpuWriteData(uint16_t addr, uint8_t data)
 
 bool Mapper002::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 {
-    if (addr >= 0x0000 && addr <= 0x1FFF) {
-        mapped_addr = addr;
-        return true;
-    }
+    //if (addr >= 0x0000 && addr <= 0x1FFF) {
+    //    mapped_addr = addr;
+    //    return true;
+    //}
     return false;
 }
 
 bool Mapper002::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 {
-    if (addr >= 0x0000 && addr <= 0x1FFF) {
-        if (chrBanks == 0) {
-            mapped_addr = addr;
-            return true;
-        }
-    }
+    //if (addr >= 0x0000 && addr <= 0x1FFF) {
+    //    if (chrBanks == 0) {
+    //        mapped_addr = addr;
+    //        return true;
+    //    }
+    //}
     return false;
 }
 

@@ -4,6 +4,7 @@
 #include "cartridge.h"
 #include "mappers/mapper000.h"
 #include "mappers/mapper001.h"
+#include "mappers/mapper002.h"
 
 extern Logger l;
 
@@ -60,8 +61,10 @@ Cartridge::Cartridge(const std::string& filename)
                 mapper = std::make_shared<Mapper000>(prgBanks, chrBanks); break;
             case 1:
                 mapper = std::make_shared<Mapper001>(prgBanks, chrBanks); break;
+            case 2:
+                mapper = std::make_shared<Mapper002>(prgBanks, chrBanks); break;
             default:
-                printf("WARNING! Unknown mapper %d\n", mapperNum);
+                printf("ERROR! Mapper %d is not implemented!\n", mapperNum);
                 mapper = nullptr; 
                 valid = false;
                 break;
@@ -76,11 +79,11 @@ Cartridge::Cartridge(const std::string& filename)
 
         if (valid) {
             printf("\n");
-            printf("Filename:  %s\n", filename.c_str());
-            printf("Mapper:    %d\n", mapperNum);
-            printf("PRG ROM:   %d x 16 KB\n", prgBanks);
-            printf("CHR ROM:   %d x  8 KB\n", chrBanks);
-            printf("Mirroring: %s\n\n", mirror == VERTICAL ? "Vertical" : "Horizontal");
+            printf("\tFilename:  %s\n", filename.c_str());
+            printf("\tMapper:    %d\n", mapperNum);
+            printf("\tPRG ROM:   %d x 16 KB [0x%06X bytes]\n", prgBanks, prgBanks * 0x4000);
+            printf("\tCHR ROM:   %d x  8 KB [0x%06X bytes]\n", chrBanks, chrBanks * 0x0000);
+            printf("\tMirroring: %s\n\n", mirror == VERTICAL ? "Vertical" : "Horizontal");
         }
     }
 }
@@ -102,11 +105,14 @@ bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
 bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)
 {
     uint32_t mapped_addr = 0;
+    //printf("hello from Cartridge::cpuWrite! addr = 0x%04x  data = 0x%02x\n", addr, data);
     if (mapper->cpuWrite(addr, mapped_addr)) {
         prgMem[mapped_addr] = data;
         return true;
-    } else
-        return false;
+    } else if (mapper->cpuWriteData(addr, data)) {
+        return true;
+    }
+    return false;
 }
 
 bool Cartridge::ppuRead(uint16_t addr, uint8_t &data)

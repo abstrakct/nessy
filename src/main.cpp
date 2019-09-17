@@ -173,8 +173,10 @@ class Nessy : public olc::PixelGameEngine
             //    nes->ppu.clock();
             //} while(!nes->cpu.complete());
 
+            printf("[ Loading Cartridge      ]\n");
             cart = std::make_shared<Cartridge>(nesFilename);
 
+            printf("[ Inserting Cartridge    ]\n");
             nes->insertCartridge(cart);
 
             if (!cart->isValid()) {
@@ -182,8 +184,10 @@ class Nessy : public olc::PixelGameEngine
                 exit(1);
             }
 
+            printf("[ Disassembling code     ]\n");
             disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
 
+            printf("[ Resetting NES          ]\n");
             nes->reset();
 
             return true;
@@ -357,14 +361,17 @@ int main(int argc, char *argv[])
     //    }
     //}
 
-    printf("\nNESSY v%s\n", VERSION_STRING);
+    printf("\nNESSY v%s\n\n", VERSION_STRING);
 
     if (argc < 2) {
         printf("Provide ROM filename.\n");
         exit(0);
     }
 
+    printf("[ Constructing Machine   ]\n");
     TheNES = make_shared<Machine>();
+
+    printf("[ Constructing Interface ]\n");
     Nessy test(TheNES, argv[1]);
 
     if (test.Construct(720, 480, 2, 2)) {

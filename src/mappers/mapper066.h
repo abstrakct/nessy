@@ -2,10 +2,10 @@
 #include <vector>
 #include "../mapper.h"
 
-class Mapper011 : public Mapper {
+class Mapper066 : public Mapper {
     public:
-        Mapper011(uint8_t p, uint8_t c);
-        ~Mapper011();
+        Mapper066(uint8_t p, uint8_t c);
+        ~Mapper066();
 
         bool cpuRead(uint16_t addr, uint32_t &mapped_addr) override;
         bool cpuWrite(uint16_t addr, uint32_t &mapped_addr) override;
@@ -21,3 +21,4 @@ class Mapper011 : public Mapper {
         uint8_t  selectedChrBank   = 0;
         //std::vector<uint8_t> vram;
 };
+

@@ -7,6 +7,7 @@
 #include "mappers/mapper002.h"
 #include "mappers/mapper007.h"
 #include "mappers/mapper011.h"
+#include "mappers/mapper066.h"
 
 extern Logger l;
 
@@ -69,6 +70,8 @@ Cartridge::Cartridge(const std::string& filename)
                 mapper = std::make_shared<Mapper007>(prgBanks, chrBanks); break;
             case 11:
                 mapper = std::make_shared<Mapper011>(prgBanks, chrBanks); break;
+            case 66:
+                mapper = std::make_shared<Mapper066>(prgBanks, chrBanks); break;
             default:
                 printf("ERROR! Mapper %d is not implemented!\n", mapperNum);
                 mapper = nullptr; 

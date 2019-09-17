@@ -33,6 +33,7 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
 
 void Machine::reset()
 {
+    // TODO: reset mapper!!
     cpu.reset();
     systemClockCounter = 0;
 }

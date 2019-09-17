@@ -27,6 +27,7 @@ class Cartridge {
         bool ppuWrite(uint16_t addr, uint8_t data);
 
     private:
+        // TODO: Mem -> Rom ?
         std::vector<uint8_t> prgMem;
         std::vector<uint8_t> chrMem;
         int mapperNum, prgBanks, chrBanks;

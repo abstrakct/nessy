@@ -16,6 +16,7 @@
 #include <chrono>
 #include <thread>
 
+#include "version.h"
 #include "logger.h"
 #include "machine.h"
 
@@ -54,6 +55,7 @@ class Nessy : public olc::PixelGameEngine
         bool debugmode, runmode = false;
         int execspeed = 100;
         float residualTime = 0.0f, targetFPS = 60.0f;
+        char log[100];
 
         std::shared_ptr<Cartridge> cart;
 
@@ -175,6 +177,11 @@ class Nessy : public olc::PixelGameEngine
 
             nes->insertCartridge(cart);
 
+            if (!cart->isValid()) {
+                printf("Invalid or unusable NES file!\n");
+                exit(1);
+            }
+
             disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
 
             nes->reset();
@@ -258,12 +265,18 @@ class Nessy : public olc::PixelGameEngine
 
             if (GetKey(olc::Key::L).bPressed) {
                 // increase execution speed which means decrease sleep time
-                if (targetFPS >= 5)
+                if (targetFPS > 5)
                     targetFPS -= 5;
+                else if (targetFPS > 1)   // zero fps makes no sense...
+                    targetFPS --;
+
             }
 
             if (GetKey(olc::Key::P).bPressed) {
-                targetFPS += 5;
+                if (targetFPS < 5)
+                    targetFPS ++;
+                else
+                    targetFPS += 5;
             }
 
             DrawRAM(2,   2, 0x0000,    16, 16);
@@ -271,8 +284,8 @@ class Nessy : public olc::PixelGameEngine
             DrawCPU(448, 2);
             DrawDisasm(448, 102, 23);
 
-            DrawString(10, 460, "s = step   r = reset  i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
-            DrawString(10, 470, "f = frame  space = run  p/l = dec/inc fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+            DrawString(10, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
+            DrawString(10, 470, "f = frame  spc = run   p/l = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
 
             //if (runmode)
             //    std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
@@ -344,6 +357,7 @@ int main(int argc, char *argv[])
     //    }
     //}
 
+    printf("\nNESSY v%s\n", VERSION_STRING);
 
     if (argc < 2) {
         printf("Provide ROM filename.\n");

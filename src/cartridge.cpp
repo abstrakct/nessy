@@ -2,7 +2,8 @@
 #include <fstream>
 #include "logger.h"
 #include "cartridge.h"
-#include "mappers/mapper_000.h"
+#include "mappers/mapper000.h"
+#include "mappers/mapper001.h"
 
 extern Logger l;
 
@@ -18,12 +19,13 @@ Cartridge::Cartridge(const std::string& filename)
         char unused[5];   // there can be information here, implement/use later
     } header;
 
+    valid = false;
     std::ifstream ifs;
     ifs.open(filename, std::ifstream::binary);
 
     if (!ifs) {
         printf("ERROR: couldn't open file!\n");
-        exit(1);
+        //exit(1);
     }
 
     if (ifs.is_open()) {
@@ -34,6 +36,8 @@ Cartridge::Cartridge(const std::string& filename)
             ifs.seekg(512, std::ios_base::cur);
 
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
+
+        mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
 
         // discover file format
         uint8_t filetype = 1;
@@ -49,21 +53,35 @@ Cartridge::Cartridge(const std::string& filename)
         } else if (filetype == 2) {
         }
 
+        valid = true;
+
         switch (mapperNum) {
             case 0:
-                mapper = std::make_shared<Mapper_000>(prgBanks, chrBanks); break;
+                mapper = std::make_shared<Mapper000>(prgBanks, chrBanks); break;
+            case 1:
+                mapper = std::make_shared<Mapper001>(prgBanks, chrBanks); break;
             default:
                 printf("WARNING! Unknown mapper %d\n", mapperNum);
-                mapper = nullptr; break;
+                mapper = nullptr; 
+                valid = false;
+                break;
+        }
+
+        if (mapper && mapper->implementationStatus()) {
+            printf("Error: Emulation of mapper %d is %s\n", mapperNum, mapper->implementationStatus() == 1 ? "not working" : "not usable");
+            exit(1);
         }
 
         ifs.close();
 
-        printf("ROM file loaded!\n");
-        printf("Filename: %s\n", filename.c_str());
-        printf("PRG ROM: %d x 16 KB\n", prgBanks);
-        printf("CHR ROM: %d x  8 KB\n", chrBanks);
-        printf("Mapper:  %d\n", mapperNum);
+        if (valid) {
+            printf("\n");
+            printf("Filename:  %s\n", filename.c_str());
+            printf("Mapper:    %d\n", mapperNum);
+            printf("PRG ROM:   %d x 16 KB\n", prgBanks);
+            printf("CHR ROM:   %d x  8 KB\n", chrBanks);
+            printf("Mirroring: %s\n\n", mirror == VERTICAL ? "Vertical" : "Horizontal");
+        }
     }
 }
 

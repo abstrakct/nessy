@@ -14,7 +14,7 @@ CPU::CPU()
 {
     using c = CPU;
     lookup = {
-        // CHECKED - OK:
+        // CHECKED and OK!
         { 0x00, "BRK", &c::BRK, &c::Implied  , 1, 7, },
         { 0x01, "ORA", &c::ORA, &c::IndirectX, 2, 6, },
         { 0x02, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -79,7 +79,6 @@ CPU::CPU()
         { 0x3D, "AND", &c::AND, &c::AbsoluteX, 3, 4, },
         { 0x3E, "ROL", &c::ROL, &c::AbsoluteX, 3, 7, },
         { 0x3F, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        // NOT CHECKED: (antageligvis korrekt stort sett)
         { 0x40, "RTI", &c::RTI, &c::Implied  , 1, 6, },
         { 0x41, "EOR", &c::EOR, &c::IndirectX, 2, 6, },
         { 0x42, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -96,7 +95,7 @@ CPU::CPU()
         { 0x4D, "EOR", &c::EOR, &c::Absolute , 3, 4, },
         { 0x4E, "LSR", &c::LSR, &c::Absolute , 3, 6, },
         { 0x4F, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0x50, "BVC", &c::BVC, &c::Relative , 2, 3, },
+        { 0x50, "BVC", &c::BVC, &c::Relative , 2, 2, },
         { 0x51, "EOR", &c::EOR, &c::IndirectY, 2, 5, },
         { 0x52, "XXX", &c::XXX, &c::Implied  , 1, 2, },
         { 0x53, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -128,7 +127,7 @@ CPU::CPU()
         { 0x6D, "ADC", &c::ADC, &c::Absolute , 3, 4, },
         { 0x6E, "ROR", &c::ROR, &c::Absolute , 3, 6, },
         { 0x6F, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0x70, "BVS", &c::BVS, &c::Relative , 2, 3, },
+        { 0x70, "BVS", &c::BVS, &c::Relative , 2, 2, },
         { 0x71, "ADC", &c::ADC, &c::IndirectY, 2, 5, },
         { 0x72, "XXX", &c::XXX, &c::Implied  , 1, 2, },
         { 0x73, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -160,11 +159,11 @@ CPU::CPU()
         { 0x8D, "STA", &c::STA, &c::Absolute , 3, 4, },
         { 0x8E, "STX", &c::STX, &c::Absolute , 3, 4, },
         { 0x8F, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0x90, "BCC", &c::BCC, &c::Relative , 2, 3, },
+        { 0x90, "BCC", &c::BCC, &c::Relative , 2, 2, },
         { 0x91, "STA", &c::STA, &c::IndirectY, 2, 6, },
         { 0x92, "XXX", &c::XXX, &c::Implied  , 1, 2, },
         { 0x93, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0x94, "STY", &c::STY, &c::ZeroPageY, 2, 4, },
+        { 0x94, "STY", &c::STY, &c::ZeroPageX, 2, 4, },
         { 0x95, "STA", &c::STA, &c::ZeroPageX, 2, 4, },
         { 0x96, "STX", &c::STX, &c::ZeroPageY, 2, 4, },
         { 0x97, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -192,7 +191,7 @@ CPU::CPU()
         { 0xAD, "LDA", &c::LDA, &c::Absolute , 3, 4, },
         { 0xAE, "LDX", &c::LDX, &c::Absolute , 3, 4, },
         { 0xAF, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0xB0, "BCS", &c::BCS, &c::Relative , 2, 3, },
+        { 0xB0, "BCS", &c::BCS, &c::Relative , 2, 2, },
         { 0xB1, "LDA", &c::LDA, &c::IndirectY, 2, 5, },
         { 0xB2, "XXX", &c::XXX, &c::Implied  , 1, 2, },
         { 0xB3, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -224,7 +223,7 @@ CPU::CPU()
         { 0xCD, "CMP", &c::CMP, &c::Absolute , 3, 4, },
         { 0xCE, "DEC", &c::DEC, &c::Absolute , 3, 6, },
         { 0xCF, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0xD0, "BNE", &c::BNE, &c::Relative , 2, 3, },
+        { 0xD0, "BNE", &c::BNE, &c::Relative , 2, 2, },
         { 0xD1, "CMP", &c::CMP, &c::IndirectY, 2, 5, },
         { 0xD2, "XXX", &c::XXX, &c::Implied  , 1, 2, },
         { 0xD3, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -256,7 +255,7 @@ CPU::CPU()
         { 0xED, "SBC", &c::SBC, &c::Absolute , 3, 4, },
         { 0xEE, "INC", &c::INC, &c::Absolute , 3, 6, },
         { 0xEF, "XXX", &c::XXX, &c::Implied  , 1, 2, },
-        { 0xF0, "BEQ", &c::BEQ, &c::Relative , 2, 3, },
+        { 0xF0, "BEQ", &c::BEQ, &c::Relative , 2, 2, },
         { 0xF1, "SBC", &c::SBC, &c::IndirectY, 2, 5, },
         { 0xF2, "XXX", &c::XXX, &c::Implied  , 1, 2, },
         { 0xF3, "XXX", &c::XXX, &c::Implied  , 1, 2, },
@@ -306,18 +305,24 @@ void CPU::push16(uint16_t data)
 // pop a value from the stack
 uint8_t CPU::pop(uint16_t offset)
 {
-    return read(++sp + offset);
+    sp++;
+    return read(sp + offset);
 }
 
 // pop 16 bits from the stack
 uint16_t CPU::pop16()
 {
-    return (pop() | (pop() << 8));
+    uint16_t ret = pop();
+    ret |= (uint16_t)(pop() << 8);
+    return ret;
 }
 
 bool CPU::GetFlag(Flag f)
 {
-    return (flags & f);
+    if (flags & f)
+        return true;
+    else
+        return false;
 }
 
 void CPU::SetFlag(Flag f, bool v)
@@ -347,9 +352,9 @@ void CPU::interrupt(uint16_t addr)
     push16(pc);
     SetFlag(B, 0);
     SetFlag(U, 1);
-    SetFlag(I, 1);
     push(flags);
     pc = ((((uint16_t)read(addr + 1)) << 8) | (uint16_t)read(addr));
+    SetFlag(I, 1);
     cycles = 7;
 }
 
@@ -435,10 +440,11 @@ uint8_t CPU::Immediate()
 
 uint8_t CPU::Relative()
 {
-    address_rel = read(pc);
+    address_rel = read(pc) & 0x00FF;
     pc++;
-    if (address_rel & 0b10000000)
+    if (address_rel & 0x80)
         address_rel |= 0xFF00;
+    //printf("address_rel set to %04X (%d)\n", address_rel, (int8_t)address_rel);
     return 0;
 }
 
@@ -529,7 +535,7 @@ uint8_t CPU::Indirect()
 
 uint8_t CPU::IndirectX()
 {
-    temp = 0x0000 | read(pc);
+    temp = read(pc);
     pc++;
     temp += x;
 
@@ -610,11 +616,11 @@ uint8_t CPU::XXX()
 uint8_t CPU::ADC()
 {
     fetch();
-    temp = (uint16_t) a + (uint16_t) operand + (uint16_t) GetFlag(C);
+    temp = (uint16_t)a + (uint16_t)operand + (uint16_t)(GetFlag(C) ? 1 : 0);
     SetFlag(C, temp > 255);
     SetFlag(Z, (temp & 0x00FF) == 0);
     // I have no idea what's going on here lol
-    SetFlag(V, (~((uint16_t) a ^ (uint16_t) operand) & ((uint16_t) a ^ (uint16_t) temp)) & 0x0080);
+    SetFlag(V, (~((uint16_t)a ^ (uint16_t)operand) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
     SetFlag(N, temp & 0x0080);
     a = temp & 0x00FF;
     return 1;
@@ -628,7 +634,7 @@ uint8_t CPU::AND()
     // OPERATE
     a = a & operand;
     SetFlag(Z, a == 0x00);
-    SetFlag(N, a & 0b10000000);
+    SetFlag(N, a & 0x80);
 
     return 1;
 }
@@ -637,8 +643,8 @@ uint8_t CPU::ASL()
 {
     fetch();
 
-    temp = (uint16_t) operand << 1;
-    SetFlag(C, operand & 0b10000000);
+    temp = (uint16_t)operand << 1;
+    SetFlag(C, (temp & 0xFF00) > 0);
     // litt usikker på Z her...
     SetFlag(Z, (temp & 0x00FF) == 0x00);
     SetFlag(N, (temp & 0x0080));
@@ -703,9 +709,10 @@ uint8_t CPU::BEQ()
 uint8_t CPU::BIT()
 {
     fetch();
-    SetFlag(N, operand & 0b10000000);
-    SetFlag(V, operand & 0b01000000);
-    SetFlag(Z, !(a & operand));
+    temp = a & operand;
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, temp & 0x80);
+    SetFlag(V, temp & 0x40);
 
     return 0;
 }
@@ -794,9 +801,12 @@ uint8_t CPU::BRK()
 {
     pc++;
 
-    SetFlag(B, true);
+    SetFlag(I, true);
     push16(pc);
+
+    SetFlag(B, true);
     push(flags);
+
     pc = (((uint16_t)read(0xFFFF) << 8) | (uint16_t)read(0xFFFE));
 
     return 0;
@@ -826,31 +836,34 @@ uint8_t CPU::CLV()
     return 0;
 }
 
-// TODO: cast til 16-bit?
 uint8_t CPU::CMP()
 {
     fetch();
+    temp = (uint16_t)a - (uint16_t)operand;
+    //printf("temp: %04X  a: %02X  operand: %02X\n", temp, a, operand);
     SetFlag(C, a >= operand);
-    SetFlag(Z, (a - operand) == 0x00);
-    SetFlag(N, (a - operand) & 0b10000000);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, temp & 0x0080);
     return 1;
 }
 
 uint8_t CPU::CPX()
 {
     fetch();
+    temp = (uint16_t)x - (uint16_t)operand;
     SetFlag(C, x >= operand);
-    SetFlag(Z, (x - operand) == 0x00);
-    SetFlag(N, (x - operand) & 0b10000000);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, temp & 0x0080);
     return 1;
 }
 
 uint8_t CPU::CPY()
 {
     fetch();
+    temp = (uint16_t)y - (uint16_t)operand;
     SetFlag(C, y >= operand);
-    SetFlag(Z, (y - operand) == 0x00);
-    SetFlag(N, (y - operand) & 0b10000000);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N, temp & 0x0080);
     return 1;
 }
 
@@ -858,8 +871,8 @@ uint8_t CPU::DEC()
 {
     fetch();
     temp = operand - 1;
-    SetFlag(Z, temp == 0x00);
-    SetFlag(N, temp & 0b10000000);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N,  temp & 0x0080);
     write(address, temp);
     return 0;
 }
@@ -868,7 +881,7 @@ uint8_t CPU::DEX()
 {
     x--;
     SetFlag(Z, x == 0x00);
-    SetFlag(N, x & 0b10000000);
+    SetFlag(N, x  & 0x80);
     return 0;
 }
 
@@ -876,7 +889,7 @@ uint8_t CPU::DEY()
 {
     y--;
     SetFlag(Z, y == 0x00);
-    SetFlag(N, y & 0b10000000);
+    SetFlag(N, y  & 0x80);
     return 0;
 }
 
@@ -885,7 +898,7 @@ uint8_t CPU::EOR()
     fetch();
     a = a ^ operand;
     SetFlag(Z, a == 0x00);
-    SetFlag(N, a & 0b10000000);
+    SetFlag(N, a  & 0x80);
     return 1;
 }
 
@@ -893,8 +906,8 @@ uint8_t CPU::INC()
 {
     fetch();
     temp = operand + 1;
-    SetFlag(Z, temp == 0x00);
-    SetFlag(N, temp & 0b10000000);
+    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(N,  temp & 0x0080);
     write(address, temp);
     return 0;
 }
@@ -903,7 +916,7 @@ uint8_t CPU::INX()
 {
     x++;
     SetFlag(Z, x == 0x00);
-    SetFlag(N, x & 0b10000000);
+    SetFlag(N, x  & 0x80);
     return 0;
 }
 
@@ -911,7 +924,7 @@ uint8_t CPU::INY()
 {
     y++;
     SetFlag(Z, y == 0x00);
-    SetFlag(N, y & 0b10000000);
+    SetFlag(N, y  & 0x80);
     return 0;
 }
 
@@ -934,7 +947,7 @@ uint8_t CPU::LDA()
     fetch();
     a = operand;
     SetFlag(Z, a == 0x00);
-    SetFlag(N, a & 0b10000000);
+    SetFlag(N, a  & 0x80);
     return 1;
 }
 
@@ -943,7 +956,7 @@ uint8_t CPU::LDX()
     fetch();
     x = operand;
     SetFlag(Z, x == 0x00);
-    SetFlag(N, x & 0b10000000);
+    SetFlag(N, x  & 0x80);
     return 1;
 }
 
@@ -952,7 +965,7 @@ uint8_t CPU::LDY()
     fetch();
     y = operand;
     SetFlag(Z, y == 0x00);
-    SetFlag(N, y & 0b10000000);
+    SetFlag(N, y  & 0x80);
     return 1;
 }
 
@@ -961,8 +974,7 @@ uint8_t CPU::LSR()
     fetch();
 
     temp = (uint16_t) operand >> 1;
-    SetFlag(C, operand & 0b00000001);
-    // litt usikker på Z her...
+    SetFlag(C, operand & 0x0001);
     SetFlag(Z, (temp & 0x00FF) == 0x00);
     SetFlag(N, (temp & 0x0080));
 
@@ -979,7 +991,7 @@ uint8_t CPU::ORA()
     fetch();
     a = a | operand;
     SetFlag(Z, a == 0x00);
-    SetFlag(N, a & 0b10000000);
+    SetFlag(N, a  & 0x80);
     return 1;
 }
 
@@ -994,7 +1006,9 @@ uint8_t CPU::PHA()
 uint8_t CPU::PHP()
 {
     // apparently PHP always pushes B as '1' (but doesn't actually set it)
-    push(flags | (1 << 4));
+    push(flags | B | U);
+    SetFlag(B, false);
+    SetFlag(U, false);
     return 0;
 }
 
@@ -1017,7 +1031,7 @@ uint8_t CPU::ROL()
 {
     fetch();
     temp = (uint16_t) (operand << 1) | GetFlag(C);
-    SetFlag(C, temp & 0x100);
+    SetFlag(C, temp & 0xFF00);
     SetFlag(Z, (temp & 0x00FF) == 0x00);
     SetFlag(N, temp & 0x0080);
     if (lookup[opcode].addrmode == &CPU::Implied)
@@ -1047,13 +1061,17 @@ uint8_t CPU::RTI()
 {
     // TODO: set/clear B+U flags??
     flags = pop();
+    SetFlag(B, false);
+    SetFlag(U, false);
+
     pc = pop16();
     return 0;
 }
 
 uint8_t CPU::RTS()
 {
-    pc = pop16() + 1;
+    pc = pop16();
+    pc++;
     //printf("RTS: pc set to %04x\n", pc);
     return 0;
 }
@@ -1067,11 +1085,11 @@ uint8_t CPU::SBC()
     uint16_t value = ((uint16_t) operand) ^ 0x00FF;
     // After that it's exactly the same as ADC ?!??
     // (adding a negative number is equal to subtracting the positive equivalent of that number)
-    temp = (uint16_t) a + value + (uint16_t) GetFlag(C);
+    temp = (uint16_t)a + value + (uint16_t) (GetFlag(C) ? 1 : 0);
     SetFlag(C, temp & 0xFF00);
     SetFlag(Z, (temp & 0x00FF) == 0);
     // I have no idea what's going on here lol
-    SetFlag(V, (temp ^ (uint16_t) a) & (temp ^ value) & 0x0080);
+    SetFlag(V, (temp ^ (uint16_t)a) & (temp ^ value) & 0x0080);
     SetFlag(N, temp & 0x0080);
     a = temp & 0x00FF;
     

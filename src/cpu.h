@@ -66,7 +66,7 @@ class CPU {
             Z = (1 << 1),   // Zero
             I = (1 << 2),   // Disable Interrupts
             D = (1 << 3),   // Decimal Mode
-            B = (1 << 4),   // Break
+            B = (1 << 4),   // Break (this flag doesn't exist physically in the CPU)
             U = (1 << 5),   // Unused
             V = (1 << 6),   // oVerflow
             N = (1 << 7),   // Negative

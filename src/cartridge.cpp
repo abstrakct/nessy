@@ -48,12 +48,12 @@ Cartridge::Cartridge(const std::string& filename)
         if (filetype == 0) {
         } else if (filetype == 1) {
             prgBanks = header.prg_rom_chunks;
-            prgMem.resize(prgBanks * 16384);
-            ifs.read((char*)prgMem.data(), prgMem.size());
+            prgROM.resize(prgBanks * 16384);
+            ifs.read((char*)prgROM.data(), prgROM.size());
 
             chrBanks = header.chr_rom_chunks;
-            chrMem.resize(chrBanks * 8192);
-            ifs.read((char*)chrMem.data(), chrMem.size());
+            chrROM.resize(chrBanks * 8192);
+            ifs.read((char*)chrROM.data(), chrROM.size());
         } else if (filetype == 2) {
         }
 
@@ -105,7 +105,7 @@ bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
 {
     uint32_t mapped_addr = 0;
     if (mapper->cpuRead(addr, mapped_addr)) {
-        data = prgMem[mapped_addr];
+        data = prgROM[mapped_addr];
         return true;
     } else
         return false;
@@ -116,7 +116,7 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)
     uint32_t mapped_addr = 0;
     //printf("hello from Cartridge::cpuWrite! addr = 0x%04x  data = 0x%02x\n", addr, data);
     if (mapper->cpuWrite(addr, mapped_addr)) {
-        prgMem[mapped_addr] = data;
+        prgROM[mapped_addr] = data;
         return true;
     } else if (mapper->cpuWriteData(addr, data)) {
         return true;
@@ -128,7 +128,7 @@ bool Cartridge::ppuRead(uint16_t addr, uint8_t &data)
 {
     uint32_t mapped_addr = 0;
     if (mapper->ppuRead(addr, mapped_addr)) {
-        data = chrMem[mapped_addr];
+        data = chrROM[mapped_addr];
         return true;
     } else if (mapper->ppuReadData(addr, data)) {
         return true;
@@ -141,7 +141,8 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
 {
     uint32_t mapped_addr = 0;
     if (mapper->ppuWrite(addr, mapped_addr)) {
-        chrMem[mapped_addr] = data;
+        printf("writing to CHR ROM?!?! addr = %04X  data = %02X\n", addr, data);
+        chrROM[mapped_addr] = data;
         return true;
     } else if(mapper->ppuWriteData(addr, data)) {
         return true;

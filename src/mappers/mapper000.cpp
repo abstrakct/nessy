@@ -11,7 +11,7 @@ Mapper000::~Mapper000()
 
 bool Mapper000::cpuRead(uint16_t addr, uint32_t &mapped_addr)
 {
-    if (addr >= 0x8000 && addr <= 0xFFFF) {
+    if (addr >= 0x8000) {
         mapped_addr = addr & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
         return true;
     }
@@ -20,7 +20,7 @@ bool Mapper000::cpuRead(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper000::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 {
-    if (addr >= 0x8000 && addr <= 0xFFFF) {
+    if (addr >= 0x8000) {
         mapped_addr = addr & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
         return true;
     }
@@ -29,7 +29,7 @@ bool Mapper000::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper000::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 {
-    if (addr >= 0x0000 && addr <= 0x1FFF) {
+    if (addr < 0x2000) {
         mapped_addr = addr;
         return true;
     }
@@ -38,7 +38,7 @@ bool Mapper000::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper000::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 {
-    if (addr >= 0x0000 && addr <= 0x1FFF) {
+    if (addr < 0x2000) {
         if (chrBanks == 0) {
             mapped_addr = addr;
             return true;

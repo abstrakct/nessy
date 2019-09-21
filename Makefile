@@ -14,7 +14,7 @@ SRC_EXT = cpp
 SRC_PATH = src
 # General compiler flags
 #COMPILE_FLAGS = -Wall -Wextra -std=c++14 -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function
-COMPILE_FLAGS = -Wall -Wextra -std=c++17 -Wno-unused-parameter
+COMPILE_FLAGS = -Wall -Wextra -std=c++17 -Wno-unused-parameter -Wno-unused-variable
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG -O3
 # Additional debug-specific flags

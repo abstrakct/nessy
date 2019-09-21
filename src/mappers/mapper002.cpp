@@ -44,7 +44,7 @@ bool Mapper002::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper002::cpuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x8000) {
-        selectedBank = data & 0b00000111;  // last 3 bits select bank. Could also be written as & 0x07
+        selectedBank = data & 0b00001111;  // last 3 bits select bank. Could also be written as & 0x07
         //printf("Mapper002: write %02x to %04x   selectedBank = %d\n", data, addr, selectedBank);
         return true;
     }
@@ -60,7 +60,7 @@ bool Mapper002::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper002::ppuReadData(uint16_t addr, uint8_t &data)
 {
     if (addr < 0x2000) {
-        printf("VRAM READ\n");
+        //printf("VRAM READ\n");
         data = vram[addr];
         return true;
     }
@@ -75,7 +75,7 @@ bool Mapper002::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper002::ppuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr < 0x2000) {
-        printf("VRAM WRITE\n");
+        //printf("VRAM WRITE\n");
         vram[addr] = data;
         return true;
     }

@@ -32,7 +32,7 @@ bool Mapper066::cpuWriteData(uint16_t addr, uint8_t data)
     if (addr >= 0x8000) {
         selectedChrBank =  data & 0b00000011;
         selectedPrgBank = (data & 0b00110000) >> 4;
-        printf("Mapper066: write %02x to %04x   selectedPrgBank = %d  selectedChrBank = %d\n", data, addr, selectedPrgBank, selectedChrBank);
+        //printf("Mapper066: write %02x to %04x   selectedPrgBank = %d  selectedChrBank = %d\n", data, addr, selectedPrgBank, selectedChrBank);
         return true;
     }
 

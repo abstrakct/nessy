@@ -56,6 +56,7 @@ class Nessy : public olc::PixelGameEngine
         int execspeed = 100;
         float residualTime = 0.0f, targetFPS = 60.0f;
         char log[100];
+        uint8_t selectedPalette = 0;
 
         std::shared_ptr<Cartridge> cart;
 
@@ -273,7 +274,7 @@ class Nessy : public olc::PixelGameEngine
                 ram2start -= 0x1000;
             }
 
-            if (GetKey(olc::Key::L).bPressed) {
+            if (GetKey(olc::Key::K).bPressed) {
                 // increase execution speed which means decrease sleep time
                 if (targetFPS > 5)
                     targetFPS -= 5;
@@ -282,12 +283,14 @@ class Nessy : public olc::PixelGameEngine
 
             }
 
-            if (GetKey(olc::Key::P).bPressed) {
+            if (GetKey(olc::Key::O).bPressed) {
                 if (targetFPS < 5)
                     targetFPS ++;
                 else
                     targetFPS += 5;
             }
+
+            if (GetKey(olc::Key::P).bPressed) (++selectedPalette) &= 0x07;
 
             DrawRAM(2,   2, 0x0000,    16, 16);
             DrawRAM(2, 182, ram2start, 16, 16);
@@ -295,7 +298,20 @@ class Nessy : public olc::PixelGameEngine
             DrawDisasm(448, 102, 23);
 
             DrawString(10, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
-            DrawString(10, 470, "f = frame  spc = run   p/l = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+            DrawString(10, 470, "f = frame  spc = run   o/k = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+
+            DrawSprite(800,  10, &nes->ppu.GetScreen());
+            DrawSprite(800, 260, &nes->ppu.GetPatterntable(0, selectedPalette));
+            DrawSprite(930, 260, &nes->ppu.GetPatterntable(1, selectedPalette));
+
+            // Visualize the palettes
+            const int sz = 6;
+            for (int p = 0; p < 8; p++) {
+                for (int s = 0; s < 4; s++) {
+                    FillRect(800 + p * (sz * 5) + (s * sz), 390, sz, sz, nes->ppu.GetColorFromPaletteRam(p, s));
+                }
+            }
+            DrawRect(800 + selectedPalette * (sz * 5) - 1, 389, (sz * 4), sz, olc::WHITE);
 
             //if (runmode)
             //    std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
@@ -380,7 +396,7 @@ int main(int argc, char *argv[])
     printf("[ Constructing Interface ]\n");
     Nessy test(TheNES, argv[1]);
 
-    if (test.Construct(720, 480, 2, 2)) {
+    if (test.Construct(1080, 540, 2, 2, true)) {
         printf("[ Starting Emulation     ]\n");
         test.Start();
     }

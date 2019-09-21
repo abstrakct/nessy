@@ -56,7 +56,7 @@ bool Mapper007::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper007::ppuReadData(uint16_t addr, uint8_t &data)
 {
     if (addr < 0x2000) {
-        printf("VRAM READ\n");
+        //printf("VRAM READ\n");
         data = vram[addr];
         return true;
     }
@@ -71,7 +71,7 @@ bool Mapper007::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper007::ppuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr < 0x2000) {
-        printf("VRAM WRITE\n");
+        //printf("VRAM WRITE\n");
         vram[addr] = data;
         return true;
     }

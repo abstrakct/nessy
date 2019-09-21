@@ -60,6 +60,7 @@ bool Mapper011::ppuReadData(uint16_t addr, uint8_t &data)
 
 bool Mapper011::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 {
+    // return false? because no RAM?
     if (addr < 0x2000) {
         mapped_addr = addr + (selectedChrBank * 0x2000);
         return true;

@@ -7,11 +7,11 @@ void Machine::cpuWrite(uint16_t addr, uint8_t data)
         // cartridge handles this write
     } else if (addr < 0x2000) {
         cpuRam[addr & 0x07FF] = data;
-    } else if (addr >= 0x2000 && addr < 0x4000) {
+    } else if (addr >= 0x2000 && addr <= 0x4014) {
         ppu.cpuWrite(addr, data);
-    } else if (addr == 0x4014) {
+    }/* else if (addr == 0x4014) {
         ppu.oamdma = data;
-    }
+    }*/
 }
 
 uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
@@ -35,14 +35,21 @@ void Machine::reset()
 {
     // TODO: reset mapper!!
     cpu.reset();
+    ppu.reset();
     systemClockCounter = 0;
 }
 
 void Machine::clock()
 {
     ppu.clock();
+
     if (systemClockCounter % 3 == 0) {
         cpu.clock();
+    }
+
+    if (ppu.nmiOccurred) {
+        ppu.nmiOccurred = false;
+        cpu.nmi();
     }
 
     systemClockCounter++;

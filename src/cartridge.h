@@ -28,8 +28,8 @@ class Cartridge {
 
     private:
         // TODO: Mem -> Rom ?
-        std::vector<uint8_t> prgMem;
-        std::vector<uint8_t> chrMem;
+        std::vector<uint8_t> prgROM;
+        std::vector<uint8_t> chrROM;
         int mapperNum, prgBanks, chrBanks;
         bool valid = false;
 

@@ -39,13 +39,16 @@ extern Logger l;
 PPU::PPU()
 {
     // set PPU to power-up state
-    reg[PPUCtrl] = 0;
-    reg[PPUMask] = 0;
-    reg[PPUStatus] = 0;
-    reg[OAMAddr] = 0;
-    reg[PPUScroll] = 0;  // latch, might need changing?
-    reg[PPUAddr] = 0;    // latch, might need changing?
-    reg[PPUData] = 0;
+    ctrl.reg = 0;
+    mask.reg = 0;
+    status.reg = 0;
+    //reg[PPUCtrl] = 0;
+    //reg[PPUMask] = 0;
+    //reg[PPUStatus] = 0;
+    //reg[OAMAddr] = 0;
+    //reg[PPUScroll] = 0;  // latch, might need changing?
+    //reg[PPUAddr] = 0;    // latch, might need changing?
+    //reg[PPUData] = 0;
 
 	palScreen[0x00] = olc::Pixel(84, 84, 84);
 	palScreen[0x01] = olc::Pixel(0, 30, 116);
@@ -163,45 +166,172 @@ void PPU::render_scanline()
 
 void PPU::clock()
 {
-	//sprScreen.SetPixel(cycles - 1, scanline, palScreen[(rand() % 2) ? 0x3F : 0x30]);
+    auto IncrementScrollX = [&]()
+    {
+        if (mask.renderBackground || mask.renderSprites) {
+            if(vramAddress.coarseX == 31) {
+                vramAddress.coarseX = 0;
+                vramAddress.nametableX = ~vramAddress.nametableX;
+            } else {
+                vramAddress.coarseX++;
+            }
+        }
+    };
 
-    cycle++;
-
-    if (cycle < 341) {
-        // We are in a scanline
-        // Each scanline takes 341 ppu clock cycles
-        // PPU renders 262 scanlines per frame
-
-        if (scanline == -1 && cycle == 1) {
-            //nmiOccurred = false;
-            reg[PPUStatus] &= ~PPUSTAT_VBLANK;
-            reg[PPUStatus] &= ~PPUSTAT_SPRITE_HIT;
-            reg[PPUStatus] &= ~PPUSTAT_SPRITE_OVERFLOW;
-        } else if (scanline < 240) {
-            // render scanlines
-        } else if (scanline == 240) {
-            // Post-render scanline - PPU idles here
-        } else if (scanline == 241) {
-            if (cycle == 1) {
-                reg[PPUStatus] |= PPUSTAT_VBLANK;
-                // This NMI can be disabled with reg 2000
-                if (reg[PPUCtrl] & 0x80 && !nmiOccurred) {
-                    //this->nes->cpu.nmi();
-                    nmiOccurred = true;
+    auto IncrementScrollY = [&]()
+    {
+        if (mask.renderBackground || mask.renderSprites) {
+            if (vramAddress.fineY < 7) {
+                vramAddress.fineY++;
+            } else {
+                vramAddress.fineY = 0;
+                if (vramAddress.coarseY == 29) {
+                    vramAddress.coarseY = 0;
+                    vramAddress.nametableY = ~vramAddress.nametableY;
+                } else if (vramAddress.coarseY == 31) {
+                    vramAddress.coarseY = 0;
+                } else {
+                    vramAddress.coarseY++;
                 }
             }
-        } else if (scanline > 241 && scanline < 261) {
-            // During Vblank, the CPU can load data into the PPU
-            // We probably don't need to do anything here
+        }
+    };
+
+    auto TransferAddressX = [&]()
+    {
+        if (mask.renderBackground || mask.renderSprites) {
+            vramAddress.nametableX = tramAddress.nametableX;
+            vramAddress.coarseX = tramAddress.coarseX;
+        }
+    };
+
+    auto TransferAddressY = [&]()
+    {
+        if (mask.renderBackground || mask.renderSprites) {
+            vramAddress.nametableY = tramAddress.nametableY;
+            vramAddress.coarseY = tramAddress.coarseY;
+            vramAddress.fineY = tramAddress.fineY;
+        }
+    };
+
+    auto LoadBackgroundShifters = [&]()
+    {
+        bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLo;
+        bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileHi;
+        bgShifterAttribLo  = (bgShifterAttribLo  & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
+        bgShifterAttribHi  = (bgShifterAttribHi  & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
+    };
+
+    auto UpdateShifters = [&]()
+    {
+        if (mask.renderBackground) {
+            bgShifterPatternLo <<= 1;
+            bgShifterPatternHi <<= 1;
+            bgShifterAttribLo  <<= 1;
+            bgShifterAttribHi  <<= 1;
+        }
+    };
+
+    if (scanline >= -1 && scanline < 240) {
+        if (scanline == 0 && cycle == 0) {
+            cycle = 1; // "odd frame" cycle skip
+        }
+
+        if (scanline == -1 && cycle == 1) {
+            status.verticalBlank = 0;
+        }
+
+        if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
+            UpdateShifters();
+
+            switch ((cycle - 1) % 8) {
+                case 0: 
+                    LoadBackgroundShifters();
+                    bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
+                    break;
+                case 2:
+                    // I HAVE NO IDEA WHAT'S GOING ON LOL
+                    bgNextTileAttrib = ppuRead(0x23C0 |  (vramAddress.nametableY << 11)
+                            |  (vramAddress.nametableX << 10)
+                            | ((vramAddress.coarseY >> 2) << 3)
+                            |  (vramAddress.coarseX >> 2));
+                    if (vramAddress.coarseY & 0x02) bgNextTileAttrib >>= 4;
+                    if (vramAddress.coarseX & 0x02) bgNextTileAttrib >>= 2;
+                    bgNextTileAttrib &= 0x03;
+                    break;
+                case 4:
+                    bgNextTileLo = ppuRead((ctrl.bgPatternTable << 12)
+                            + ((uint16_t)bgNextTileId << 4)
+                            + (vramAddress.fineY));
+                    break;
+                case 6:
+                    bgNextTileHi = ppuRead((ctrl.bgPatternTable << 12)
+                            + ((uint16_t)bgNextTileId << 4)
+                            + (vramAddress.fineY) + 8);
+                    break;
+                case 7:
+                    IncrementScrollX();
+                    break;
+            }
+        }
+
+        if (cycle == 256) {
+            IncrementScrollY();
+        }
+
+        if (cycle == 257) {
+            LoadBackgroundShifters();
+            TransferAddressX();
+        }
+
+        if (cycle == 338 || cycle == 340)
+            bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
+
+        if (scanline == -1 && cycle >= 280 && cycle < 305)
+            // End of vblank period, reset Y address
+            TransferAddressY();
+    }
+
+    if (scanline == 240) {
+        // Post-render scanline - PPU idles here
+    }
+
+    if (scanline >= 241 && scanline < 261) {
+        if (scanline == 241 && cycle == 1) {
+            status.verticalBlank = 1;
+            // This NMI can be disabled with reg 2000
+            if (ctrl.enableNmi && !nmiOccurred) {
+                nmiOccurred = true;
+            }
         }
     }
+
+    // We now have background pixel information for this cycle
+    // Let's render!
+
+    uint8_t bgPixel = 0;
+    uint8_t bgPalette = 0;
+    if (mask.renderBackground) {
+        uint16_t mux = 0x8000 >> fineX;
+        uint8_t p0 = (bgShifterPatternLo & mux) > 0;
+        uint8_t p1 = (bgShifterPatternHi & mux) > 0;
+
+        bgPixel = (p1 << 1) | p0;
+
+        uint8_t pal0 = (bgShifterAttribLo & mux) > 0;
+        uint8_t pal1 = (bgShifterAttribHi & mux) > 0;
+        bgPalette = (pal1 << 1) | pal0;
+    }
+
+    sprScreen.SetPixel(cycle - 1, scanline, GetColorFromPaletteRam(bgPalette, bgPixel));
+
+    cycle++;
 
     // One scanline done
     if (cycle >= 341) {
         cycle = 0;
         scanline++;
         if (scanline >= 261) {
-            // is this the pre-render line?
             scanline = -1;
             frame_complete = true;
         }
@@ -212,22 +342,22 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
 {
     uint8_t data = 0x00;
 
-    if (readOnly)
-        return reg[addr & 0x0007];
+    //if (readOnly)
+    //    return reg[addr & 0x0007];
 
     switch (addr & 0x0007) {
         case PPUCtrl: break; // write only
         case PPUMask: break; // write only
         case PPUStatus:
-            data = reg[PPUStatus] & 0xE0;
+            data = status.reg & 0xE0;
             data |= (vramBuffer & 0x1F);
-            reg[PPUStatus] &= ~PPUSTAT_VBLANK;
-            vramAddress = 0;
+            status.verticalBlank = 0;
+            vramAddress.reg = 0;
             flip = false;
             break;
         case OAMAddr: break; // write only
         case OAMData:
-            if (reg[PPUStatus] & PPUSTAT_VBLANK)
+            if (status.verticalBlank)
                 data = oam[oamAddr];
             break;
         case PPUScroll: break; // write only
@@ -235,12 +365,12 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
         case PPUData:
             // Read data
             data = vramBuffer;
-            vramBuffer = this->ppuRead(vramAddress);
-            if (vramAddress > 0x3F00)
+            vramBuffer = this->ppuRead(vramAddress.reg);
+            if (vramAddress.reg >= 0x3F00)
                 data = vramBuffer;
 
             // Increment address
-            vramAddress += vramInc;
+            vramAddress.reg += vramInc;
             break;
     }
 
@@ -255,34 +385,34 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
         //reg[addr & 0x0007] = data;
         switch (addr & 0x0007) {
             case PPUCtrl: {
-                auto old = reg[PPUCtrl];
-                reg[PPUCtrl] = data;
-                bool vOn = (!(old & PPUCTRL_NMI_ENABLE)) && (data & PPUCTRL_NMI_ENABLE);
-                vramInc = (data & PPUCTRL_VRAM_INC) ? 32 : 1;
+                //auto old = ctrl;
+                ctrl.reg = data;
+                //bool vOn = (!(old.enableNmi)) && (ctrl.enableNmi);
+                vramInc = (ctrl.incrementMode ? 32 : 1);
 
-                if (vOn) {
+                //if (vOn) {
                     // if NMI flag was changed from off to on, do an NMI
                     //nes->cpu.nmi();
-                    nmiOccurred = true;
-                }
+                    //nmiOccurred = true;
+                //}
 
                 // also use nametable bits
                 break;
             }
-            case PPUMask: reg[PPUMask] = data; break;
+            case PPUMask: mask.reg = data; break;
             case PPUStatus: break; // read only
             case OAMAddr:
                             oamAddr = data; break;
             case OAMData:
                             oam[oamAddr++] = data; break;
-            case PPUScroll: reg[PPUScroll] = data; break;
+            case PPUScroll: break;
             case PPUAddr:
                             // write twice to set address
                             if (!flip) {
-                                vramAddress = (vramAddress & 0x00FF) | (data << 8);
+                                vramAddress.reg = (vramAddress.reg & 0x00FF) | (data << 8);
                                 //hi = data;
                             } else {
-                                vramAddress = (vramAddress & 0xFF00) | data;
+                                vramAddress.reg = (vramAddress.reg & 0xFF00) | data;
                                 //lo = data;
                             }
 
@@ -296,9 +426,9 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
                             break;
             case PPUData: 
                             // Write data
-                            this->ppuWrite(vramAddress, data);
+                            this->ppuWrite(vramAddress.reg, data);
                             // Increment address
-                            vramAddress += vramInc;
+                            vramAddress.reg += vramInc;
                             break;
             default: break;
         }
@@ -325,15 +455,17 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 
     addr &= 0x3FFF;
 
-    if (addr <= 0x3EFF)
-        data = vramBuffer;
+    //if (addr <= 0x3EFF)
+    //    data = vramBuffer;
 
     // TODO: mapper 2 isn't working now........
-    if (cart->ppuRead(addr, vramBuffer)) {
-        data = vramBuffer;
+    if (cart->ppuRead(addr, data)) {
+        //data = vramBuffer;
         sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);
         l.w(out);
-    } else if (addr >= 0x2000 && addr < 0x3000) {
+    } else if (addr >= 0x2000 && addr <= 0x3EFF) {
+        if (addr >= 0x3000)
+            addr -= 0x1000;
         // Read from nametables
         if (cart->mirror == Cartridge::HORIZONTAL) {
             if (addr < 0x2800)
@@ -354,12 +486,13 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         if (addr == 0x0018) addr = 0x0008;
         if (addr == 0x001C) addr = 0x000C;
         data = palette[addr];
-    } else if (addr >= 0x3000) {
+    /*} else if (addr >= 0x3000) {
+        data = ppuRead(addr - 0x1000);
         printf("suspicious ppu read from addr %04x\n", addr);
+        */
     } else {
         data = vramBuffer;
     }
-
 
     return data;
 }
@@ -370,14 +503,16 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
     
     //printf("ppuWrite: addr %04X  data %02X\n", addr, data);
 
-    if (addr <= 0x3EFF)
-        vramBuffer = data;
+    //if (addr <= 0x3EFF)
+    //    vramBuffer = data;
 
     if (cart->ppuWrite(addr, data)) {
     //} else if (addr < 0x2000) {
         //printf("write to patterntable %d %04x   data = %02x\n", (addr & 0x1000) >> 12, addr & 0x0FFF, data);
         //patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
-    } else if (addr >= 0x2000 && addr < 0x3000) {
+    } else if (addr >= 0x2000 && addr < 0x3EFF) {
+        if (addr >= 0x3000)
+            addr -= 0x1000;
         // Write to nametables
         if (cart->mirror == Cartridge::HORIZONTAL) {
             if (addr < 0x2800)
@@ -398,9 +533,10 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
         if (addr == 0x0018) addr = 0x0008;
         if (addr == 0x001C) addr = 0x000C;
         palette[addr] = data;
-    } else if (addr >= 0x3000) {
+    }/* else if (addr >= 0x3000) {
+        ppuWrite(addr - 0x1000, data);
         printf("suspicious ppu write to addr %04x\n", addr);
-    }
+    }*/
 }
 
 void PPU::connectCartridge(const std::shared_ptr<Cartridge>& cartridge)
@@ -410,9 +546,8 @@ void PPU::connectCartridge(const std::shared_ptr<Cartridge>& cartridge)
 
 void PPU::reset()
 {
-    // probably incomplete
-    this->cycle = 0;
-    this->reg[PPUCtrl] = 0x00;
-    this->reg[PPUMask] = 0x00;
-    this->reg[PPUData] = 0x00;
+    // very probably incomplete
+    cycle = 0;
+    ctrl.reg = 0x00;
+    mask.reg = 0x00;
 }

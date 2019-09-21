@@ -25,6 +25,13 @@
 
 using namespace std;
 
+// Configuration
+bool cfgDisplayRam = false;
+bool cfgDisplayDisasm = false;
+bool cfgDisplayCpu = false;
+bool cfgDisplayHelp = false;
+bool cfgDisplayPT = true;
+
 // this is silly, move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
 Logger l;
@@ -213,7 +220,9 @@ class Nessy : public olc::PixelGameEngine
                     } while (!nes->ppu.frame_complete);
 
                     nes->ppu.frame_complete = false;
-                    disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
+
+                    if (cfgDisplayDisasm)
+                        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                 }
             } else {
                 // Advance one instruction
@@ -226,7 +235,8 @@ class Nessy : public olc::PixelGameEngine
                         nes->clock();
                     } while (nes->cpu.complete());
 
-                    disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
+                    if (cfgDisplayDisasm)
+                        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                 }
 
                 // Advance one frame
@@ -240,7 +250,9 @@ class Nessy : public olc::PixelGameEngine
                     } while (!nes->cpu.complete());
 
                     nes->ppu.frame_complete = false;
-                    disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
+
+                    if (cfgDisplayDisasm)
+                        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                 }
             }
 
@@ -248,6 +260,21 @@ class Nessy : public olc::PixelGameEngine
                 // Run Mode! Run machine until stopped!
                 runmode = !runmode;
             }
+
+            if (GetKey(olc::Key::F1).bPressed)
+                cfgDisplayHelp = !cfgDisplayHelp;
+
+            if (GetKey(olc::Key::F2).bPressed)
+                cfgDisplayCpu = !cfgDisplayCpu;
+
+            if (GetKey(olc::Key::F3).bPressed)
+                cfgDisplayRam = !cfgDisplayRam;
+
+            if (GetKey(olc::Key::F4).bPressed)
+                cfgDisplayDisasm = !cfgDisplayDisasm;
+
+            if (GetKey(olc::Key::F5).bPressed)
+                cfgDisplayPT = !cfgDisplayPT;
 
             if (GetKey(olc::Key::R).bPressed)
                 nes->cpu.reset();
@@ -292,26 +319,41 @@ class Nessy : public olc::PixelGameEngine
 
             if (GetKey(olc::Key::P).bPressed) (++selectedPalette) &= 0x07;
 
-            DrawRAM(2,   2, 0x0000,    16, 16);
-            DrawRAM(2, 182, ram2start, 16, 16);
-            DrawCPU(448, 2);
-            DrawDisasm(448, 102, 23);
+            const int x = 10;
 
-            DrawString(10, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
-            DrawString(10, 470, "f = frame  spc = run   o/k = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+            // Draw the NES Screen!
+            DrawSprite(x,  10, &nes->ppu.GetScreen());
 
-            DrawSprite(800,  10, &nes->ppu.GetScreen());
-            DrawSprite(800, 260, &nes->ppu.GetPatterntable(0, selectedPalette));
-            DrawSprite(930, 260, &nes->ppu.GetPatterntable(1, selectedPalette));
-
-            // Visualize the palettes
-            const int sz = 6;
-            for (int p = 0; p < 8; p++) {
-                for (int s = 0; s < 4; s++) {
-                    FillRect(800 + p * (sz * 5) + (s * sz), 390, sz, sz, nes->ppu.GetColorFromPaletteRam(p, s));
-                }
+            if (cfgDisplayRam) {
+                DrawRAM(2,   2, 0x0000,    16, 16);
+                DrawRAM(2, 182, ram2start, 16, 16);
             }
-            DrawRect(800 + selectedPalette * (sz * 5) - 1, 389, (sz * 4), sz, olc::WHITE);
+
+            if (cfgDisplayDisasm)
+                DrawDisasm(448, 102, 23);
+
+            if (cfgDisplayCpu)
+                DrawCPU(448, 2);
+
+            if (cfgDisplayHelp) {
+                DrawString(x, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
+                DrawString(x, 470, "f = frame  spc = run   o/k = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+            }
+
+
+            if (cfgDisplayPT) {
+                DrawSprite(x, 260, &nes->ppu.GetPatterntable(0, selectedPalette));
+                DrawSprite(x + 130, 260, &nes->ppu.GetPatterntable(1, selectedPalette));
+
+                // Visualize the palettes
+                const int sz = 6;
+                for (int p = 0; p < 8; p++) {
+                    for (int s = 0; s < 4; s++) {
+                        FillRect(x + 10 + p * (sz * 5) + (s * sz), 390, sz, sz, nes->ppu.GetColorFromPaletteRam(p, s));
+                    }
+                }
+                DrawRect(x + 10 + selectedPalette * (sz * 5) - 1, 389, (sz * 4), sz, olc::WHITE);
+            }
 
             //if (runmode)
             //    std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
@@ -396,7 +438,7 @@ int main(int argc, char *argv[])
     printf("[ Constructing Interface ]\n");
     Nessy test(TheNES, argv[1]);
 
-    if (test.Construct(1080, 540, 2, 2, true)) {
+    if (test.Construct(940, 480, 2, 2, false)) {
         printf("[ Starting Emulation     ]\n");
         test.Start();
     }

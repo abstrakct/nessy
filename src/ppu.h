@@ -19,8 +19,6 @@ class Machine;
 #define OAMDMA     0x4014
 
 // Bits 0-1: Base nametable address
-// 0: 0x2000  1: 0x2400  2: 0x2800  3: 0x2C00
-//
 // 0: add 1, going across; 1: add 32, going down
 #define PPUCTRL_VRAM_INC      (1 << 2)
 // 0: 0x0000  1: 0x1000  - ignored in 8x16 mode
@@ -31,6 +29,10 @@ class Machine;
 #define PPUCTRL_SPRITE_SIZE   (1 << 5)
 #define PPUCTRL_MASTER_SLAVE  (1 << 6)
 #define PPUCTRL_NMI_ENABLE    (1 << 7)
+
+// TODO: change registers to bitfield union
+
+#define PPUMASK_RENDER_BG (1 << 3)
 
 #define PPUSTAT_SPRITE_OVERFLOW (1 << 5)
 #define PPUSTAT_SPRITE_HIT      (1 << 6)
@@ -46,11 +48,81 @@ class PPU {
         uint8_t palette[32];
         uint8_t oam[256];
         
-        uint16_t vramAddress = 0;
+        //uint16_t vramAddress = 0;
         uint8_t vramBuffer = 0, vramInc = 1;
         uint8_t lo = 0, hi = 0;
         uint8_t oamAddr = 0;
         bool flip = false;
+
+        union {
+            struct {
+                uint8_t nametableX : 1;
+                uint8_t nametableY : 1;
+                uint8_t incrementMode : 1;
+                uint8_t spritePatternTable : 1;
+                uint8_t bgPatternTable : 1;
+                uint8_t spriteSize : 1;
+                uint8_t slaveMode : 1;   // unused
+                uint8_t enableNmi : 1;
+            };
+
+            uint8_t reg;
+        } ctrl; // $2000
+
+        union {
+            struct {
+                uint8_t grayscale : 1;
+                uint8_t renderBackgroundLeft : 1;
+                uint8_t renderSpritesLeft : 1;
+                uint8_t renderBackground : 1;
+                uint8_t renderSprites : 1;
+                uint8_t enhanceRed : 1;
+                uint8_t enhanceGreen : 1;
+                uint8_t enhanceBlue : 1;
+            };
+
+            uint8_t reg;
+        } mask; // $2001
+        
+        union {
+            struct {
+                uint8_t unused : 5;
+                uint8_t spriteOverflow : 1;
+                uint8_t spriteZeroHit : 1;
+                uint8_t verticalBlank : 1;
+            };
+
+            uint8_t reg;
+        } status; // $2002
+
+        union loopyRegister {
+            struct {
+                uint16_t coarseX : 5;
+                uint16_t coarseY : 5;
+                uint16_t nametableX : 1;
+                uint16_t nametableY : 1;
+                uint16_t fineY : 3;
+                uint16_t unused : 1;
+            };
+
+            uint16_t reg = 0x0000;
+        };
+
+        loopyRegister vramAddress;
+        loopyRegister tramAddress;
+
+        uint8_t fineX = 0;
+
+        uint8_t bgNextTileId = 0;
+        uint8_t bgNextTileAttrib = 0;
+        uint8_t bgNextTileHi = 0;
+        uint8_t bgNextTileLo = 0;
+        uint16_t bgShifterPatternLo = 0;
+        uint16_t bgShifterPatternHi = 0;
+        uint16_t bgShifterAttribLo = 0;
+        uint16_t bgShifterAttribHi = 0;
+
+
 
         // Output
         olc::Pixel  palScreen[0x40];
@@ -68,7 +140,8 @@ class PPU {
         void ConnectMachine(Machine *n) { nes = n; }
 
         //uint8_t oamdma    = 0;
-        uint8_t reg[8];
+        //uint8_t reg[8];
+
         bool nmiOccurred = false;
 
         bool frame_complete = false;

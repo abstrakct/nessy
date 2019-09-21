@@ -265,10 +265,10 @@ class Nessy : public olc::PixelGameEngine
                 cfgDisplayHelp = !cfgDisplayHelp;
 
             if (GetKey(olc::Key::F2).bPressed)
-                cfgDisplayCpu = !cfgDisplayCpu;
+                cfgDisplayRam = !cfgDisplayRam;
 
             if (GetKey(olc::Key::F3).bPressed)
-                cfgDisplayRam = !cfgDisplayRam;
+                cfgDisplayCpu = !cfgDisplayCpu;
 
             if (GetKey(olc::Key::F4).bPressed)
                 cfgDisplayDisasm = !cfgDisplayDisasm;
@@ -324,16 +324,16 @@ class Nessy : public olc::PixelGameEngine
             // Draw the NES Screen!
             DrawSprite(x,  10, &nes->ppu.GetScreen());
 
-            if (cfgDisplayRam) {
-                DrawRAM(2,   2, 0x0000,    16, 16);
-                DrawRAM(2, 182, ram2start, 16, 16);
-            }
+            if (cfgDisplayCpu)
+                DrawCPU(x + 720, 12);
 
             if (cfgDisplayDisasm)
-                DrawDisasm(448, 102, 23);
+                DrawDisasm(x + 260, 382, 8);
 
-            if (cfgDisplayCpu)
-                DrawCPU(448, 2);
+            if (cfgDisplayRam) {
+                DrawRAM(x + 260,  12, 0x0000,    16, 16);
+                DrawRAM(x + 260, 192, ram2start, 16, 16);
+            }
 
             if (cfgDisplayHelp) {
                 DrawString(x, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");

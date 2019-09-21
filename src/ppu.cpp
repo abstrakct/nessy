@@ -287,9 +287,10 @@ void PPU::clock()
         if (cycle == 338 || cycle == 340)
             bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
 
-        if (scanline == -1 && cycle >= 280 && cycle < 305)
+        if (scanline == -1 && cycle >= 280 && cycle < 305) {
             // End of vblank period, reset Y address
             TransferAddressY();
+        }
     }
 
     if (scanline == 240) {
@@ -300,7 +301,7 @@ void PPU::clock()
         if (scanline == 241 && cycle == 1) {
             status.verticalBlank = 1;
             // This NMI can be disabled with reg 2000
-            if (ctrl.enableNmi && !nmiOccurred) {
+            if (ctrl.enableNmi) {
                 nmiOccurred = true;
             }
         }
@@ -352,7 +353,7 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
             data = status.reg & 0xE0;
             data |= (vramBuffer & 0x1F);
             status.verticalBlank = 0;
-            vramAddress.reg = 0;
+            //vramAddress.reg = 0;
             flip = false;
             break;
         case OAMAddr: break; // write only
@@ -390,6 +391,9 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
                 //bool vOn = (!(old.enableNmi)) && (ctrl.enableNmi);
                 vramInc = (ctrl.incrementMode ? 32 : 1);
 
+                tramAddress.nametableX = ctrl.nametableX;
+                tramAddress.nametableY = ctrl.nametableY;
+
                 //if (vOn) {
                     // if NMI flag was changed from off to on, do an NMI
                     //nes->cpu.nmi();
@@ -402,34 +406,37 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
             case PPUMask: mask.reg = data; break;
             case PPUStatus: break; // read only
             case OAMAddr:
-                            oamAddr = data; break;
+                oamAddr = data; break;
             case OAMData:
-                            oam[oamAddr++] = data; break;
-            case PPUScroll: break;
+                oam[oamAddr++] = data; break;
+            case PPUScroll:
+                if (!flip) {
+                    fineX = data & 0x07;
+                    tramAddress.coarseX = data >> 3;
+                    flip = true;
+                } else {
+                    tramAddress.fineY = data & 0x07;
+                    tramAddress.coarseY = data >> 3;
+                    flip = false;
+                }
+                break;
             case PPUAddr:
-                            // write twice to set address
-                            if (!flip) {
-                                vramAddress.reg = (vramAddress.reg & 0x00FF) | (data << 8);
-                                //hi = data;
-                            } else {
-                                vramAddress.reg = (vramAddress.reg & 0xFF00) | data;
-                                //lo = data;
-                            }
-
-                            if (flip) {
-                                //vramAddress = ((uint16_t)hi << 8) | (uint16_t)lo;
-                                //printf("vramAddress set to %04x\n", vramAddress);
-                            }
-
-                            flip = !flip;
-
-                            break;
+                // write twice to set address
+                if (!flip) {
+                    tramAddress.reg = (uint16_t)((data & 0x3F) << 8) | (tramAddress.reg & 0x00FF);
+                    flip = true;
+                } else {
+                    tramAddress.reg = (tramAddress.reg & 0xFF00) | data;
+                    vramAddress = tramAddress;
+                    flip = false;
+                }
+                break;
             case PPUData: 
-                            // Write data
-                            this->ppuWrite(vramAddress.reg, data);
-                            // Increment address
-                            vramAddress.reg += vramInc;
-                            break;
+                // Write data
+                this->ppuWrite(vramAddress.reg, data);
+                // Increment address
+                vramAddress.reg += vramInc;
+                break;
             default: break;
         }
     } else if (addr == 0x4014) {

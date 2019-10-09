@@ -30,7 +30,7 @@ bool cfgDisplayRam = false;
 bool cfgDisplayDisasm = false;
 bool cfgDisplayCpu = false;
 bool cfgDisplayHelp = false;
-bool cfgDisplayPT = true;
+bool cfgDisplayPPU = true;
 
 // this is silly, move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
@@ -226,7 +226,7 @@ class Nessy : public olc::PixelGameEngine
                 }
             } else {
                 // Advance one instruction
-                if (GetKey(olc::Key::S).bPressed || GetKey(olc::Key::ENTER).bPressed) {
+                if (GetKey(olc::Key::S).bPressed) {
                     do {
                         nes->clock();
                     } while (!nes->cpu.complete());
@@ -274,7 +274,7 @@ class Nessy : public olc::PixelGameEngine
                 cfgDisplayDisasm = !cfgDisplayDisasm;
 
             if (GetKey(olc::Key::F5).bPressed)
-                cfgDisplayPT = !cfgDisplayPT;
+                cfgDisplayPPU = !cfgDisplayPPU;
 
             if (GetKey(olc::Key::R).bPressed)
                 nes->cpu.reset();
@@ -317,12 +317,66 @@ class Nessy : public olc::PixelGameEngine
                     targetFPS += 5;
             }
 
+            // Keys mapped to NES controller 1
+
+            if (GetKey(olc::Key::ENTER).bPressed) {
+                nes->controller1.pressButton(Controller::Button::Start);
+            }
+
+            if (GetKey(olc::Key::ENTER).bReleased) {
+                nes->controller1.releaseButton(Controller::Button::Start);
+            }
+
+            if (GetKey(olc::Key::TAB).bPressed) {
+                nes->controller1.pressButton(Controller::Button::Select);
+            }
+
+            if (GetKey(olc::Key::ENTER).bReleased) {
+                nes->controller1.releaseButton(Controller::Button::Start);
+            }
+
+            if (GetKey(olc::Key::D).bHeld) {
+                nes->controller1.pressButton(Controller::Button::Right);
+            } else {
+                nes->controller1.releaseButton(Controller::Button::Right);
+            }
+
+            if (GetKey(olc::Key::A).bHeld) {
+                nes->controller1.pressButton(Controller::Button::Left);
+            } else {
+                nes->controller1.releaseButton(Controller::Button::Left);
+            }
+
+            if (GetKey(olc::Key::W).bHeld) {
+                nes->controller1.pressButton(Controller::Button::Up);
+            } else {
+                nes->controller1.releaseButton(Controller::Button::Up);
+            }
+
+            if (GetKey(olc::Key::S).bHeld) {
+                nes->controller1.pressButton(Controller::Button::Down);
+            } else {
+                nes->controller1.releaseButton(Controller::Button::Down);
+            }
+
+            if (GetKey(olc::Key::L).bHeld) {
+                nes->controller1.pressButton(Controller::Button::A);
+            } else {
+                nes->controller1.releaseButton(Controller::Button::A);
+            }
+
+            if (GetKey(olc::Key::K).bHeld) {
+                nes->controller1.pressButton(Controller::Button::B);
+            } else {
+                nes->controller1.releaseButton(Controller::Button::B);
+            }
+
             if (GetKey(olc::Key::P).bPressed) (++selectedPalette) &= 0x07;
 
             const int x = 10;
 
             // Draw the NES Screen!
-            DrawSprite(x,  10, &nes->ppu.GetScreen());
+            DrawSprite(x + 350,  10, &nes->ppu.GetScreen());
 
             if (cfgDisplayCpu)
                 DrawCPU(x + 720, 12);
@@ -341,9 +395,10 @@ class Nessy : public olc::PixelGameEngine
             }
 
 
-            if (cfgDisplayPT) {
+            if (cfgDisplayPPU) {
                 DrawSprite(x, 260, &nes->ppu.GetPatterntable(0, selectedPalette));
                 DrawSprite(x + 130, 260, &nes->ppu.GetPatterntable(1, selectedPalette));
+                //DrawSprite(x + 260, 260, &nes->ppu.GetOAM(selectedPalette));
 
                 // Visualize the palettes
                 const int sz = 6;

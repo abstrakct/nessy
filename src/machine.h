@@ -5,7 +5,7 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "cartridge.h"
-
+#include "controller.h"
 
 class Machine {
     public:
@@ -17,6 +17,7 @@ class Machine {
         CPU cpu;
         PPU ppu;
         std::shared_ptr<Cartridge> cart;
+        Controller controller1;
 
         // Bus read and write
         void cpuWrite(uint16_t addr, uint8_t data);

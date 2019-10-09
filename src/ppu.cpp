@@ -30,6 +30,7 @@
 //     0: 0x2000  1: 0x2400  2: 0x2800  3: 0x2C00
 
 
+#include <cstring>
 #include "machine.h"
 #include "ppu.h"
 #include "logger.h"
@@ -123,12 +124,6 @@ PPU::~PPU()
 {
 }
 
-//bool PPU::frame_complete()
-//{
-//    return (scanline == 262);
-//}
-
-
 olc::Pixel& PPU::GetColorFromPaletteRam(uint8_t palette, uint8_t pixel)
 {
     return palScreen[ppuRead(0x3F00 + (palette << 2) + pixel)];
@@ -143,7 +138,7 @@ olc::Sprite& PPU::GetPatterntable(uint8_t i, uint8_t palette)
                 uint8_t tile_lo = ppuRead(i * 0x1000 + offset + row);
                 uint8_t tile_hi = ppuRead(i * 0x1000 + offset + row + 8);
                 for (uint8_t col = 0; col < 8; col++) {
-                    uint8_t pixel = (tile_lo & 0x01) + (tile_hi & 0x01);
+                    uint8_t pixel = (tile_lo & 0x01) + ((tile_hi & 0x01) << 1);
                     tile_lo >>= 1;
                     tile_hi >>= 1;
                     sprPatterntable[i].SetPixel(
@@ -159,9 +154,112 @@ olc::Sprite& PPU::GetPatterntable(uint8_t i, uint8_t palette)
     return sprPatterntable[i];
 }
 
-
-void PPU::render_scanline()
+olc::Sprite& PPU::GetOAM(uint8_t palette)
 {
+    int tilex = 0, tiley = 0;
+
+    //uint8_t sprite = 1;
+    //uint8_t offset = sprite * 4;
+    //uint8_t y = oam[offset];
+    //uint8_t tile = oam[offset + 1];
+    //uint8_t attr = oam[offset + 2];
+    //uint8_t x = oam[offset + 3];
+
+    //printf("Sprite %d\n", sprite);
+    //printf("Y = %02X\n", y);
+    //printf("T = %02X\n", tile);
+    //printf("A = %02X\n", attr);
+    //printf("X = %02X\n\n", x);
+
+    for (uint16_t s = 0; s < 64; s++) {
+        bool sixteen = ctrl.spriteSize ? true : false;
+        uint16_t offset = s * 4;
+        uint8_t y = oam[offset];
+        uint8_t tileNum = oam[offset + 1];
+        uint8_t attr = oam[offset + 2];
+        uint8_t x = oam[offset + 3];
+
+        uint8_t i = 0;
+        if (!sixteen) {  // 8x8
+            //printf("8x8");
+            i = ctrl.spritePatternTable;
+        } else {                 // 8x16
+            //printf("8x16");
+            i = tileNum & 0x01;
+            tileNum >>= 1;
+        }
+
+        uint8_t tile;
+
+        for (uint8_t row = 0; row < 8; row++) {
+            tile = ppuRead(i * 0x1000 + tileNum + row);
+            //uint8_t tile1 = ppuRead(i * 0x1000 + tileNum + row + 1);
+            //uint8_t tile2 = ppuRead(i * 0x1000 + tileNum + row + 2);
+            //uint8_t tile3 = ppuRead(i * 0x1000 + tileNum + row + 3);
+            //uint8_t tile_hi = ppuRead(i * 0x1000 + tile + row + 8);
+            for (uint8_t col = 0; col < 8; col++) {
+                uint8_t pixel = tile & 0x01; //(tile_lo & 0x01) + ((tile_hi & 0x01) << 1);
+                tile >>= 1;
+                //tile_hi >>= 1;
+                sprOAM.SetPixel(
+                        (tilex * 8) + (7 - col),
+                        (tiley * 8) + row,
+                        GetColorFromPaletteRam(attr & 0x03, pixel)
+                        );
+            }
+        }
+
+        tilex++;
+        if (tilex == 8) {
+            tiley++;
+            tilex = 0;
+        }
+    }
+
+    return sprOAM;
+}
+
+void PPU::evaluateSprites()
+{
+    int n = 0;
+    for (int i = 0; i < 64; i++) {
+        int line = (scanline == 261 ? -1 : scanline) - oam[i*4 + 0];
+        // If the sprite is in the scanline, copy its properties into secondary OAM:
+        if (line >= 0 && line < spriteHeight()) {
+            oamBuf2[n].id   = i;
+            oamBuf2[n].y    = oam[i*4 + 0];
+            oamBuf2[n].tile = oam[i*4 + 1];
+            oamBuf2[n].attr = oam[i*4 + 2];
+            oamBuf2[n].x    = oam[i*4 + 3];
+
+            if (++n > 8) {
+                status.spriteOverflow = true;
+                break;
+            }
+        }
+    }
+}
+
+void PPU::loadSprites()
+{
+    uint16_t addr;
+    for (int i = 0; i < 8; i++) {
+        oamBuf[i] = oamBuf2[i];  // Copy secondary OAM into primary.
+
+        // Different address modes depending on the sprite height:
+        if (spriteHeight() == 16)
+            addr = ((oamBuf[i].tile & 0x01) * 0x1000) + ((oamBuf[i].tile & ~1) * 16);
+        else
+            addr = (ctrl.spritePatternTable * 0x1000) + (oamBuf[i].tile * 16);
+
+        unsigned sprY = (scanline - oamBuf[i].y) % spriteHeight();  // Line inside the sprite.
+        if (oamBuf[i].attr & 0x80)
+            sprY ^= spriteHeight() - 1;      // Vertical flip.
+        addr += sprY + (sprY & 0x08);         // Select the second tile if on 8x16.
+
+        oamBuf[i].dataL = ppuRead(addr + 0);
+        oamBuf[i].dataH = ppuRead(addr + 8);
+    }
 }
 
 void PPU::clock()
@@ -237,10 +335,71 @@ void PPU::clock()
             cycle = 1; // "odd frame" cycle skip
         }
 
+        // Clear Vblank flag
         if (scanline == -1 && cycle == 1) {
             status.verticalBlank = 0;
+            status.spriteOverflow = 0;
+            status.spriteZeroHit = 0;
         }
 
+        //// Clear OAM 2
+        //if (cycle >= 1 && cycle <= 64) {
+        //    if (cycle == 1)
+        //        std::memset(oam2, 0xFF, sizeof(uint8_t) * 32);
+        //}
+
+        //// Sprite evaluation
+        //if (cycle >= 65 && cycle <= 256) {
+        //    if (mask.renderSprites || mask.renderBackground) {
+        //        if (cycle % 2) {               // odd cycle
+        //            uint8_t spriteY = 0;
+        //            if (spriteNum < 8) {
+        //                spriteY = oam[spriteNum * 4];
+        //                oam2[oam2index * 4] = spriteY;
+        //            }
+        //            if (spriteY < 0xEF) {      // EF = 239 = invisible
+        //                // scanline 1:
+        //                // y will be 238
+        //                // 239 - 1
+        //                if (spriteY == (239 - scanline)) {
+        //                    for (int i = 1; i < 4; i++) 
+        //                        oam2[oam2index + i] = oam[spriteNum * 4 + i];
+        //                    oam2index++;
+        //                    if (spriteNum >= 64) {
+        //                    }
+        //                }
+        //            }
+        //        } else {                       // even cycle
+        //            if (oam2index < 8) {
+
+        //            }
+        //        }
+        //    }
+        //}
+        //
+        
+        // Clear secondary OAM
+        if (cycle == 1) {
+            for (int i = 0; i < 8; i++) {
+                oamBuf2[i].id    = 64;
+                oamBuf2[i].y     = 0xFF;
+                oamBuf2[i].tile  = 0xFF;
+                oamBuf2[i].attr  = 0xFF;
+                oamBuf2[i].x     = 0xFF;
+                oamBuf2[i].dataL = 0;
+                oamBuf2[i].dataH = 0;
+            }
+        }
+
+        if (scanline && cycle == 257) {
+            evaluateSprites();
+        }
+
+        if (scanline && cycle == 321) {
+            loadSprites();
+        }
+
+        // Load Background data
         if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
             UpdateShifters();
 
@@ -326,6 +485,39 @@ void PPU::clock()
 
     sprScreen.SetPixel(cycle - 1, scanline, GetColorFromPaletteRam(bgPalette, bgPixel));
 
+    // let's not care about priority yet, let's just draw sprites
+    int x = cycle - 1;
+    uint8_t sprPixel = 0;
+    uint8_t sprPalette = 0;
+    bool front = false;
+    if (mask.renderSprites/* && !(!mask.renderSpritesLeft && x < 8)*/) {
+        for (int i = 7; i >= 0; i--) {
+            if (oamBuf[i].id == 64) continue;
+            unsigned sprX = x - oamBuf[i].x;
+            if (sprX >= 8) continue;
+            if (oamBuf[i].attr & 0x40)
+                sprX ^= 7; // horizontal flip
+
+            if (oamBuf[i].attr & 0x20)
+                front = false;
+            else
+                front = true;
+
+            sprPixel = ((((oamBuf[i].dataH >> (7 - sprX)) & 0x01) << 1) |
+                         ((oamBuf[i].dataL >> (7 - sprX)) & 0x01));
+
+            if (sprPixel == 0) continue;
+            
+            if (oamBuf[i].id == 0 && bgPalette && x != 255)
+                status.spriteZeroHit = 1;
+
+            sprPalette = (oamBuf[i].attr & 0x03);
+        }
+    }
+
+    if (((sprPixel & 0x03) && front) || (bgPixel == 0))
+        sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(sprPalette, sprPixel));
+
     cycle++;
 
     // One scanline done
@@ -352,6 +544,12 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
         case PPUStatus:
             data = status.reg & 0xE0;
             data |= (vramBuffer & 0x1F);
+            // "simulate" sprite zero hits
+            //if (cycle & 0x08)
+            //    data |= 0x40;
+            //else
+            //    data &= ~0x40;
+
             status.verticalBlank = 0;
             //vramAddress.reg = 0;
             flip = false;
@@ -400,7 +598,6 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
                     //nmiOccurred = true;
                 //}
 
-                // also use nametable bits
                 break;
             }
             case PPUMask: mask.reg = data; break;
@@ -451,10 +648,17 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
             //printf("oam dma address: %04x\n", ((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
             oam[i] = nes->cpuRead(((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
         }
+        //printf("\nOAMDMA written - transferred bytes from %04X\n", ((uint16_t)data << 8) | ((uint16_t) (oamAddr)));
+        //for (int i = 0; i < 256; i++) {
+        //    if (i && !(i % 8))
+        //        printf("\n");
+        //    printf("%02x ", oam[i]);
+        //}
+        //printf("\n");
     }
 }
 
-// THIS IS A MESS
+// THIS IS A BIT MESSY
 uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 {
     char out[100];
@@ -558,3 +762,6 @@ void PPU::reset()
     ctrl.reg = 0x00;
     mask.reg = 0x00;
 }
+
+
+// vim: fdm=syntax

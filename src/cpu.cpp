@@ -471,9 +471,9 @@ uint8_t CPU::ZeroPageY()
 
 uint8_t CPU::Absolute()
 {
-    address = read(pc);
+    address = (uint16_t) read(pc);
     pc++;
-    address |= (read(pc) << 8);
+    address |= (uint16_t) (read(pc) << 8);
     pc++;
     return 0;
 }
@@ -539,7 +539,11 @@ uint8_t CPU::IndirectX()
     pc++;
     temp += x;
 
-    address = read(temp & 0x00FF) | (read((temp + 1) & 0x00FF) << 8);
+    address = (uint16_t)read(temp & 0x00FF) | (uint16_t)(read((temp + 1) & 0x00FF) << 8);
+
+    //uint16_t lo = read((uint16_t)(temp + (uint16_t)x) & 0x00FF);
+    //uint16_t hi = read((uint16_t)(temp + (uint16_t)x + 1) & 0x00FF);
+    //address = (hi << 8) | lo;
 
     return 0;
 }
@@ -842,7 +846,7 @@ uint8_t CPU::CMP()
     temp = (uint16_t)a - (uint16_t)operand;
     //printf("temp: %04X  a: %02X  operand: %02X\n", temp, a, operand);
     SetFlag(C, a >= operand);
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(Z, a == operand);
     SetFlag(N, temp & 0x0080);
     return 1;
 }
@@ -852,7 +856,7 @@ uint8_t CPU::CPX()
     fetch();
     temp = (uint16_t)x - (uint16_t)operand;
     SetFlag(C, x >= operand);
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(Z, x == operand);
     SetFlag(N, temp & 0x0080);
     return 1;
 }
@@ -862,7 +866,7 @@ uint8_t CPU::CPY()
     fetch();
     temp = (uint16_t)y - (uint16_t)operand;
     SetFlag(C, y >= operand);
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(Z, y == operand);
     SetFlag(N, temp & 0x0080);
     return 1;
 }
@@ -1032,7 +1036,7 @@ uint8_t CPU::ROL()
     fetch();
     temp = (uint16_t) (operand << 1) | GetFlag(C);
     SetFlag(C, temp & 0xFF00);
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
+    SetFlag(Z, (temp & 0x00FF) == 0x0000);
     SetFlag(N, temp & 0x0080);
     if (lookup[opcode].addrmode == &CPU::Implied)
         a = temp & 0x00FF;

@@ -38,15 +38,47 @@ class Machine;
 #define PPUSTAT_SPRITE_HIT      (1 << 6)
 #define PPUSTAT_VBLANK          (1 << 7)
 
+/* OAM
+ * Byte 0 = Y position of top of sprite ($EF - $FF = invisible)
+ * Byte 1 = Tile index number.
+ *          For 8x8 sprites: tile number within pattern table selected in PPUCTRL
+ *          For 8x16 sprites: PPU ignores PPUCTRL, selects PT  from bit 0 of this
+ *                            number.
+ * Byte 2 = Attributes
+ * 765---10
+   ||||||||
+   ||||||++- Palette (4 to 7) of sprite
+   |||+++--- Unimplemented
+   ||+------ Priority (0: in front of background; 1: behind background)
+   |+------- Flip sprite horizontally
+   +-------- Flip sprite vertically
+
+   Byte 3 = X position of left side of sprite ($F9 - $FF = invisible)
+
+ */
+
 class PPU {
     private:
+        /* Sprite buffer (taken from LaiNES) */
+        struct SpriteBuffer {
+            uint8_t id;     // Index in OAM.
+            uint8_t x;      // X position.
+            uint8_t y;      // Y position.
+            uint8_t tile;   // Tile index.
+            uint8_t attr;   // Attributes.
+            uint8_t dataL;  // Tile data (low).
+            uint8_t dataH;  // Tile data (high).
+        };
+
         int scanline = 0, cycle = 0;
         std::shared_ptr<Cartridge> cart;
 
         //uint8_t patterntable[2][0x1000];  // 2x4096 bytes - maps to Cartridge
         uint8_t nametable[2][0x400];      // 2x1024 bytes, aka NES internal VRAM
         uint8_t palette[32];
-        uint8_t oam[256];
+        uint8_t oam[256];  // 64 sprites, 4 bytes each, 256 byes total
+        SpriteBuffer oamBuf[8], oamBuf2[8];
+        //uint8_t oam2[32];  //  8 sprites, 4 bytes each, 32 bytes total
         
         //uint16_t vramAddress = 0;
         uint8_t vramBuffer = 0, vramInc = 1;
@@ -113,6 +145,7 @@ class PPU {
 
         uint8_t fineX = 0;
 
+        // Background data
         uint8_t bgNextTileId = 0;
         uint8_t bgNextTileAttrib = 0;
         uint8_t bgNextTileHi = 0;
@@ -122,14 +155,24 @@ class PPU {
         uint16_t bgShifterAttribLo = 0;
         uint16_t bgShifterAttribHi = 0;
 
+        // Sprite data
+        uint8_t spriteNum = 0, oam2index = 0;
 
+        // Sprite functions
+        void evaluateSprites();
+        void loadSprites();
 
         // Output
         olc::Pixel  palScreen[0x40];
         olc::Sprite sprScreen = olc::Sprite(256, 240);
         olc::Sprite sprNametable[2]    = { olc::Sprite(256, 240), olc::Sprite(256, 240) };
         olc::Sprite sprPatterntable[2] = { olc::Sprite(128, 128), olc::Sprite(128, 128) };
+        olc::Sprite sprOAM = { olc::Sprite(128, 128) };
 
+        // Inline functions
+        inline int spriteHeight() {
+            return (ctrl.spriteSize == 1) ? 16 : 8;
+        }
     public:
         PPU();
         ~PPU();
@@ -139,19 +182,15 @@ class PPU {
         Machine *nes;
         void ConnectMachine(Machine *n) { nes = n; }
 
-        //uint8_t oamdma    = 0;
-        //uint8_t reg[8];
-
         bool nmiOccurred = false;
 
         bool frame_complete = false;
         olc::Sprite& GetScreen() { return sprScreen; };
         olc::Sprite& GetNametable(uint8_t i) { return sprNametable[i]; };
         olc::Sprite& GetPatterntable(uint8_t i, uint8_t palette);
+        olc::Sprite& GetOAM(uint8_t palette);
         olc::Pixel& GetColorFromPaletteRam(uint8_t palette, uint8_t pixel);
 
-        //bool frame_complete();
-        void render_scanline();
         void clock();
 
         uint8_t cpuRead(uint16_t addr, bool readOnly = false);

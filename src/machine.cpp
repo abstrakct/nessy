@@ -9,9 +9,9 @@ void Machine::cpuWrite(uint16_t addr, uint8_t data)
         cpuRam[addr & 0x07FF] = data;
     } else if (addr >= 0x2000 && addr <= 0x4014) {
         ppu.cpuWrite(addr, data);
-    }/* else if (addr == 0x4014) {
-        ppu.oamdma = data;
-    }*/
+    } else if (addr == 0x4016) {
+        controller1.write(data & 0x01);
+    }
 }
 
 uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
@@ -24,6 +24,8 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
         data = cpuRam[addr & 0x07FF];
     } else if (addr >= 0x2000 && addr < 0x4000) {
         data = ppu.cpuRead(addr, readonly);
+    } else if (addr == 0x4016) {
+        data = controller1.read();
     } else {
         data = 0x00;
     }

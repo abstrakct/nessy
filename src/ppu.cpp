@@ -138,7 +138,7 @@ olc::Sprite& PPU::GetPatterntable(uint8_t i, uint8_t palette)
                 uint8_t tile_lo = ppuRead(i * 0x1000 + offset + row);
                 uint8_t tile_hi = ppuRead(i * 0x1000 + offset + row + 8);
                 for (uint8_t col = 0; col < 8; col++) {
-                    uint8_t pixel = (tile_lo & 0x01) + ((tile_hi & 0x01) << 1);
+                    uint8_t pixel = (tile_lo & 0x01) | ((tile_hi & 0x01) << 1);
                     tile_lo >>= 1;
                     tile_hi >>= 1;
                     sprPatterntable[i].SetPixel(
@@ -180,11 +180,9 @@ olc::Sprite& PPU::GetOAM(uint8_t palette)
         uint8_t x = oam[offset + 3];
 
         uint8_t i = 0;
-        if (!sixteen) {  // 8x8
-            //printf("8x8");
+        if (!sixteen) {                     // 8x8
             i = ctrl.spritePatternTable;
-        } else {                 // 8x16
-            //printf("8x16");
+        } else {                            // 8x16
             i = tileNum & 0x01;
             tileNum >>= 1;
         }
@@ -254,7 +252,7 @@ void PPU::loadSprites()
 
         unsigned sprY = (scanline - oamBuf[i].y) % spriteHeight();  // Line inside the sprite.
         if (oamBuf[i].attr & 0x80)
-            sprY ^= spriteHeight() - 1;      // Vertical flip.
+            sprY ^= spriteHeight() - 1;       // Vertical flip.
         addr += sprY + (sprY & 0x08);         // Select the second tile if on 8x16.
 
         oamBuf[i].dataL = ppuRead(addr + 0);
@@ -378,26 +376,6 @@ void PPU::clock()
         //}
         //
         
-        // Clear secondary OAM
-        if (cycle == 1) {
-            for (int i = 0; i < 8; i++) {
-                oamBuf2[i].id    = 64;
-                oamBuf2[i].y     = 0xFF;
-                oamBuf2[i].tile  = 0xFF;
-                oamBuf2[i].attr  = 0xFF;
-                oamBuf2[i].x     = 0xFF;
-                oamBuf2[i].dataL = 0;
-                oamBuf2[i].dataH = 0;
-            }
-        }
-
-        if (scanline && cycle == 257) {
-            evaluateSprites();
-        }
-
-        if (scanline && cycle == 321) {
-            loadSprites();
-        }
 
         // Load Background data
         if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
@@ -445,6 +423,32 @@ void PPU::clock()
 
         if (cycle == 338 || cycle == 340)
             bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
+
+
+        // Sprites / Foreground
+        //
+        // Clear secondary OAM
+        if (cycle == 1) {
+            for (int i = 0; i < 8; i++) {
+                oamBuf2[i].id    = 64;
+                oamBuf2[i].y     = 0xFF;
+                oamBuf2[i].tile  = 0xFF;
+                oamBuf2[i].attr  = 0xFF;
+                oamBuf2[i].x     = 0xFF;
+                oamBuf2[i].dataL = 0;
+                oamBuf2[i].dataH = 0;
+            }
+        }
+
+        if (scanline && cycle == 257) {
+            evaluateSprites();
+        }
+
+        if (scanline && cycle == 321) {
+            loadSprites();
+        }
+
+
 
         if (scanline == -1 && cycle >= 280 && cycle < 305) {
             // End of vblank period, reset Y address
@@ -605,7 +609,7 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
             case OAMAddr:
                 oamAddr = data; break;
             case OAMData:
-                oam[oamAddr++] = data; break;
+                oam[oamAddr] = data; break;
             case PPUScroll:
                 if (!flip) {
                     fineX = data & 0x07;
@@ -644,10 +648,10 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
         //
         // TODO: takes 513-514 cycles
         // TODO: should start at oamAddr, not 0 (?)
-        for (int i = 0; i < 256; i++) {
-            //printf("oam dma address: %04x\n", ((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
-            oam[i] = nes->cpuRead(((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
-        }
+        //for (int i = 0; i < 256; i++) {
+        //    //printf("oam dma address: %04x\n", ((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
+        //    oam[i] = nes->cpuRead(((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
+        //}
         //printf("\nOAMDMA written - transferred bytes from %04X\n", ((uint16_t)data << 8) | ((uint16_t) (oamAddr)));
         //for (int i = 0; i < 256; i++) {
         //    if (i && !(i % 8))
@@ -669,7 +673,7 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
     //if (addr <= 0x3EFF)
     //    data = vramBuffer;
 
-    // TODO: mapper 2 isn't working now........
+    // TODO: mapper 2 is only partially working now........
     if (cart->ppuRead(addr, data)) {
         //data = vramBuffer;
         sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);

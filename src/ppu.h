@@ -76,14 +76,13 @@ class PPU {
         //uint8_t patterntable[2][0x1000];  // 2x4096 bytes - maps to Cartridge
         uint8_t nametable[2][0x400];      // 2x1024 bytes, aka NES internal VRAM
         uint8_t palette[32];
-        uint8_t oam[256];  // 64 sprites, 4 bytes each, 256 byes total
+        uint8_t oam[256];  // 64 sprites, 4 bytes each, 256 bytes total
         SpriteBuffer oamBuf[8], oamBuf2[8];
         //uint8_t oam2[32];  //  8 sprites, 4 bytes each, 32 bytes total
         
         //uint16_t vramAddress = 0;
         uint8_t vramBuffer = 0, vramInc = 1;
         uint8_t lo = 0, hi = 0;
-        uint8_t oamAddr = 0;
         bool flip = false;
 
         union {
@@ -191,14 +190,24 @@ class PPU {
         olc::Sprite& GetOAM(uint8_t palette);
         olc::Pixel& GetColorFromPaletteRam(uint8_t palette, uint8_t pixel);
 
+        // OAM stuff
+        uint8_t oamAddr = 0;
+        inline void oamWrite(uint8_t addr, uint8_t data) {
+            oam[addr] = data;
+        };
+
+        // Clock
         void clock();
 
+        // CPU Bus IO
         uint8_t cpuRead(uint16_t addr, bool readOnly = false);
         void cpuWrite(uint16_t addr, uint8_t data);
 
+        // PPU Bus IO
         uint8_t ppuRead(uint16_t addr, bool readOnly = false);
         void ppuWrite(uint16_t addr, uint8_t data);
 
+        // Connect / Reset
         void connectCartridge(const std::shared_ptr<Cartridge>& cartridge);
         void reset();
 };

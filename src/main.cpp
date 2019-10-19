@@ -331,8 +331,8 @@ class Nessy : public olc::PixelGameEngine
                 nes->controller1.pressButton(Controller::Button::Select);
             }
 
-            if (GetKey(olc::Key::ENTER).bReleased) {
-                nes->controller1.releaseButton(Controller::Button::Start);
+            if (GetKey(olc::Key::TAB).bReleased) {
+                nes->controller1.releaseButton(Controller::Button::Select);
             }
 
             if (GetKey(olc::Key::D).bHeld) {

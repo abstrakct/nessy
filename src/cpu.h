@@ -133,12 +133,28 @@ class CPU {
         //           stored in a 16-bit pointer anywhere in memory
         // IndirectX: madness
         // IndirectY: more madness
-        uint8_t Implied();
+        inline uint8_t Implied() {
+            operand = a;
+            return 0;
+        }
+
         inline uint8_t Immediate() {
             address = pc++;
             return 0;
         }
-        uint8_t ZeroPage();  uint8_t ZeroPageX();
+
+        inline uint8_t ZeroPage() {
+            address = (read(pc) & 0x00FF);
+            pc++;
+            return 0;
+        }
+        
+        inline uint8_t ZeroPageX() {
+            address = (read(pc) + x) & 0x00FF;
+            pc++;
+            return 0;
+        }
+
         uint8_t Relative();  uint8_t ZeroPageY();
         uint8_t Absolute();  uint8_t AbsoluteX();
         uint8_t Indirect();  uint8_t AbsoluteY();

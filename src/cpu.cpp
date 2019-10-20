@@ -400,11 +400,11 @@ void CPU::clock()
 
 // Addressing modes
 // These set up stuff for use later.
-uint8_t CPU::Implied()
-{
-    operand = a;
-    return 0;
-}
+//uint8_t CPU::Implied()
+//{
+//    operand = a;
+//    return 0;
+//}
 
 //uint8_t CPU::Immediate()
 //{
@@ -424,19 +424,19 @@ uint8_t CPU::Relative()
     return 0;
 }
 
-uint8_t CPU::ZeroPage()
-{
-    address = (read(pc) & 0x00FF);
-    pc++;
-    return 0;
-}
+//uint8_t CPU::ZeroPage()
+//{
+//    address = (read(pc) & 0x00FF);
+//    pc++;
+//    return 0;
+//}
 
-uint8_t CPU::ZeroPageX()
-{
-    address = (read(pc) + x) & 0x00FF;
-    pc++;
-    return 0;
-}
+//uint8_t CPU::ZeroPageX()
+//{
+//    address = (read(pc) + x) & 0x00FF;
+//    pc++;
+//    return 0;
+//}
 
 uint8_t CPU::ZeroPageY()
 {

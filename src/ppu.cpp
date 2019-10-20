@@ -515,7 +515,7 @@ void PPU::clock()
             if (oamBuf[i].id == 0 && bgPalette && x != 255)
                 status.spriteZeroHit = 1;
 
-            sprPalette = (oamBuf[i].attr & 0x03);
+            sprPalette = (oamBuf[i].attr & 0x03) + 4;
         }
     }
 

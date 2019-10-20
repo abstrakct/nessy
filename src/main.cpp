@@ -30,7 +30,7 @@ bool cfgDisplayRam = false;
 bool cfgDisplayDisasm = false;
 bool cfgDisplayCpu = false;
 bool cfgDisplayHelp = false;
-bool cfgDisplayPPU = true;
+bool cfgDisplayPPU = false;
 
 // this is silly, move into Nessy class?!
 std::shared_ptr<Machine> TheNES;

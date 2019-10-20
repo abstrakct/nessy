@@ -4,27 +4,28 @@
 
 class Controller {
     private:
+        uint8_t buttons;
         uint8_t state;
-        bool strobe;
+        //bool strobe;
 
     public:
         Controller();
         ~Controller();
 
         enum Button {
-            A = 0,        // 1
-            B = 1,        // 2
-            Select = 2,   // 4
-            Start = 3,    // 8
-            Up = 4,       // 10
-            Down = 5,     // 20
-            Left = 6,     // 40
-            Right = 7     // 80
+            Right  = 0x01,
+            Left   = 0x02,
+            Down   = 0x04,
+            Up     = 0x08,
+            Start  = 0x10,
+            Select = 0x20,
+            B      = 0x40,
+            A      = 0x80,
         };
 
         void pressButton(Button b);
         void releaseButton(Button b);
 
         uint8_t read();
-        void write(bool v);
+        void write(uint8_t data);
 };

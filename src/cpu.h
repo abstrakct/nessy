@@ -72,8 +72,15 @@ class CPU {
             N = (1 << 7),   // Negative
         };
 
-        bool GetFlag(Flag f);
-        void SetFlag(Flag f, bool v = true);
+        inline bool GetFlag(Flag f) {
+            return (flags & f);
+        }
+        inline void SetFlag(Flag f, bool v = true) {
+            if (v)
+                flags |= f;
+            else
+                flags &= ~f;
+        }
 
         void reset();
         void irq();
@@ -102,7 +109,13 @@ class CPU {
         uint16_t address_rel = 0;
         uint16_t temp = 0;
         
-        uint8_t fetch();
+        inline uint8_t fetch() {
+            // only read if needed
+            if (!(lookup[opcode].addrmode == &CPU::Implied))
+                operand = read(address);
+
+            return operand;
+        }
 
 
         // Adressing Modes
@@ -120,7 +133,11 @@ class CPU {
         //           stored in a 16-bit pointer anywhere in memory
         // IndirectX: madness
         // IndirectY: more madness
-        uint8_t Implied();   uint8_t Immediate();
+        uint8_t Implied();
+        inline uint8_t Immediate() {
+            address = pc++;
+            return 0;
+        }
         uint8_t ZeroPage();  uint8_t ZeroPageX();
         uint8_t Relative();  uint8_t ZeroPageY();
         uint8_t Absolute();  uint8_t AbsoluteX();

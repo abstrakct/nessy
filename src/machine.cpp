@@ -13,8 +13,8 @@ void Machine::cpuWrite(uint16_t addr, uint8_t data)
         dma_page = data;
         dma_addr = 0x00;
         dma_transfer = true;
-    } else if (addr == 0x4016) {
-        controller1.write(data & 0x01);
+    } else if (addr == 0x4016 || addr == 0x4017) {
+        controller[addr & 0x0001].write(data);
     }
 }
 
@@ -28,8 +28,8 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
         data = cpuRam[addr & 0x07FF];
     } else if (addr >= 0x2000 && addr < 0x4000) {
         data = ppu.cpuRead(addr, readonly);
-    } else if (addr == 0x4016) {
-        data = controller1.read();
+    } else if (addr == 0x4016 || addr == 0x4017) {
+        data = controller[addr & 0x0001].read();
     } else {
         data = 0x00;
     }

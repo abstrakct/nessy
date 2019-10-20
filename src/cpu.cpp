@@ -317,22 +317,6 @@ uint16_t CPU::pop16()
     return ret;
 }
 
-bool CPU::GetFlag(Flag f)
-{
-    if (flags & f)
-        return true;
-    else
-        return false;
-}
-
-void CPU::SetFlag(Flag f, bool v)
-{
-    if (v)
-        flags |= f;
-    else
-        flags &= ~f;
-}
-
 void CPU::reset()
 {
     a = 0;
@@ -412,14 +396,6 @@ void CPU::clock()
     cycles--;
 }
 
-uint8_t CPU::fetch()
-{
-    // only read if needed
-    if (!(lookup[opcode].addrmode == &CPU::Implied))
-        operand = read(address);
-
-    return operand;
-}
 
 
 // Addressing modes
@@ -430,13 +406,13 @@ uint8_t CPU::Implied()
     return 0;
 }
 
-uint8_t CPU::Immediate()
-{
-    // ++ postfix means:
-    // address = pc; pc += 1;
-    address = pc++;
-    return 0;
-}
+//uint8_t CPU::Immediate()
+//{
+//    // ++ postfix means:
+//    // address = pc; pc += 1;
+//    address = pc++;
+//    return 0;
+//}
 
 uint8_t CPU::Relative()
 {

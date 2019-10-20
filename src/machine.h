@@ -17,7 +17,7 @@ class Machine {
         CPU cpu;
         PPU ppu;
         std::shared_ptr<Cartridge> cart;
-        Controller controller1;
+        Controller controller[2];
 
         // Bus read and write
         void cpuWrite(uint16_t addr, uint8_t data);

@@ -320,55 +320,55 @@ class Nessy : public olc::PixelGameEngine
             // Keys mapped to NES controller 1
 
             if (GetKey(olc::Key::ENTER).bPressed) {
-                nes->controller1.pressButton(Controller::Button::Start);
+                nes->controller[0].pressButton(Controller::Button::Start);
             }
 
             if (GetKey(olc::Key::ENTER).bReleased) {
-                nes->controller1.releaseButton(Controller::Button::Start);
+                nes->controller[0].releaseButton(Controller::Button::Start);
             }
 
             if (GetKey(olc::Key::TAB).bPressed) {
-                nes->controller1.pressButton(Controller::Button::Select);
+                nes->controller[0].pressButton(Controller::Button::Select);
             }
 
             if (GetKey(olc::Key::TAB).bReleased) {
-                nes->controller1.releaseButton(Controller::Button::Select);
+                nes->controller[0].releaseButton(Controller::Button::Select);
             }
 
             if (GetKey(olc::Key::D).bHeld) {
-                nes->controller1.pressButton(Controller::Button::Right);
+                nes->controller[0].pressButton(Controller::Button::Right);
             } else {
-                nes->controller1.releaseButton(Controller::Button::Right);
+                nes->controller[0].releaseButton(Controller::Button::Right);
             }
 
             if (GetKey(olc::Key::A).bHeld) {
-                nes->controller1.pressButton(Controller::Button::Left);
+                nes->controller[0].pressButton(Controller::Button::Left);
             } else {
-                nes->controller1.releaseButton(Controller::Button::Left);
+                nes->controller[0].releaseButton(Controller::Button::Left);
             }
 
             if (GetKey(olc::Key::W).bHeld) {
-                nes->controller1.pressButton(Controller::Button::Up);
+                nes->controller[0].pressButton(Controller::Button::Up);
             } else {
-                nes->controller1.releaseButton(Controller::Button::Up);
+                nes->controller[0].releaseButton(Controller::Button::Up);
             }
 
             if (GetKey(olc::Key::S).bHeld) {
-                nes->controller1.pressButton(Controller::Button::Down);
+                nes->controller[0].pressButton(Controller::Button::Down);
             } else {
-                nes->controller1.releaseButton(Controller::Button::Down);
+                nes->controller[0].releaseButton(Controller::Button::Down);
             }
 
             if (GetKey(olc::Key::L).bHeld) {
-                nes->controller1.pressButton(Controller::Button::A);
+                nes->controller[0].pressButton(Controller::Button::A);
             } else {
-                nes->controller1.releaseButton(Controller::Button::A);
+                nes->controller[0].releaseButton(Controller::Button::A);
             }
 
             if (GetKey(olc::Key::K).bHeld) {
-                nes->controller1.pressButton(Controller::Button::B);
+                nes->controller[0].pressButton(Controller::Button::B);
             } else {
-                nes->controller1.releaseButton(Controller::Button::B);
+                nes->controller[0].releaseButton(Controller::Button::B);
             }
 
             if (GetKey(olc::Key::P).bPressed) (++selectedPalette) &= 0x07;

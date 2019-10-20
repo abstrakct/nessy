@@ -261,19 +261,19 @@ class Nessy : public olc::PixelGameEngine
                 runmode = !runmode;
             }
 
-            if (GetKey(olc::Key::F1).bPressed)
+            if (GetKey(olc::Key::K1).bPressed)
                 cfgDisplayHelp = !cfgDisplayHelp;
 
-            if (GetKey(olc::Key::F2).bPressed)
+            if (GetKey(olc::Key::K2).bPressed)
                 cfgDisplayRam = !cfgDisplayRam;
 
-            if (GetKey(olc::Key::F3).bPressed)
+            if (GetKey(olc::Key::K3).bPressed)
                 cfgDisplayCpu = !cfgDisplayCpu;
 
-            if (GetKey(olc::Key::F4).bPressed)
+            if (GetKey(olc::Key::K4).bPressed)
                 cfgDisplayDisasm = !cfgDisplayDisasm;
 
-            if (GetKey(olc::Key::F5).bPressed)
+            if (GetKey(olc::Key::K5).bPressed)
                 cfgDisplayPPU = !cfgDisplayPPU;
 
             if (GetKey(olc::Key::R).bPressed)
@@ -301,7 +301,7 @@ class Nessy : public olc::PixelGameEngine
                 ram2start -= 0x1000;
             }
 
-            if (GetKey(olc::Key::K).bPressed) {
+            if (GetKey(olc::Key::K9).bPressed) {
                 // increase execution speed which means decrease sleep time
                 if (targetFPS > 5)
                     targetFPS -= 5;
@@ -310,7 +310,7 @@ class Nessy : public olc::PixelGameEngine
 
             }
 
-            if (GetKey(olc::Key::O).bPressed) {
+            if (GetKey(olc::Key::K0).bPressed) {
                 if (targetFPS < 5)
                     targetFPS ++;
                 else

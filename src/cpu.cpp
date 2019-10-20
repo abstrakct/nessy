@@ -438,21 +438,21 @@ uint8_t CPU::Relative()
 //    return 0;
 //}
 
-uint8_t CPU::ZeroPageY()
-{
-    address = (read(pc) + y) & 0x00FF;
-    pc++;
-    return 0;
-}
+//uint8_t CPU::ZeroPageY()
+//{
+//    address = (read(pc) + y) & 0x00FF;
+//    pc++;
+//    return 0;
+//}
 
-uint8_t CPU::Absolute()
-{
-    address = (uint16_t) read(pc);
-    pc++;
-    address |= (uint16_t) (read(pc) << 8);
-    pc++;
-    return 0;
-}
+//uint8_t CPU::Absolute()
+//{
+//    address = (uint16_t) read(pc);
+//    pc++;
+//    address |= (uint16_t) (read(pc) << 8);
+//    pc++;
+//    return 0;
+//}
 
 uint8_t CPU::AbsoluteX()
 {

@@ -155,8 +155,19 @@ class CPU {
             return 0;
         }
 
-        uint8_t Relative();  uint8_t ZeroPageY();
-        uint8_t Absolute();  uint8_t AbsoluteX();
+        inline uint8_t ZeroPageY() {
+            address = (read(pc) + y) & 0x00FF;
+            pc++;
+            return 0;
+        }
+
+        inline uint8_t Absolute() {
+            address = (uint16_t) read(pc++);
+            address |= (uint16_t) (read(pc++) << 8);
+            return 0;
+        }
+
+        uint8_t Relative();  uint8_t AbsoluteX();
         uint8_t Indirect();  uint8_t AbsoluteY();
         uint8_t IndirectX(); uint8_t IndirectY();
 

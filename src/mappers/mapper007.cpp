@@ -40,13 +40,19 @@ bool Mapper007::cpuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x8000) {
         selectedBank = data & 0b00000111;  // last 3 bits select bank. Could also be written as & 0x07
-        //TODO: bit 5 = select 1 kb VRAM page for all 4 nametables
-        //printf("Mapper007: write %02x to %04x   selectedBank = %d\n", data, addr, selectedBank);
+        vramBank     = (data & 0b00010000) >> 4;
+        //printf("Mapper007: write %02x to %04x   selectedBank = %d   vramBank = %d\n", data, addr, selectedBank, vramBank);
         return true;
     }
 
     return false;
 }
+
+// Taken from ANESE
+//inline uint16_t nt_mirror(uint16_t addr) const
+//{
+//    const uint16_t fix_4s = 0x2000 * (
+//}
 
 bool Mapper007::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 {
@@ -55,11 +61,23 @@ bool Mapper007::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper007::ppuReadData(uint16_t addr, uint8_t &data)
 {
-    if (addr < 0x2000) {
-        //printf("VRAM READ\n");
+    if (addr > 0x0000 && addr < 0x3EFF) {
+        //printf("VRAM READ addr %04X\n", addr);
+        if (addr >= 0x2000) {
+            if (vramBank) {
+                if (addr >= 0x2400) {
+                    addr &= 0x23FF;
+                    addr += 0x400;
+                }
+            } else {
+                addr &= 0x23FF;
+            }
+        }
+        addr &= 0x1FFF;
         data = vram[addr];
         return true;
     }
+
     return false;
 }
 
@@ -70,11 +88,25 @@ bool Mapper007::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper007::ppuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr < 0x2000) {
-        //printf("VRAM WRITE\n");
+    //printf("VRAM WRITE addr %04X\n", addr);
+    if (addr > 0x0000 && addr < 0x3EFF) {
+        if (addr >= 0x2000) {
+            if (vramBank) {
+                if (addr >= 0x2400) {
+                    addr &= 0x23FF;
+                    addr += 0x400;
+                }
+            } else {
+                addr &= 0x23FF;
+            }
+        }
+
+        //printf("VRAM WRITE addr %04X   data %02X\n", addr, data);
+        addr &= 0x1FFF;
         vram[addr] = data;
         return true;
     }
+
     return false;
 }
 

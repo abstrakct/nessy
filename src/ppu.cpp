@@ -676,8 +676,8 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
     // TODO: mapper 2 is only partially working now........
     if (cart->ppuRead(addr, data)) {
         //data = vramBuffer;
-        sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);
-        l.w(out);
+        //sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);
+        //l.w(out);
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
         if (addr >= 0x3000)
             addr -= 0x1000;

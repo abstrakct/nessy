@@ -2,6 +2,7 @@
 #pragma once
 #include <cstdint>
 
+
 #define MI_WORKING     0
 #define MI_NOT_WORKING 1
 #define MI_NOT_USABLE  2
@@ -23,6 +24,9 @@ class Mapper {
 
         // What is the status of the emulator's implementation of this mapper?
         virtual int implementationStatus() = 0;
+
+        // Link back to the Cartridge
+        //std::shared_ptr<Cartridge> cart;
     protected:
         uint8_t prgBanks = 0;
         uint8_t chrBanks = 0;

@@ -6,7 +6,6 @@ class Controller {
     private:
         uint8_t buttons;
         uint8_t state;
-        //bool strobe;
 
     public:
         Controller();

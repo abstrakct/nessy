@@ -3,6 +3,8 @@
 
 Controller::Controller()
 {
+    buttons = 0;
+    state = 0;
 }
 
 Controller::~Controller()

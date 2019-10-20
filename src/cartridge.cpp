@@ -41,7 +41,11 @@ Cartridge::Cartridge(const std::string& filename)
 
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
 
-        mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+        if (header.mapper1 & 0x10) {
+            mirror = FOUR_SCREEN;
+        } else {
+            mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+        }
 
         // discover file format
         uint8_t filetype = 1;
@@ -92,7 +96,17 @@ Cartridge::Cartridge(const std::string& filename)
             printf("\tMapper:    %d\n", mapperNum);
             printf("\tPRG ROM:   %d x 16 KB [0x%06X bytes]\n", prgBanks, prgBanks * 0x4000);
             printf("\tCHR ROM:   %d x  8 KB [0x%06X bytes]\n", chrBanks, chrBanks * 0x0000);
-            printf("\tMirroring: %s\n\n", mirror == VERTICAL ? "Vertical" : "Horizontal");
+            printf("\tMirroring: ");
+            if (mirror == HORIZONTAL)
+                printf("Horizontal");
+            else if (mirror == VERTICAL)
+                printf("Vertical");
+            else if (mirror == FOUR_SCREEN)
+                printf("Four Screen");
+            else
+                printf("????");
+
+            printf("\n\n");
         }
     }
 }

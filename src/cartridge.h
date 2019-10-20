@@ -16,6 +16,7 @@ class Cartridge {
         enum Mirror {
             HORIZONTAL,
             VERTICAL,
+            FOUR_SCREEN,
             ONESCREEN_LO,
             ONESCREEN_HI
         } mirror = HORIZONTAL;

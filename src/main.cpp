@@ -75,6 +75,8 @@ class Nessy : public olc::PixelGameEngine
             nesFilename = filename;
         }
 
+        ~Nessy() { }
+
         void DrawRAM(int x, int y, uint16_t addr, int rows, int cols)
         {
             // TODO: highlight current PC (også read/writes????!!!!) !!!

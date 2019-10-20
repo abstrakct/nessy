@@ -17,7 +17,8 @@ class Mapper007 : public Mapper {
 
         int implementationStatus() override { return MI_WORKING; };
     private:
-        uint8_t  selectedBank   = 0;
+        uint8_t  selectedBank = 0;
+        uint8_t  vramBank = 0;
         std::vector<uint8_t> vram;
 };
 

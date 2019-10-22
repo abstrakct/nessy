@@ -73,7 +73,7 @@ class PPU {
         int scanline = 0, cycle = 0;
         std::shared_ptr<Cartridge> cart;
 
-        //uint8_t patterntable[2][0x1000];  // 2x4096 bytes - maps to Cartridge
+        uint8_t patterntable[2][0x1000];  // 2x4096 bytes - maps to Cartridge
         uint8_t nametable[2][0x400];      // 2x1024 bytes, aka NES internal VRAM
         uint8_t palette[32];
         uint8_t oam[256];  // 64 sprites, 4 bytes each, 256 bytes total

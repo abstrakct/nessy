@@ -466,6 +466,7 @@ void PPU::clock()
 
         uint8_t pal0 = (bgShifterAttribLo & mux) > 0;
         uint8_t pal1 = (bgShifterAttribHi & mux) > 0;
+
         bgPalette = (pal1 << 1) | pal0;
     }
 
@@ -477,7 +478,7 @@ void PPU::clock()
     uint8_t sprPalette = 0;
     bool front = false;
     if (mask.renderSprites/* && !(!mask.renderSpritesLeft && x < 8)*/) {
-        for (int i = 7; i >= 0; i--) {
+        for (int i = 0; i < 8; i++) {
             if (oamBuf[i].id == 64) continue;
             unsigned sprX = x - oamBuf[i].x;
             if (sprX >= 8) continue;
@@ -494,7 +495,7 @@ void PPU::clock()
 
             if (sprPixel == 0) continue;
             
-            if (oamBuf[i].id == 0 && bgPalette && x != 255)
+            if (oamBuf[i].id == 0 && sprPixel && x != 255)
                 status.spriteZeroHit = 1;
 
             sprPalette = (oamBuf[i].attr & 0x03) + 4;
@@ -523,8 +524,9 @@ void PPU::clock()
     }
 
     sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(palette, pixel));
-    //if (((sprPixel & 0x03) && front) || (bgPixel == 0))
-    //    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(sprPalette, sprPixel));
+
+    //if (((sprPixel & 0x03) && front) || (bgPixel))
+    //    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(palette, pixel));
 
     cycle++;
 
@@ -655,7 +657,34 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         //data = vramBuffer;
         //sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);
         //l.w(out);
+    } else if (addr < 0x2000) {
+        // If the cartridge can't handle this address
+        data = patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF];
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
+        //addr &= 0x0FFF;
+        //if (cart->getMirrorType() == Cartridge::VERTICAL) {
+        //    if (addr <= 0x03FF)
+        //        data = nametable[0][addr & 0x03FF];
+        //    else if (addr <= 0x07FF)
+        //        data = nametable[1][addr & 0x03FF];
+        //    else if (addr <= 0x0BFF)
+        //        data = nametable[0][addr & 0x03FF];
+        //    else if (addr <= 0x0FFF)
+        //        data = nametable[1][addr & 0x03FF];
+        //} else if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
+        //    if (addr <= 0x03FF)
+        //        data = nametable[0][addr & 0x03FF];
+        //    else if (addr <= 0x07FF)
+        //        data = nametable[0][addr & 0x03FF];
+        //    else if (addr <= 0x0BFF)
+        //        data = nametable[1][addr & 0x03FF];
+        //    else if (addr <= 0x0FFF)
+        //        data = nametable[1][addr & 0x03FF];
+        //}
+
+
+
+
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Read from nametables
@@ -677,7 +706,7 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         if (addr == 0x0014) addr = 0x0004;
         if (addr == 0x0018) addr = 0x0008;
         if (addr == 0x001C) addr = 0x000C;
-        data = palette[addr];
+        data = palette[addr] & (mask.grayscale ? 0x30 : 0x3F);
     /*} else if (addr >= 0x3000) {
         data = ppuRead(addr - 0x1000);
         printf("suspicious ppu read from addr %04x\n", addr);
@@ -699,10 +728,30 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
     //    vramBuffer = data;
 
     if (cart->ppuWrite(addr, data)) {
-    //} else if (addr < 0x2000) {
-        //printf("write to patterntable %d %04x   data = %02x\n", (addr & 0x1000) >> 12, addr & 0x0FFF, data);
-        //patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
-    } else if (addr >= 0x2000 && addr < 0x3EFF) {
+    } else if (addr < 0x2000) {
+        patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
+    } else if (addr >= 0x2000 && addr <= 0x3EFF) {
+        //addr &= 0x0FFF;
+        //if (cart->getMirrorType() == Cartridge::VERTICAL) {
+        //    if (addr <= 0x03FF)
+        //        nametable[0][addr & 0x03FF] = data;
+        //    else if (addr <= 0x07FF)
+        //        nametable[1][addr & 0x03FF] = data;
+        //    else if (addr <= 0x0BFF)
+        //        nametable[0][addr & 0x03FF] = data;
+        //    else if (addr <= 0x0FFF)
+        //        nametable[1][addr & 0x03FF] = data;
+        //} else if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
+        //    if (addr <= 0x03FF)
+        //        nametable[0][addr & 0x03FF] = data;
+        //    else if (addr <= 0x07FF)
+        //        nametable[0][addr & 0x03FF] = data;
+        //    else if (addr <= 0x0BFF)
+        //        nametable[1][addr & 0x03FF] = data;
+        //    else if (addr <= 0x0FFF)
+        //        nametable[1][addr & 0x03FF] = data;
+        //}
+
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Write to nametables
@@ -718,7 +767,6 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
                 nametable[0][addr & 0x03FF] = data;
         }
     } else if (addr >= 0x3F00 && addr < 0x4000) {
-        //printf("writing palette data! addr = %04X (%d)  data  = %02X\n", addr, addr & 0x001F, data);
         addr &= 0x001F;
         if (addr == 0x0010) addr = 0x0000;
         if (addr == 0x0014) addr = 0x0004;
@@ -738,10 +786,24 @@ void PPU::connectCartridge(const std::shared_ptr<Cartridge>& cartridge)
 
 void PPU::reset()
 {
-    // very probably incomplete
+    fineX = 0;
+    vramAddress.reg = 0;
+    tramAddress.reg = 0;
+    vramBuffer = 0;
+    scanline = 0;
     cycle = 0;
+    bgNextTileId = 0;
+    bgNextTileAttrib = 0;
+    bgNextTileHi = 0;
+    bgNextTileLo = 0;
+    bgShifterPatternLo = 0;
+    bgShifterPatternHi = 0;
+    bgShifterAttribLo = 0;
+    bgShifterAttribHi = 0;
+    status.reg = 0x00;
     ctrl.reg = 0x00;
     mask.reg = 0x00;
+    flip = false;
 }
 
 

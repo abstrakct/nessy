@@ -156,68 +156,68 @@ olc::Sprite& PPU::GetPatterntable(uint8_t i, uint8_t palette)
 
 olc::Sprite& PPU::GetOAM(uint8_t palette)
 {
-    int tilex = 0, tiley = 0;
-
-    for (uint16_t s = 0; s < 64; s++) {
-        bool sixteen = ctrl.spriteSize ? true : false;
-        uint16_t offset = s * 4;
-        uint8_t y = oam[offset];
-        uint8_t tileNum = oam[offset + 1];
-        uint8_t attr = oam[offset + 2];
-        uint8_t x = oam[offset + 3];
-
-        uint8_t i = 0;
-        if (!sixteen) {                     // 8x8
-            i = ctrl.spritePatternTable;
-        } else {                            // 8x16
-            i = tileNum & 0x01;
-            tileNum >>= 1;
-        }
-
-        uint8_t tile;
-
-        for (uint8_t row = 0; row < 8; row++) {
-            tile = ppuRead(i * 0x1000 + tileNum + row);
-            for (uint8_t col = 0; col < 8; col++) {
-                uint8_t pixel = tile & 0x01; //(tile_lo & 0x01) + ((tile_hi & 0x01) << 1);
-                tile >>= 1;
-                sprOAM.SetPixel(
-                        (tilex * 8) + (7 - col),
-                        (tiley * 8) + row,
-                        GetColorFromPaletteRam(attr & 0x03, pixel)
-                        );
-            }
-        }
-
-        tilex++;
-        if (tilex == 8) {
-            tiley++;
-            tilex = 0;
-        }
-    }
-
+//    int tilex = 0, tiley = 0;
+//
+//    for (uint16_t s = 0; s < 64; s++) {
+//        bool sixteen = ctrl.spriteSize ? true : false;
+//        uint16_t offset = s * 4;
+//        uint8_t y = oam[offset];
+//        uint8_t tileNum = oam[offset + 1];
+//        uint8_t attr = oam[offset + 2];
+//        uint8_t x = oam[offset + 3];
+//
+//        uint8_t i = 0;
+//        if (!sixteen) {                     // 8x8
+//            i = ctrl.spritePatternTable;
+//        } else {                            // 8x16
+//            i = tileNum & 0x01;
+//            tileNum >>= 1;
+//        }
+//
+//        uint8_t tile;
+//
+//        for (uint8_t row = 0; row < 8; row++) {
+//            tile = ppuRead(i * 0x1000 + tileNum + row);
+//            for (uint8_t col = 0; col < 8; col++) {
+//                uint8_t pixel = tile & 0x01; //(tile_lo & 0x01) + ((tile_hi & 0x01) << 1);
+//                tile >>= 1;
+//                sprOAM.SetPixel(
+//                        (tilex * 8) + (7 - col),
+//                        (tiley * 8) + row,
+//                        GetColorFromPaletteRam(attr & 0x03, pixel)
+//                        );
+//            }
+//        }
+//
+//        tilex++;
+//        if (tilex == 8) {
+//            tiley++;
+//            tilex = 0;
+//        }
+//    }
+//
     return sprOAM;
 }
 
 void PPU::evaluateSprites()
 {
-    int n = 0;
-    for (int i = 0; i < 64; i++) {
-        int line = (scanline == 261 ? -1 : scanline) - oam[i*4 + 0];
-        // If the sprite is in the scanline, copy its properties into secondary OAM:
-        if (line >= 0 && line < spriteHeight()) {
-            oamBuf2[n].id   = i;
-            oamBuf2[n].y    = oam[i*4 + 0];
-            oamBuf2[n].tile = oam[i*4 + 1];
-            oamBuf2[n].attr = oam[i*4 + 2];
-            oamBuf2[n].x    = oam[i*4 + 3];
-
-            if (++n > 8) {
-                status.spriteOverflow = true;
-                break;
-            }
-        }
-    }
+//    int n = 0;
+//    for (int i = 0; i < 64; i++) {
+//        int line = (scanline == 261 ? -1 : scanline) - oam[i*4 + 0];
+//        // If the sprite is in the scanline, copy its properties into secondary OAM:
+//        if (line >= 0 && line < spriteHeight()) {
+//            oamBuf2[n].id   = i;
+//            oamBuf2[n].y    = oam[i*4 + 0];
+//            oamBuf2[n].tile = oam[i*4 + 1];
+//            oamBuf2[n].attr = oam[i*4 + 2];
+//            oamBuf2[n].x    = oam[i*4 + 3];
+//
+//            if (++n > 8) {
+//                status.spriteOverflow = true;
+//                break;
+//            }
+//        }
+//    }
 }
 
 void PPU::loadSprites()
@@ -308,6 +308,17 @@ void PPU::clock()
             bgShifterAttribLo  <<= 1;
             bgShifterAttribHi  <<= 1;
         }
+
+        if (mask.renderSprites && cycle >= 1 && cycle < 258) {
+            for (int i = 0; i < spriteCount; i++) {
+                if (spriteScanline[i].x > 0) {
+                    spriteScanline[i].x--;
+                } else {
+                    spriteShifterLo[i] <<= 1;
+                    spriteShifterHi[i] <<= 1;
+                }
+            }
+        }
     };
 
     if (scanline >= -1 && scanline < 240) {
@@ -320,6 +331,10 @@ void PPU::clock()
             status.verticalBlank = 0;
             status.spriteOverflow = 0;
             status.spriteZeroHit = 0;
+            for (int i = 0; i < 8; i++) {
+                spriteShifterHi[i] = 0;
+                spriteShifterLo[i] = 0;
+            }
         }
 
         //// Clear OAM 2
@@ -410,25 +425,25 @@ void PPU::clock()
         // Sprites / Foreground
         //
         // Clear secondary OAM
-        if (cycle == 1) {
-            for (int i = 0; i < 8; i++) {
-                oamBuf2[i].id    = 64;
-                oamBuf2[i].y     = 0xFF;
-                oamBuf2[i].tile  = 0xFF;
-                oamBuf2[i].attr  = 0xFF;
-                oamBuf2[i].x     = 0xFF;
-                oamBuf2[i].dataL = 0;
-                oamBuf2[i].dataH = 0;
-            }
-        }
+        //if (cycle == 1) {
+        //    for (int i = 0; i < 8; i++) {
+        //        oamBuf2[i].id    = 64;
+        //        oamBuf2[i].y     = 0xFF;
+        //        oamBuf2[i].tile  = 0xFF;
+        //        oamBuf2[i].attr  = 0xFF;
+        //        oamBuf2[i].x     = 0xFF;
+        //        oamBuf2[i].dataL = 0;
+        //        oamBuf2[i].dataH = 0;
+        //    }
+        //}
 
-        if (scanline && cycle == 257) {
-            evaluateSprites();
-        }
+        //if (scanline && cycle == 257) {
+        //    evaluateSprites();
+        //}
 
-        if (scanline && cycle == 321) {
-            loadSprites();
-        }
+        //if (scanline && cycle == 321) {
+        //    loadSprites();
+        //}
 
 
 
@@ -436,7 +451,110 @@ void PPU::clock()
             // End of vblank period, reset Y address
             TransferAddressY();
         }
+
+
+        // SPRITE STUFF
+        // performs all sprite evaluation in one hit - this is not how the nes actually does it!
+
+        if (cycle == 257 && scanline >= 0) {
+            std::memset(spriteScanline, 0xFF, 8 * sizeof(ObjectAttributeEntry));
+            spriteCount = 0;
+            for (int i = 0; i < 8; i++) {
+                spriteShifterHi[i] = 0;
+                spriteShifterLo[i] = 0;
+            }
+
+            uint8_t oamEntry = 0;
+            spriteZeroHitPossible =  false;
+
+            while (oamEntry < 64 && spriteCount < 9) {
+                int16_t diff = ((int16_t)scanline - (int16_t)oam[oamEntry].y);
+                if (diff >= 0 && diff < spriteHeight()) {
+                    if (spriteCount < 8) {
+                        if (oamEntry == 0)
+                            spriteZeroHitPossible = true;
+                        memcpy(&spriteScanline[spriteCount], &oam[oamEntry], sizeof(ObjectAttributeEntry));
+                        spriteCount++;
+                    }
+                }
+                oamEntry++;
+            }
+
+            status.spriteOverflow = (spriteCount > 8);
+        }
+
+        if (cycle == 340) {
+            for (int i = 0; i < spriteCount; i++) {
+                uint8_t spritePatternBitsLo, spritePatternBitsHi;
+                uint16_t spritePatternAddrLo, spritePatternAddrHi;
+                if (!ctrl.spriteSize) { // 8x8
+                    if (!(spriteScanline[i].attr & 0x80)) {
+                        // Sprite is NOT flipped vertically
+                        spritePatternAddrLo = (ctrl.spritePatternTable << 12)
+                            | (spriteScanline[i].id << 4)
+                            | (scanline - spriteScanline[i].y);
+                    } else {
+                        // Sprite IS flipped vertically
+                        spritePatternAddrLo = (ctrl.spritePatternTable << 12)
+                            | (spriteScanline[i].id << 4)
+                            | (7 - (scanline - spriteScanline[i].y));
+                    }
+                } else { // 8x16
+                    if (!(spriteScanline[i].attr & 0x80)) {
+                        // NOT flipped vertically
+                        if (scanline - spriteScanline[i].y < 8) {
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
+                                | ((spriteScanline[i].id & 0xFE) << 4)
+                                | ((scanline - spriteScanline[i].y) & 0x07);
+                        } else {
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
+                                |(((spriteScanline[i].id & 0xFE) + 1) << 4)
+                                | ((scanline - spriteScanline[i].y) & 0x07);
+                        }
+                    } else {
+                        // FLIPPED vertically
+                        if (scanline - spriteScanline[i].y < 8) {
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
+                                |(((spriteScanline[i].id & 0xFE) + 1) << 4)
+                                | ((7 - (scanline - spriteScanline[i].y)) & 0x07);
+                        } else {
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
+                                |(((spriteScanline[i].id & 0xFE)) << 4)
+                                | ((7 - (scanline - spriteScanline[i].y)) & 0x07);
+                        }
+                    }
+                }
+
+                spritePatternAddrHi = spritePatternAddrLo + 8;
+                spritePatternBitsLo = ppuRead(spritePatternAddrLo);
+                spritePatternBitsHi = ppuRead(spritePatternAddrHi);
+
+                if (spriteScanline[i].attr & 0x40) {
+                    // flipped horizontally?
+                    // This little lambda function "flips" a byte
+                    // so 0b11100000 becomes 0b00000111. It's very
+                    // clever, and stolen completely from here:
+                    // https://stackoverflow.com/a/2602885
+                    auto flipbyte = [](uint8_t b)
+                    {
+                        b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+                        b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+                        b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+                        return b;
+                    };
+
+                    // Flip Patterns Horizontally
+                    spritePatternBitsLo = flipbyte(spritePatternBitsLo);
+                    spritePatternBitsHi = flipbyte(spritePatternBitsHi);
+                }
+
+                spriteShifterLo[i] = spritePatternBitsLo;
+                spriteShifterHi[i] = spritePatternBitsHi;
+            }
+        }
     }
+
+    // END OF SPRITE STUFF
 
     if (scanline == 240) {
         // Post-render scanline - PPU idles here
@@ -473,32 +591,53 @@ void PPU::clock()
     //sprScreen.SetPixel(cycle - 1, scanline, GetColorFromPaletteRam(bgPalette, bgPixel));
 
     // let's not care about priority yet, let's just draw sprites
-    int x = cycle - 1;
-    uint8_t sprPixel = 0;
-    uint8_t sprPalette = 0;
+    //int x = cycle - 1;
+    //uint8_t sprPixel = 0;
+    //uint8_t sprPalette = 0;
+    //bool front = false;
+    //if (mask.renderSprites/* && !(!mask.renderSpritesLeft && x < 8)*/) {
+    //    for (int i = 0; i < 8; i++) {
+    //        if (oamBuf[i].id == 64) continue;
+    //        unsigned sprX = x - oamBuf[i].x;
+    //        if (sprX >= 8) continue;
+    //        if (oamBuf[i].attr & 0x40)
+    //            sprX ^= 7; // horizontal flip
+
+    //        if (oamBuf[i].attr & 0x20)
+    //            front = false;
+    //        else
+    //            front = true;
+
+    //        sprPixel = ((((oamBuf[i].dataH >> (7 - sprX)) & 0x01) << 1) |
+    //                     ((oamBuf[i].dataL >> (7 - sprX)) & 0x01));
+
+    //        if (sprPixel == 0) continue;
+    //        
+    //        if (oamBuf[i].id == 0 && sprPixel && x != 255)
+    //            status.spriteZeroHit = 1;
+
+    //        sprPalette = (oamBuf[i].attr & 0x03) + 4;
+    //    }
+    //}
+    //
+    
+    uint8_t sprPixel = 0, sprPalette = 0;
     bool front = false;
-    if (mask.renderSprites/* && !(!mask.renderSpritesLeft && x < 8)*/) {
-        for (int i = 0; i < 8; i++) {
-            if (oamBuf[i].id == 64) continue;
-            unsigned sprX = x - oamBuf[i].x;
-            if (sprX >= 8) continue;
-            if (oamBuf[i].attr & 0x40)
-                sprX ^= 7; // horizontal flip
-
-            if (oamBuf[i].attr & 0x20)
-                front = false;
-            else
-                front = true;
-
-            sprPixel = ((((oamBuf[i].dataH >> (7 - sprX)) & 0x01) << 1) |
-                         ((oamBuf[i].dataL >> (7 - sprX)) & 0x01));
-
-            if (sprPixel == 0) continue;
-            
-            if (oamBuf[i].id == 0 && sprPixel && x != 255)
-                status.spriteZeroHit = 1;
-
-            sprPalette = (oamBuf[i].attr & 0x03) + 4;
+    if (mask.renderSprites) {
+        spriteZeroBeingRendered = false;
+        for (uint8_t i = 0; i < spriteCount; i++) {
+            if (spriteScanline[i].x == 0) {
+                uint8_t lo = (spriteShifterLo[i] & 0x80) > 0;
+                uint8_t hi = (spriteShifterHi[i] & 0x80) > 0;
+                sprPixel = (hi << 1) | lo;
+                sprPalette = (spriteScanline[i].attr & 0x03) + 4;
+                front = (!(spriteScanline[i].attr & 0x20));
+                if (sprPixel) {
+                    if (i == 0)
+                        spriteZeroBeingRendered = true;
+                    break;
+                }
+            }
         }
     }
 
@@ -521,9 +660,23 @@ void PPU::clock()
             pixel = bgPixel;
             palette = bgPalette;
         }
+
+        if (spriteZeroHitPossible && spriteZeroBeingRendered) {
+            if (mask.renderBackground && mask.renderSprites) {
+                if (~(mask.renderBackgroundLeft | mask.renderSpritesLeft)) {
+                    if (cycle >= 9 && cycle < 258) {
+                        status.spriteZeroHit = 1;
+                    }
+                } else {
+                    if (cycle >= 1 && cycle < 258) {
+                        status.spriteZeroHit = 1;
+                    }
+                }
+            }
+        }
     }
 
-    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(palette, pixel));
+    sprScreen.SetPixel(cycle - 1, scanline, GetColorFromPaletteRam(palette, pixel));
 
     //if (((sprPixel & 0x03) && front) || (bgPixel))
     //    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(palette, pixel));
@@ -561,7 +714,7 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
         case OAMAddr: break; // write only
         case OAMData:
             //if (status.verticalBlank)
-            data = oam[oamAddr];
+            data = oamPointer[oamAddr];
             break;
         case PPUScroll: break; // write only
         case PPUAddr: break; // write only
@@ -607,7 +760,7 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
             case OAMAddr:
                 oamAddr = data; break;
             case OAMData:
-                oam[oamAddr] = data; break;
+                oamPointer[oamAddr] = data; break;
             case PPUScroll:
                 if (!flip) {
                     fineX = data & 0x07;

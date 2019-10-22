@@ -76,7 +76,7 @@ class PPU {
         uint8_t patterntable[2][0x1000];  // 2x4096 bytes - maps to Cartridge
         uint8_t nametable[2][0x400];      // 2x1024 bytes, aka NES internal VRAM
         uint8_t palette[32];
-        uint8_t oam[256];  // 64 sprites, 4 bytes each, 256 bytes total
+        //uint8_t oam[256];  // 64 sprites, 4 bytes each, 256 bytes total
         SpriteBuffer oamBuf[8], oamBuf2[8];
         //uint8_t oam2[32];  //  8 sprites, 4 bytes each, 32 bytes total
         
@@ -155,7 +155,20 @@ class PPU {
         uint16_t bgShifterAttribHi = 0;
 
         // Sprite data
+        struct ObjectAttributeEntry {
+            uint8_t y;
+            uint8_t id;
+            uint8_t attr;
+            uint8_t x;
+        } oam[64];
         uint8_t spriteNum = 0, oam2index = 0;
+        uint8_t spriteCount;
+        uint8_t spriteShifterLo[8];
+        uint8_t spriteShifterHi[8];
+        bool spriteZeroHitPossible = false;
+        bool spriteZeroBeingRendered = false;
+        uint8_t* oamPointer = (uint8_t*) oam;
+        ObjectAttributeEntry spriteScanline[8];
 
         // Sprite functions
         void evaluateSprites();
@@ -193,7 +206,7 @@ class PPU {
         // OAM stuff
         uint8_t oamAddr = 0;
         inline void oamWrite(uint8_t addr, uint8_t data) {
-            oam[addr] = data;
+            oamPointer[addr] = data;
         };
 
         // Clock

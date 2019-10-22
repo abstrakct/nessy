@@ -11,7 +11,8 @@ void Machine::cpuWrite(uint16_t addr, uint8_t data)
         ppu.cpuWrite(addr, data);
     } else if (addr == 0x4014) {
         dma_page = data;
-        dma_addr = 0x00;
+        dma_addr = ppu.oamAddr;
+        dma_count = 0;
         dma_transfer = true;
     } else if (addr == 0x4016 || addr == 0x4017) {
         controller[addr & 0x0001].write(data);
@@ -62,7 +63,8 @@ void Machine::clock()
                 } else {
                     ppu.oamWrite(dma_addr, dma_data);
                     dma_addr++;
-                    if (dma_addr == 0x00) {
+                    dma_count++;
+                    if (dma_count == 0x00) {
                         dma_transfer = false;
                         dma_dummy = true;
                     }

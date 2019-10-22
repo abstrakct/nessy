@@ -552,20 +552,14 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
         case PPUStatus:
             data = status.reg & 0xE0;
             data |= (vramBuffer & 0x1F);
-            // "simulate" sprite zero hits
-            //if (cycle & 0x08)
-            //    data |= 0x40;
-            //else
-            //    data &= ~0x40;
-
             status.verticalBlank = 0;
             //vramAddress.reg = 0;
             flip = false;
             break;
         case OAMAddr: break; // write only
         case OAMData:
-            if (status.verticalBlank)
-                data = oam[oamAddr];
+            //if (status.verticalBlank)
+            data = oam[oamAddr];
             break;
         case PPUScroll: break; // write only
         case PPUAddr: break; // write only
@@ -588,8 +582,6 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
 {
     //vramBuffer = data;
     if (addr >= 0x2000 && addr < 0x4000) {
-        // not sure about the next line... but it seems correct?
-        //reg[addr & 0x0007] = data;
         switch (addr & 0x0007) {
             case PPUCtrl: {
                 //auto old = ctrl;
@@ -644,25 +636,6 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
                 break;
             default: break;
         }
-    } else if (addr == 0x4014) {
-        // Transfer 256 bytes to OAM
-        // data = high byte of address
-        // so if data = FF then address is FF00 - FFFF etc
-        //printf("YO! OAM DMA IN DA HOUSE! data = %02X\n", data);
-        //
-        // TODO: takes 513-514 cycles
-        // TODO: should start at oamAddr, not 0 (?)
-        //for (int i = 0; i < 256; i++) {
-        //    //printf("oam dma address: %04x\n", ((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
-        //    oam[i] = nes->cpuRead(((uint16_t)data << 8) | ((uint8_t) (oamAddr + i)));
-        //}
-        //printf("\nOAMDMA written - transferred bytes from %04X\n", ((uint16_t)data << 8) | ((uint16_t) (oamAddr)));
-        //for (int i = 0; i < 256; i++) {
-        //    if (i && !(i % 8))
-        //        printf("\n");
-        //    printf("%02x ", oam[i]);
-        //}
-        //printf("\n");
     }
 }
 

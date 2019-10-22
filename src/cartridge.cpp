@@ -41,11 +41,11 @@ Cartridge::Cartridge(const std::string& filename)
 
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
 
-        if (header.mapper1 & 0x10) {
-            mirrorType = FOUR_SCREEN;
-        } else {
+        //if (header.mapper1 & 0x10) {
+        //    mirrorType = FOUR_SCREEN;
+        //} else {
             mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
-        }
+        //}
 
         // discover file format
         uint8_t filetype = 1;

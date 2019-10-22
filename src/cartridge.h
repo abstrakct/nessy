@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
-#include "mappers/mapper000.h"
+#include "mapper.h"
 
 class Cartridge {
     public:
@@ -14,12 +14,13 @@ class Cartridge {
         bool isValid() { return valid; }
 
         enum Mirror {
-            HORIZONTAL,
+            ONESCREEN_LO = 0,
+            ONESCREEN_HI,
             VERTICAL,
+            HORIZONTAL,
             FOUR_SCREEN,
-            ONESCREEN_LO,
-            ONESCREEN_HI
-        } mirror = HORIZONTAL;
+        };
+
 
         bool cpuRead(uint16_t addr, uint8_t &data);
         bool cpuWrite(uint16_t addr, uint8_t data);
@@ -27,12 +28,15 @@ class Cartridge {
         bool ppuRead(uint16_t addr, uint8_t &data);
         bool ppuWrite(uint16_t addr, uint8_t data);
 
+        Cartridge::Mirror getMirrorType();
+
     private:
-        // TODO: Mem -> Rom ?
         std::vector<uint8_t> prgROM;
+        std::vector<uint8_t> prgRAM;
         std::vector<uint8_t> chrROM;
-        int mapperNum, prgBanks, chrBanks;
+        int mapperNum, prgBanks, chrBanks, prgRamSize;
         bool valid = false;
 
         std::shared_ptr<Mapper> mapper;
+        Cartridge::Mirror mirrorType = HORIZONTAL;
 };

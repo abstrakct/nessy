@@ -375,20 +375,20 @@ class Nessy : public olc::PixelGameEngine
 
             if (GetKey(olc::Key::P).bPressed) (++selectedPalette) &= 0x07;
 
-            const int x = 10;
+            int x = 10;
 
             // Draw the NES Screen!
-            DrawSprite(x + 350,  10, &nes->ppu.GetScreen());
+            DrawSprite(x + 450,  10, &nes->ppu.GetScreen());
 
             if (cfgDisplayCpu)
                 DrawCPU(x + 720, 12);
 
             if (cfgDisplayDisasm)
-                DrawDisasm(x + 260, 382, 8);
+                DrawDisasm(x + 720, 150, 16);
 
             if (cfgDisplayRam) {
-                DrawRAM(x + 260,  12, 0x0000,    16, 16);
-                DrawRAM(x + 260, 192, ram2start, 16, 16);
+                DrawRAM(x + 10,  12, 0x0000,    16, 16);
+                DrawRAM(x + 10, 192, ram2start, 16, 16);
             }
 
             if (cfgDisplayHelp) {
@@ -398,6 +398,7 @@ class Nessy : public olc::PixelGameEngine
 
 
             if (cfgDisplayPPU) {
+                x += 450;
                 DrawSprite(x, 260, &nes->ppu.GetPatterntable(0, selectedPalette));
                 DrawSprite(x + 130, 260, &nes->ppu.GetPatterntable(1, selectedPalette));
                 //DrawSprite(x + 260, 260, &nes->ppu.GetOAM(selectedPalette));
@@ -493,11 +494,11 @@ int main(int argc, char *argv[])
     TheNES = make_shared<Machine>();
 
     printf("[ Constructing Interface ]\n");
-    Nessy test(TheNES, argv[1]);
+    Nessy ui(TheNES, argv[1]);
 
-    if (test.Construct(940, 480, 2, 2, false)) {
+    if (ui.Construct(958, 480, 2, 2, false)) {
         printf("[ Starting Emulation     ]\n");
-        test.Start();
+        ui.Start();
     }
 
     printf("\n");

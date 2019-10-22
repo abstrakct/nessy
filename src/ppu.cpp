@@ -158,19 +158,6 @@ olc::Sprite& PPU::GetOAM(uint8_t palette)
 {
     int tilex = 0, tiley = 0;
 
-    //uint8_t sprite = 1;
-    //uint8_t offset = sprite * 4;
-    //uint8_t y = oam[offset];
-    //uint8_t tile = oam[offset + 1];
-    //uint8_t attr = oam[offset + 2];
-    //uint8_t x = oam[offset + 3];
-
-    //printf("Sprite %d\n", sprite);
-    //printf("Y = %02X\n", y);
-    //printf("T = %02X\n", tile);
-    //printf("A = %02X\n", attr);
-    //printf("X = %02X\n\n", x);
-
     for (uint16_t s = 0; s < 64; s++) {
         bool sixteen = ctrl.spriteSize ? true : false;
         uint16_t offset = s * 4;
@@ -191,14 +178,9 @@ olc::Sprite& PPU::GetOAM(uint8_t palette)
 
         for (uint8_t row = 0; row < 8; row++) {
             tile = ppuRead(i * 0x1000 + tileNum + row);
-            //uint8_t tile1 = ppuRead(i * 0x1000 + tileNum + row + 1);
-            //uint8_t tile2 = ppuRead(i * 0x1000 + tileNum + row + 2);
-            //uint8_t tile3 = ppuRead(i * 0x1000 + tileNum + row + 3);
-            //uint8_t tile_hi = ppuRead(i * 0x1000 + tile + row + 8);
             for (uint8_t col = 0; col < 8; col++) {
                 uint8_t pixel = tile & 0x01; //(tile_lo & 0x01) + ((tile_hi & 0x01) << 1);
                 tile >>= 1;
-                //tile_hi >>= 1;
                 sprOAM.SetPixel(
                         (tilex * 8) + (7 - col),
                         (tiley * 8) + row,
@@ -487,7 +469,7 @@ void PPU::clock()
         bgPalette = (pal1 << 1) | pal0;
     }
 
-    sprScreen.SetPixel(cycle - 1, scanline, GetColorFromPaletteRam(bgPalette, bgPixel));
+    //sprScreen.SetPixel(cycle - 1, scanline, GetColorFromPaletteRam(bgPalette, bgPixel));
 
     // let's not care about priority yet, let's just draw sprites
     int x = cycle - 1;
@@ -519,8 +501,30 @@ void PPU::clock()
         }
     }
 
-    if (((sprPixel & 0x03) && front) || (bgPixel == 0))
-        sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(sprPalette, sprPixel));
+    uint8_t pixel = 0;
+    uint8_t palette = 0;
+    if (sprPixel == 0 && bgPixel == 0) {
+        pixel = 0x00;
+        palette = 0x00;
+    } else if (sprPixel > 0 && bgPixel == 0) {
+        pixel = sprPixel;
+        palette = sprPalette;
+    } else if (sprPixel == 0 && bgPixel > 0) {
+        pixel = bgPixel;
+        palette = bgPalette;
+    } else if (sprPixel > 0 && bgPixel > 0) {
+        if (front) {
+            pixel = sprPixel;
+            palette = sprPalette;
+        } else {
+            pixel = bgPixel;
+            palette = bgPalette;
+        }
+    }
+
+    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(palette, pixel));
+    //if (((sprPixel & 0x03) && front) || (bgPixel == 0))
+    //    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(sprPalette, sprPixel));
 
     cycle++;
 
@@ -682,13 +686,13 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Read from nametables
-        if (cart->mirror == Cartridge::HORIZONTAL) {
+        if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
             if (addr < 0x2800)
                 // probably data -> vramBuffer
                 data = nametable[0][addr & 0x03FF];
             else
                 data = nametable[1][addr & 0x03FF];
-        } else if (cart->mirror == Cartridge::VERTICAL) {
+        } else if (cart->getMirrorType() == Cartridge::VERTICAL) {
             if ((addr & 0x07FF) >= 0x400)
                 data = nametable[1][addr & 0x03FF];
             else
@@ -729,12 +733,12 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Write to nametables
-        if (cart->mirror == Cartridge::HORIZONTAL) {
+        if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
             if (addr < 0x2800)
                 nametable[0][addr & 0x03FF] = data;
             else
                 nametable[1][addr & 0x03FF] = data;
-        } else if (cart->mirror == Cartridge::VERTICAL) {
+        } else if (cart->getMirrorType() == Cartridge::VERTICAL) {
             if ((addr & 0x07FF) >= 0x400)
                 nametable[1][addr & 0x03FF] = data;
             else

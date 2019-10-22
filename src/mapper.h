@@ -2,10 +2,9 @@
 #pragma once
 #include <cstdint>
 
-
 #define MI_WORKING     0
-#define MI_NOT_WORKING 1
-#define MI_NOT_USABLE  2
+#define MI_DEVELOPMENT 1
+#define MI_NOT_WORKING 2
 
 class Mapper {
     public:
@@ -21,6 +20,8 @@ class Mapper {
         virtual bool ppuReadData(uint16_t addr, uint8_t &data) = 0;
         virtual bool ppuWrite(uint16_t addr, uint32_t &mapped_addr) = 0;
         virtual bool ppuWriteData(uint16_t addr, uint8_t data) = 0;
+
+        virtual bool getMirrorType(int &data) = 0;
 
         // What is the status of the emulator's implementation of this mapper?
         virtual int implementationStatus() = 0;

@@ -42,9 +42,9 @@ Cartridge::Cartridge(const std::string& filename)
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
 
         if (header.mapper1 & 0x10) {
-            mirror = FOUR_SCREEN;
+            mirrorType = FOUR_SCREEN;
         } else {
-            mirror = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+            mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
         }
 
         // discover file format
@@ -58,6 +58,9 @@ Cartridge::Cartridge(const std::string& filename)
             chrBanks = header.chr_rom_chunks;
             chrROM.resize(chrBanks * 8192);
             ifs.read((char*)chrROM.data(), chrROM.size());
+
+            prgRamSize = header.prg_ram_size ? (header.prg_ram_size * 0x2000) : 0x2000;
+            prgRAM.resize(prgRamSize);
         } else if (filetype == 2) {
         }
 
@@ -84,8 +87,12 @@ Cartridge::Cartridge(const std::string& filename)
         }
 
         if (mapper && mapper->implementationStatus()) {
-            printf("Error: Emulation of mapper %d is %s\n", mapperNum, mapper->implementationStatus() == 1 ? "not working" : "not usable");
-            exit(1);
+            if (mapper->implementationStatus() == MI_DEVELOPMENT) {
+                printf("WARNING: Emulation of mapper %d is IN DEVELOPMENT!\n", mapperNum);
+            } else {
+                printf("Error: Emulation of mapper %d is not working\n", mapperNum);
+                exit(1);
+            }
         }
 
         ifs.close();
@@ -95,13 +102,14 @@ Cartridge::Cartridge(const std::string& filename)
             printf("\tFilename:  %s\n", filename.c_str());
             printf("\tMapper:    %d\n", mapperNum);
             printf("\tPRG ROM:   %d x 16 KB [0x%06X bytes]\n", prgBanks, prgBanks * 0x4000);
-            printf("\tCHR ROM:   %d x  8 KB [0x%06X bytes]\n", chrBanks, chrBanks * 0x0000);
+            printf("\tCHR ROM:   %d x  8 KB [0x%06X bytes]\n", chrBanks, chrBanks * 0x2000);
+            printf("\tPRG RAM:   0x%04X bytes\n", prgRamSize);
             printf("\tMirroring: ");
-            if (mirror == HORIZONTAL)
+            if (mirrorType == HORIZONTAL)
                 printf("Horizontal");
-            else if (mirror == VERTICAL)
+            else if (mirrorType == VERTICAL)
                 printf("Vertical");
-            else if (mirror == FOUR_SCREEN)
+            else if (mirrorType == FOUR_SCREEN)
                 printf("Four Screen");
             else
                 printf("????");
@@ -113,6 +121,16 @@ Cartridge::Cartridge(const std::string& filename)
 
 Cartridge::~Cartridge()
 {
+}
+
+Cartridge::Mirror Cartridge::getMirrorType()
+{
+    int tmp;
+    if (mapper->getMirrorType(tmp)) {
+        mirrorType = (Cartridge::Mirror) tmp;
+    }
+
+    return mirrorType;
 }
 
 bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
@@ -130,7 +148,9 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)
     uint32_t mapped_addr = 0;
     //printf("hello from Cartridge::cpuWrite! addr = 0x%04x  data = 0x%02x\n", addr, data);
     if (mapper->cpuWrite(addr, mapped_addr)) {
-        prgROM[mapped_addr] = data;
+        //printf("write to PRG RAM  %04X \n", mapped_addr);
+        // TODO: check mapped_addr is within bounds
+        prgRAM[mapped_addr] = data;
         return true;
     } else if (mapper->cpuWriteData(addr, data)) {
         return true;

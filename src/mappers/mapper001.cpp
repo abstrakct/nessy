@@ -22,8 +22,8 @@ bool Mapper001::getMirrorType(int &data)
 
 bool Mapper001::cpuRead(uint16_t addr, uint32_t &mapped_addr)
 {
-    uint8_t mode = reg[0] & 0b1100;
-    if (mode == 0xC) {
+    uint8_t mode = (reg[0] & 0b1100) >> 2;
+    if (mode == 0x3) {
         // Highest bank fixed, swapable bank at 0x8000
         if (addr >= 0x8000 && addr < 0xC000) {
             mapped_addr = (addr & 0x7FFF) + ((reg[3] & 0xF) * 0x4000);
@@ -34,7 +34,7 @@ bool Mapper001::cpuRead(uint16_t addr, uint32_t &mapped_addr)
             //printf("addr: %04X\tmapped_addr: %05X\n", addr, mapped_addr);
             return true;
         }
-    } else if (mode == 0x8) {
+    } else if (mode == 0x2) {
         // Lowest bank fixed, swapable bank at 0xC000
         if (addr >= 0x8000 && addr < 0xC000) {
             mapped_addr =  addr - 0x8000;

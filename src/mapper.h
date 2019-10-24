@@ -11,7 +11,7 @@ class Mapper {
         Mapper(uint8_t p, uint8_t c);
         virtual ~Mapper();
 
-        virtual bool cpuRead(uint16_t addr, uint32_t &mapped_addr) = 0;
+        virtual bool cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram) = 0;
         virtual bool cpuWrite(uint16_t addr, uint32_t &mapped_addr) = 0;
         virtual bool cpuWriteData(uint16_t addr, uint8_t data) = 0;
         // ppu...Data could instead just use the ppu... methods and map the

@@ -7,7 +7,7 @@ class Mapper007 : public Mapper {
         Mapper007(uint8_t p, uint8_t c);
         ~Mapper007();
 
-        bool cpuRead(uint16_t addr, uint32_t &mapped_addr) override;
+        bool cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram) override;
         bool cpuWrite(uint16_t addr, uint32_t &mapped_addr) override;
         bool cpuWriteData(uint16_t addr, uint8_t data) override;
         bool ppuRead(uint16_t addr, uint32_t &mapped_addr) override;

@@ -9,8 +9,9 @@ Mapper000::~Mapper000()
 {
 }
 
-bool Mapper000::cpuRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper000::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
+    prgram = false;
     if (addr >= 0x8000) {
         mapped_addr = addr & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
         return true;

@@ -52,11 +52,11 @@ Cartridge::Cartridge(const std::string& filename)
         if (filetype == 0) {
         } else if (filetype == 1) {
             prgBanks = header.prg_rom_chunks;
-            prgROM.resize(prgBanks * 16384);
+            prgROM.resize(prgBanks * 0x4000); // 16384
             ifs.read((char*)prgROM.data(), prgROM.size());
 
             chrBanks = header.chr_rom_chunks;
-            chrROM.resize(chrBanks * 8192);
+            chrROM.resize(chrBanks * 0x2000); // 8192
             ifs.read((char*)chrROM.data(), chrROM.size());
 
             prgRamSize = header.prg_ram_size ? (header.prg_ram_size * 0x2000) : 0x2000;
@@ -136,8 +136,12 @@ Cartridge::Mirror Cartridge::getMirrorType()
 bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
 {
     uint32_t mapped_addr = 0;
-    if (mapper->cpuRead(addr, mapped_addr)) {
-        data = prgROM[mapped_addr];
+    bool prgram = false;
+    if (mapper->cpuRead(addr, mapped_addr, prgram)) {
+        if (prgram)
+            data = prgRAM[mapped_addr];
+        else
+            data = prgROM[mapped_addr];
         return true;
     } else
         return false;

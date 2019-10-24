@@ -32,8 +32,9 @@ class Cartridge {
 
     private:
         std::vector<uint8_t> prgROM;
-        std::vector<uint8_t> prgRAM;
         std::vector<uint8_t> chrROM;
+        std::vector<uint8_t> prgRAM;
+
         int mapperNum, prgBanks, chrBanks, prgRamSize;
         bool valid = false;
 

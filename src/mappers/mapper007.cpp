@@ -22,8 +22,9 @@ Mapper007::~Mapper007()
 {
 }
 
-bool Mapper007::cpuRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper007::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
+    prgram = false;
     if (addr >= 0x8000) {
         mapped_addr = (addr - 0x8000) + (selectedBank * 0x8000);
         return true;

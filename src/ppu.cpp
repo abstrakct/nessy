@@ -705,8 +705,7 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
         case PPUCtrl: break; // write only
         case PPUMask: break; // write only
         case PPUStatus:
-            data = status.reg & 0xE0;
-            data |= (vramBuffer & 0x1F);
+            data = (status.reg & 0xE0) | (vramBuffer & 0x1F);
             status.verticalBlank = 0;
             //vramAddress.reg = 0;
             flip = false;
@@ -722,8 +721,10 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
             // Read data
             data = vramBuffer;
             vramBuffer = this->ppuRead(vramAddress.reg);
-            if (vramAddress.reg >= 0x3F00)
+            if (vramAddress.reg >= 0x3F00 && vramAddress.reg < 0x4000) {
                 data = vramBuffer;
+                vramBuffer = ppuRead(vramAddress.reg - 0x1000);
+            }
 
             // Increment address
             vramAddress.reg += vramInc;
@@ -735,7 +736,7 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
 
 void PPU::cpuWrite(uint16_t addr, uint8_t data)
 {
-    //vramBuffer = data;
+    vramBuffer = data;
     if (addr >= 0x2000 && addr < 0x4000) {
         switch (addr & 0x0007) {
             case PPUCtrl: {
@@ -805,7 +806,6 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
     //if (addr <= 0x3EFF)
     //    data = vramBuffer;
 
-    // TODO: mapper 2 is only partially working now........
     if (cart->ppuRead(addr, data)) {
         //data = vramBuffer;
         //sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);

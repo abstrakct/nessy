@@ -20,8 +20,16 @@ bool Mapper001::getMirrorType(int &data)
     return true;
 }
 
-bool Mapper001::cpuRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper001::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
+    // PRG RAM?
+    if (addr >= 0x6000 && addr < 0x8000) {
+        mapped_addr = addr - 0x6000;
+        prgram = true;
+        return true;
+    }
+
+    prgram = false;
     uint8_t mode = (reg[0] & 0b1100) >> 2;
     if (mode == 0x3) {
         // Highest bank fixed, swapable bank at 0x8000
@@ -76,7 +84,7 @@ bool Mapper001::cpuWriteData(uint16_t addr, uint8_t data)
             reg[0] |= 0x0C;
             // apply()
         } else {
-            tmpreg = ((data & 0x01) << 4) | (tmpreg >> 1);
+            tmpreg = ((data & 1) << 4) | (tmpreg >> 1);
             if (++writes == 5) {
                 //printf("[Mapper001] reg[%d] set to %02X (%02X)\n", (addr >> 13) & 0b11, tmpreg, (tmpreg & 0xF) >> 1);
                 reg[(addr >> 13) & 0b11] = tmpreg;
@@ -99,8 +107,8 @@ bool Mapper001::ppuRead(uint16_t addr, uint32_t &mapped_addr)
         if (addr < 0x2000) {
             if (fourKMode) {
                 if (addr < 0x1000)
-                    mapped_addr = (addr & 0x1FFF) + (reg[1] * 0x1000);
-                else if (addr < 0x2000)
+                    mapped_addr = (addr & 0x0FFF) + (reg[1] * 0x1000);
+                if (addr >= 0x1000 && addr < 0x2000)
                     mapped_addr = (addr & 0x0FFF) + (reg[2] * 0x1000);
             } else {
                 mapped_addr = (addr & 0x1FFF) + ((reg[1] >> 1) * 0x2000);

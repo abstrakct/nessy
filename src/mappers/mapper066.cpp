@@ -13,8 +13,9 @@ Mapper066::~Mapper066()
 {
 }
 
-bool Mapper066::cpuRead(uint16_t addr, uint32_t &mapped_addr)
+bool Mapper066::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
+    prgram = false;
     if (addr >= 0x8000) {
         mapped_addr = (addr - 0x8000) + (selectedPrgBank * 0x8000);
         return true;

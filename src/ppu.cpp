@@ -841,17 +841,28 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Read from nametables
-        if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
+        uint8_t mirrortype = cart->getMirrorType();
+        if (mirrortype == Cartridge::HORIZONTAL) {
+            //printf("horizontal mirroring\n");
             if (addr < 0x2800)
                 // probably data -> vramBuffer
                 data = nametable[0][addr & 0x03FF];
             else
                 data = nametable[1][addr & 0x03FF];
-        } else if (cart->getMirrorType() == Cartridge::VERTICAL) {
+        } else if (mirrortype == Cartridge::VERTICAL) {
+            //printf("vertical mirroring\n");
             if ((addr & 0x07FF) >= 0x400)
                 data = nametable[1][addr & 0x03FF];
             else
                 data = nametable[0][addr & 0x03FF];
+        } else if (mirrortype == Cartridge::ONESCREEN_LO) {
+            // One-screen mirroring: All nametables refer to the same memory at any given time, and the mapper directly manipulates CIRAM address bit 10 (e.g. many Rare games using AxROM)
+            data = nametable[0][addr & 0x03FF];
+        } else if (mirrortype == Cartridge::ONESCREEN_HI) {
+            // One-screen mirroring: All nametables refer to the same memory at any given time, and the mapper directly manipulates CIRAM address bit 10 (e.g. many Rare games using AxROM)
+            data = nametable[1][addr & 0x03FF];
+        } else {
+            printf("WARNING unsupported mirroring mode %d!\n", cart->getMirrorType());
         }
     } else if (addr >= 0x3F00 && addr < 0x4000) {
         addr &= 0x001F;

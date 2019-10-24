@@ -36,11 +36,12 @@ class Cartridge {
         void reset();
 
     private:
-        std::vector<uint8_t> prgROM;
-        std::vector<uint8_t> chrROM;
+        //std::vector<uint8_t> prgROM;
+        //std::vector<uint8_t> chrROM;
         std::vector<uint8_t> prgRAM;
         //std::map<uint16_t, std::vector<uint8_t>> prgROMBanks;
-        std::shared_ptr<BankedMemory> prgROMBanks;
+        std::shared_ptr<BankedMemory> prgROM;
+        std::shared_ptr<BankedMemory> chrROM;
 
         int mapperNum, prgBanks, chrBanks, prgRamSize;
         uint16_t firstBank, lastBank;

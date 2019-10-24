@@ -24,11 +24,13 @@ void BankedMemory::addBank(uint16_t n, std::vector<uint8_t> _data)
     bankData[n] = _data;
 }
 
-void BankedMemory::setBank(uint16_t startAddress, uint16_t bankNum)
+void BankedMemory::setBank(uint16_t startAddress, uint16_t bankNum, bool mirror)
 {
-    for (auto &it : bank) {
-        if (it.second.first == startAddress && it.second.second == (startAddress + bankSize - 1)) {
-            it.second = { 0xFFFFFFFF, 0xFFFFFFFF };
+    if (!mirror) {
+        for (auto &it : bank) {
+            if (it.second.first == startAddress && it.second.second == (startAddress + bankSize - 1)) {
+                it.second = { 0xFFFFFFFF, 0xFFFFFFFF };
+            }
         }
     }
     bank[bankNum] = { startAddress, startAddress + bankSize - 1 };

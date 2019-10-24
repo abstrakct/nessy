@@ -21,6 +21,11 @@ void Mapper001::reset()
         prgROM->setBank(0x8000, 0);
         prgROM->setBank(0xC000, lastBank);
     }
+
+    if (chrROM) {
+        chrROM->setBank(0x0000, 0);
+        chrROM->setBank(0x0000, 1);
+    }
 }
 
 void Mapper001::apply()
@@ -34,11 +39,21 @@ void Mapper001::apply()
         prgROM->setBank(0x8000, 0);
         prgROM->setBank(0xC000, reg[3] & 0xF);
     } else if (mode < 0x2) {
-        prgROM->setBank(0x8000, reg[3] >> 1);
+        prgROM->setBank(0x8000, (reg[3] >> 1) + 0);
         prgROM->setBank(0xC000, (reg[3] >> 1) + 1);
     }
 
     // CHR ROM
+    uint8_t fourKMode = (reg[0] & 0x10);
+    if (fourKMode) {
+        // Switch 2 separate 4 KB banks
+        chrROM->setBank(0x0000, reg[1] & 0x1F);
+        chrROM->setBank(0x1000, reg[2] & 0x1F);
+    } else {
+        // Switch 1 8 KB bank
+        chrROM->setBank(0x0000, ((reg[1] >> 1) << 1) + 0);
+        chrROM->setBank(0x0000, ((reg[1] >> 1) << 1) + 1);
+    }
 }
 
 bool Mapper001::getMirrorType(int &data)
@@ -59,45 +74,7 @@ bool Mapper001::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
         return true;
     }
     
-    // goal:
-    //
-    // prgROM->setBank(0x8000, 2)
-    // prgROM[0x8002]
-    // prgROM->read(addr)
-
     prgram = false;
-    //uint8_t mode = (reg[0] & 0b1100) >> 2;
-    //if (mode == 0x3) {
-    //    // Highest bank fixed, swapable bank at 0x8000
-    //    if (addr >= 0x8000 && addr < 0xC000) {
-    //        mapped_addr = (addr & 0x7FFF) + ((reg[3] & 0xF) * 0x4000);
-    //        //printf("addr: %04X\tmapped_addr: %05X\n", addr, mapped_addr);
-    //        return true;
-    //    } else if (addr >= 0xC000) {
-    //        mapped_addr = (addr - 0xC000) + lastBankOffset;
-    //        //printf("addr: %04X\tmapped_addr: %05X\n", addr, mapped_addr);
-    //        return true;
-    //    }
-    //} else if (mode == 0x2) {
-    //    // Lowest bank fixed, swapable bank at 0xC000
-    //    if (addr >= 0x8000 && addr < 0xC000) {
-    //        mapped_addr =  addr - 0x8000;
-    //        return true;
-    //    } else if (addr >= 0xC000) {
-    //        mapped_addr = (addr & 0x3FFF) + ((reg[3] & 0xF) * 0x4000);
-    //        return true;
-    //    }
-    //} else if (mode == 0x0 || mode == 0x1) {
-    //    // Swapable bank at 0x8000, size 0x8000
-    //    if (addr >= 0x8000) {
-    //        mapped_addr = (addr - 0x8000) + (((reg[3] & 0xF) >> 1) * 0x8000);
-    //        //printf("addr = %04X\tmapped_addr = %05X\n", addr, mapped_addr);
-    //        return true;
-    //    }
-    //} else {
-    //    printf("[Mapper001] WARNING unimplemented mode %X\n", mode);
-    //    return false;
-    //}
     return false;
 }
 
@@ -141,14 +118,14 @@ bool Mapper001::ppuRead(uint16_t addr, uint32_t &mapped_addr)
     uint8_t fourKMode = (reg[0] & 0x10) >> 4;
     if (chrBanks > 0) {
         if (addr < 0x2000) {
-            if (fourKMode) {
-                if (addr < 0x1000)
-                    mapped_addr = (addr & 0x0FFF) + (reg[1] * 0x1000);
-                if (addr >= 0x1000 && addr < 0x2000)
-                    mapped_addr = (addr & 0x0FFF) + (reg[2] * 0x1000);
-            } else {
-                mapped_addr = (addr & 0x1FFF) + ((reg[1] >> 1) * 0x2000);
-            }
+            //if (fourKMode) {
+            //    if (addr < 0x1000)
+            //        mapped_addr = (addr & 0x0FFF) + (reg[1] * 0x1000);
+            //    if (addr >= 0x1000 && addr < 0x2000)
+            //        mapped_addr = (addr & 0x0FFF) + (reg[2] * 0x1000);
+            //} else {
+            //    mapped_addr = (addr & 0x1FFF) + ((reg[1] >> 1) * 0x2000);
+            //}
             return true;
         }
     }

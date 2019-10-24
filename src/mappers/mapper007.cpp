@@ -22,11 +22,23 @@ Mapper007::~Mapper007()
 {
 }
 
+void Mapper007::reset()
+{
+    prgROM->setBank(0x8000, 0);
+    prgROM->setBank(0xC000, 1);
+}
+
+void Mapper007::apply()
+{
+    prgROM->setBank(0x8000, prgBank * 2);
+    prgROM->setBank(0xC000, (prgBank * 2) + 1);
+}
+
 bool Mapper007::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
     if (addr >= 0x8000) {
-        mapped_addr = (addr - 0x8000) + (selectedBank * 0x8000);
+        //mapped_addr = (addr - 0x8000) + (prgBank * 0x8000);
         return true;
     }
     return false;
@@ -40,8 +52,11 @@ bool Mapper007::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper007::cpuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x8000) {
-        selectedBank = data & 0b00000111;  // last 3 bits select bank. Could also be written as & 0x07
-        vramBank     = (data & 0b00010000) >> 4;
+        prgBank  =  data & 0b00000111;  // last 3 bits select bank. Could also be written as & 0x07
+        vramBank = (data & 0b00010000) >> 4;
+
+        apply();
+
         //printf("Mapper007: write %02x to %04x   selectedBank = %d   vramBank = %d\n", data, addr, selectedBank, vramBank);
         return true;
     }

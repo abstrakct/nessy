@@ -36,10 +36,15 @@ class Mapper {
             prgROM = p;
         };
 
+        void setChrROM(std::shared_ptr<BankedMemory> p) {
+            chrROM = p;
+        };
+
         // Link back to the Cartridge
         //std::shared_ptr<Cartridge> cart;
     protected:
         uint8_t prgBanks = 0;
         uint8_t chrBanks = 0;
         std::shared_ptr<BankedMemory> prgROM;
+        std::shared_ptr<BankedMemory> chrROM;
 };

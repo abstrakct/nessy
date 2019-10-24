@@ -18,8 +18,10 @@ class BankedMemory {
         void addBank(uint16_t n, std::vector<uint8_t> data);
 
         // Associate a bank with a memory region
-        void setBank(uint16_t startAddress, uint16_t bankNum);
+        void setBank(uint16_t startAddress, uint16_t bankNum, bool mirror = false);
 
+        // Change bank size
+        
         // Read a byte
         uint8_t read(uint16_t addr);
 

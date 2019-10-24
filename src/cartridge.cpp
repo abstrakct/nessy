@@ -52,31 +52,32 @@ Cartridge::Cartridge(const std::string& filename)
         if (filetype == 0) {
         } else if (filetype == 1) {
             prgBanks = header.prg_rom_chunks;
-            prgROM.resize(prgBanks * 0x4000); // 16384
-            ifs.read((char*)prgROM.data(), prgROM.size());
-
-            ifs.seekg(16, std::ios_base::beg);
-            if (header.mapper1 & 0x04)   // then 512 bytes of trainer data
-                ifs.seekg(512, std::ios_base::cur);
-
-            
-            // THE NEW MEMORY MANAGEMENT STUFF
-            prgBanks = header.prg_rom_chunks;
+            chrBanks = header.chr_rom_chunks;
             firstBank = 0;
             lastBank = prgBanks - 1;
 
-            prgROMBanks = std::make_shared<BankedMemory>(prgBanks, 0x4000);
+            prgROM = std::make_shared<BankedMemory>(prgBanks, 0x4000);
 
             for (int i = 0; i < prgBanks; i++) {
                 std::vector<uint8_t> tmp;
                 tmp.resize(0x4000);
                 ifs.read((char*)tmp.data(), 0x4000);
-                prgROMBanks->addBank(i, tmp);
+                prgROM->addBank(i, tmp);
+
+                // Special "workaround" for mapper 0 games with only 1 bank of prg rom
+                if (prgBanks == 1 && mapperNum == 0) {
+                    prgROM->addBank(1, tmp);
+                }
             }
 
-            chrBanks = header.chr_rom_chunks;
-            chrROM.resize(chrBanks * 0x2000); // 8192
-            ifs.read((char*)chrROM.data(), chrROM.size());
+            chrROM = std::make_shared<BankedMemory>(chrBanks, 0x1000);
+
+            for (int i = 0; i < (chrBanks*2); i++) {
+                std::vector<uint8_t> tmp;
+                tmp.resize(0x1000);
+                ifs.read((char*)tmp.data(), 0x1000);
+                chrROM->addBank(i, tmp);
+            }
 
             prgRamSize = header.prg_ram_size ? (header.prg_ram_size * 0x2000) : 0x2000;
             prgRAM.resize(prgRamSize);
@@ -106,7 +107,8 @@ Cartridge::Cartridge(const std::string& filename)
                 break;
         }
 
-        mapper->setPrgROM(prgROMBanks);
+        mapper->setPrgROM(prgROM);
+        mapper->setChrROM(chrROM);
         mapper->reset();
 
         if (mapper && mapper->implementationStatus()) {
@@ -170,7 +172,7 @@ bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
         if (prgram) {
             data = prgRAM[mapped_addr];
         } else {
-            data = prgROMBanks->read(addr);
+            data = prgROM->read(addr);
             //printf("addr: %04X  data: %02X\n", addr, data);
         }
         return true;
@@ -198,7 +200,7 @@ bool Cartridge::ppuRead(uint16_t addr, uint8_t &data)
 {
     uint32_t mapped_addr = 0;
     if (mapper->ppuRead(addr, mapped_addr)) {
-        data = chrROM[mapped_addr];
+        data = chrROM->read(addr);
         return true;
     } else if (mapper->ppuReadData(addr, data)) {
         return true;
@@ -211,8 +213,8 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
 {
     uint32_t mapped_addr = 0;
     if (mapper->ppuWrite(addr, mapped_addr)) {
-        printf("writing to CHR ROM?!?! addr = %04X  data = %02X\n", addr, data);
-        chrROM[mapped_addr] = data;
+        //printf("writing to CHR ROM?!?! addr = %04X  data = %02X\n", addr, data);
+        //chrROM[mapped_addr] = data;
         return true;
     } else if(mapper->ppuWriteData(addr, data)) {
         return true;

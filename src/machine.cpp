@@ -43,6 +43,7 @@ void Machine::reset()
     // TODO: reset mapper!!
     cpu.reset();
     ppu.reset();
+    cart->reset();
     systemClockCounter = 0;
 }
 

@@ -3,7 +3,10 @@
 #include <string>
 #include <cstdint>
 #include <vector>
+#include <map>
 #include <memory>
+
+#include "memory.h"
 #include "mapper.h"
 
 class Cartridge {
@@ -30,12 +33,17 @@ class Cartridge {
 
         Cartridge::Mirror getMirrorType();
 
+        void reset();
+
     private:
         std::vector<uint8_t> prgROM;
         std::vector<uint8_t> chrROM;
         std::vector<uint8_t> prgRAM;
+        //std::map<uint16_t, std::vector<uint8_t>> prgROMBanks;
+        std::shared_ptr<BankedMemory> prgROMBanks;
 
         int mapperNum, prgBanks, chrBanks, prgRamSize;
+        uint16_t firstBank, lastBank;
         bool valid = false;
 
         std::shared_ptr<Mapper> mapper;

@@ -55,6 +55,25 @@ Cartridge::Cartridge(const std::string& filename)
             prgROM.resize(prgBanks * 0x4000); // 16384
             ifs.read((char*)prgROM.data(), prgROM.size());
 
+            ifs.seekg(16, std::ios_base::beg);
+            if (header.mapper1 & 0x04)   // then 512 bytes of trainer data
+                ifs.seekg(512, std::ios_base::cur);
+
+            
+            // THE NEW MEMORY MANAGEMENT STUFF
+            prgBanks = header.prg_rom_chunks;
+            firstBank = 0;
+            lastBank = prgBanks - 1;
+
+            prgROMBanks = std::make_shared<BankedMemory>(prgBanks, 0x4000);
+
+            for (int i = 0; i < prgBanks; i++) {
+                std::vector<uint8_t> tmp;
+                tmp.resize(0x4000);
+                ifs.read((char*)tmp.data(), 0x4000);
+                prgROMBanks->addBank(i, tmp);
+            }
+
             chrBanks = header.chr_rom_chunks;
             chrROM.resize(chrBanks * 0x2000); // 8192
             ifs.read((char*)chrROM.data(), chrROM.size());
@@ -63,6 +82,7 @@ Cartridge::Cartridge(const std::string& filename)
             prgRAM.resize(prgRamSize);
         } else if (filetype == 2) {
         }
+        
 
         valid = true;
 
@@ -85,6 +105,9 @@ Cartridge::Cartridge(const std::string& filename)
                 valid = false;
                 break;
         }
+
+        mapper->setPrgROM(prgROMBanks);
+        mapper->reset();
 
         if (mapper && mapper->implementationStatus()) {
             if (mapper->implementationStatus() == MI_DEVELOPMENT) {
@@ -133,18 +156,27 @@ Cartridge::Mirror Cartridge::getMirrorType()
     return mirrorType;
 }
 
+void Cartridge::reset()
+{
+    mapper->reset();
+}
+
 bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)
 {
     uint32_t mapped_addr = 0;
     bool prgram = false;
+
     if (mapper->cpuRead(addr, mapped_addr, prgram)) {
-        if (prgram)
+        if (prgram) {
             data = prgRAM[mapped_addr];
-        else
-            data = prgROM[mapped_addr];
+        } else {
+            data = prgROMBanks->read(addr);
+            //printf("addr: %04X  data: %02X\n", addr, data);
+        }
         return true;
-    } else
-        return false;
+    }
+
+    return false;
 }
 
 bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)

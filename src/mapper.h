@@ -1,6 +1,10 @@
 
 #pragma once
+
+#include <memory>
 #include <cstdint>
+
+#include "memory.h"
 
 #define MI_WORKING     0
 #define MI_DEVELOPMENT 1
@@ -21,14 +25,21 @@ class Mapper {
         virtual bool ppuWrite(uint16_t addr, uint32_t &mapped_addr) = 0;
         virtual bool ppuWriteData(uint16_t addr, uint8_t data) = 0;
 
+        virtual void reset() = 0;  // Reset anything in the mapper
+
         virtual bool getMirrorType(int &data) = 0;
 
         // What is the status of the emulator's implementation of this mapper?
         virtual int implementationStatus() = 0;
+
+        void setPrgROM(std::shared_ptr<BankedMemory> p) {
+            prgROM = p;
+        };
 
         // Link back to the Cartridge
         //std::shared_ptr<Cartridge> cart;
     protected:
         uint8_t prgBanks = 0;
         uint8_t chrBanks = 0;
+        std::shared_ptr<BankedMemory> prgROM;
 };

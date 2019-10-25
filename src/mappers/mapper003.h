@@ -3,6 +3,12 @@
 #include "../mapper.h"
 
 class Mapper003 : public Mapper {
+    private:
+        uint8_t chrBank  = 0;
+        std::vector<uint8_t> vram;
+        std::vector<std::string> infoString = { };
+        bool updateInfo = true;
+
     public:
         Mapper003(uint8_t p, uint8_t c);
         ~Mapper003();
@@ -21,10 +27,6 @@ class Mapper003 : public Mapper {
         std::vector<std::string> getInfoStrings() override;
 
         void apply();
-    private:
-        uint8_t chrBank  = 0;
-        std::vector<uint8_t> vram;
-        std::vector<std::string> infoString = { };
 };
 
 

@@ -803,9 +803,6 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 
     addr &= 0x3FFF;
 
-    //if (addr <= 0x3EFF)
-    //    data = vramBuffer;
-
     if (cart->ppuRead(addr, data)) {
         //data = vramBuffer;
         //sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);
@@ -814,30 +811,6 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         // If the cartridge can't handle this address
         data = patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF];
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
-        //addr &= 0x0FFF;
-        //if (cart->getMirrorType() == Cartridge::VERTICAL) {
-        //    if (addr <= 0x03FF)
-        //        data = nametable[0][addr & 0x03FF];
-        //    else if (addr <= 0x07FF)
-        //        data = nametable[1][addr & 0x03FF];
-        //    else if (addr <= 0x0BFF)
-        //        data = nametable[0][addr & 0x03FF];
-        //    else if (addr <= 0x0FFF)
-        //        data = nametable[1][addr & 0x03FF];
-        //} else if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
-        //    if (addr <= 0x03FF)
-        //        data = nametable[0][addr & 0x03FF];
-        //    else if (addr <= 0x07FF)
-        //        data = nametable[0][addr & 0x03FF];
-        //    else if (addr <= 0x0BFF)
-        //        data = nametable[1][addr & 0x03FF];
-        //    else if (addr <= 0x0FFF)
-        //        data = nametable[1][addr & 0x03FF];
-        //}
-
-
-
-
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Read from nametables
@@ -896,27 +869,6 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
     } else if (addr < 0x2000) {
         patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF] = data;
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
-        //addr &= 0x0FFF;
-        //if (cart->getMirrorType() == Cartridge::VERTICAL) {
-        //    if (addr <= 0x03FF)
-        //        nametable[0][addr & 0x03FF] = data;
-        //    else if (addr <= 0x07FF)
-        //        nametable[1][addr & 0x03FF] = data;
-        //    else if (addr <= 0x0BFF)
-        //        nametable[0][addr & 0x03FF] = data;
-        //    else if (addr <= 0x0FFF)
-        //        nametable[1][addr & 0x03FF] = data;
-        //} else if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
-        //    if (addr <= 0x03FF)
-        //        nametable[0][addr & 0x03FF] = data;
-        //    else if (addr <= 0x07FF)
-        //        nametable[0][addr & 0x03FF] = data;
-        //    else if (addr <= 0x0BFF)
-        //        nametable[1][addr & 0x03FF] = data;
-        //    else if (addr <= 0x0FFF)
-        //        nametable[1][addr & 0x03FF] = data;
-        //}
-
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Write to nametables

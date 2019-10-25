@@ -691,8 +691,8 @@ uint8_t CPU::BIT()
     fetch();
     temp = a & operand;
     SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N, temp & 0x80);
-    SetFlag(V, temp & 0x40);
+    SetFlag(N, operand & 0x80);
+    SetFlag(V, operand & 0x40);
 
     return 0;
 }
@@ -969,7 +969,7 @@ uint8_t CPU::LSR()
 uint8_t CPU::ORA()
 {
     fetch();
-    a = a | operand;
+    a |= operand;
     SetFlag(Z, a == 0x00);
     SetFlag(N, a  & 0x80);
     return 1;

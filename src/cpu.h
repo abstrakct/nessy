@@ -46,6 +46,15 @@ class CPU {
         CPU();
         ~CPU();
 
+        const uint8_t C = 0x01;
+        const uint8_t Z = 0x02;
+        const uint8_t I = 0x04;
+        const uint8_t D = 0x08;
+        const uint8_t B = 0x10;
+        const uint8_t U = 0x20;
+        const uint8_t V = 0x40;
+        const uint8_t N = 0x80;
+
         // Program Counter
         uint16_t pc    = 0x0000;
         // Registers
@@ -61,25 +70,15 @@ class CPU {
         void clock();
         void TestOpcodes();
 
-        enum Flag {
-            C = (1 << 0),   // Carry
-            Z = (1 << 1),   // Zero
-            I = (1 << 2),   // Disable Interrupts
-            D = (1 << 3),   // Decimal Mode
-            B = (1 << 4),   // Break (this flag doesn't exist physically in the CPU)
-            U = (1 << 5),   // Unused
-            V = (1 << 6),   // oVerflow
-            N = (1 << 7),   // Negative
-        };
-
-        inline bool GetFlag(Flag f) {
-            return (flags & f);
+        inline bool GetFlag(int f) {
+            return ((flags & f) > 0) ? 1 : 0;
+            //return (flags & f);
         }
-        inline void SetFlag(Flag f, bool v = true) {
+        inline void SetFlag(int f, bool v = true) {
             if (v)
                 flags |= f;
             else
-                flags &= ~f;
+                flags &= ~(f);
         }
 
         void reset();

@@ -104,14 +104,14 @@ class Nessy : public olc::PixelGameEngine
             int xs = 32;
             int space = 8;
             DrawString(x, y, "CPU:", olc::WHITE);
-            DrawString(x + (xs + space * 1), y, "N", nes->cpu.GetFlag(CPU::N) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 2), y, "V", nes->cpu.GetFlag(CPU::V) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 3), y, "-", nes->cpu.GetFlag(CPU::U) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 4), y, "B", nes->cpu.GetFlag(CPU::B) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 5), y, "D", nes->cpu.GetFlag(CPU::D) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 6), y, "I", nes->cpu.GetFlag(CPU::I) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 7), y, "Z", nes->cpu.GetFlag(CPU::Z) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 8), y, "C", nes->cpu.GetFlag(CPU::C) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 1), y, "N", nes->cpu.GetFlag(nes->cpu.N) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 2), y, "V", nes->cpu.GetFlag(nes->cpu.V) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 3), y, "-", nes->cpu.GetFlag(nes->cpu.U) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 4), y, "B", nes->cpu.GetFlag(nes->cpu.B) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 5), y, "D", nes->cpu.GetFlag(nes->cpu.D) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 6), y, "I", nes->cpu.GetFlag(nes->cpu.I) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 7), y, "Z", nes->cpu.GetFlag(nes->cpu.Z) ? olc::GREEN : olc::RED);
+            DrawString(x + (xs + space * 8), y, "C", nes->cpu.GetFlag(nes->cpu.C) ? olc::GREEN : olc::RED);
             DrawString(x, y + 10, " PC: $" + hex(nes->cpu.pc, 4));
             DrawString(x, y + 20, " SP: $" + hex(nes->cpu.sp, 4));
             DrawString(x, y + 30, "  A: $" + hex(nes->cpu.a,  2) + "  [" + bin(nes->cpu.a) + "]");
@@ -212,7 +212,7 @@ class Nessy : public olc::PixelGameEngine
                 }
             } else {
                 // Advance one instruction
-                if (GetKey(olc::Key::S).bPressed) {
+                if (GetKey(olc::Key::K_S).bPressed) {
                     do {
                         nes->clock();
                     } while (!nes->cpu.complete());
@@ -226,7 +226,7 @@ class Nessy : public olc::PixelGameEngine
                 }
 
                 // Advance one frame
-                if (GetKey(olc::Key::F).bPressed) {
+                if (GetKey(olc::Key::K_F).bPressed) {
                     do {
                         nes->clock();
                     } while (!nes->ppu.frame_complete);
@@ -265,13 +265,13 @@ class Nessy : public olc::PixelGameEngine
             if (GetKey(olc::Key::K5).bPressed)
                 cfgDisplayPPU = !cfgDisplayPPU;
 
-            if (GetKey(olc::Key::R).bPressed)
+            if (GetKey(olc::Key::K_R).bPressed)
                 nes->cpu.reset();
 
-            if (GetKey(olc::Key::I).bPressed)
+            if (GetKey(olc::Key::K_I).bPressed)
                 nes->cpu.irq();
 
-            if (GetKey(olc::Key::N).bPressed)
+            if (GetKey(olc::Key::K_N).bPressed)
                 nes->cpu.nmi();
 
             if (GetKey(olc::Key::UP).bPressed) {
@@ -324,43 +324,50 @@ class Nessy : public olc::PixelGameEngine
                 nes->controller[0].releaseButton(Controller::Button::Select);
             }
 
-            if (GetKey(olc::Key::D).bHeld) {
+            if (GetKey(olc::Key::K_D).bHeld) {
                 nes->controller[0].pressButton(Controller::Button::Right);
             } else {
                 nes->controller[0].releaseButton(Controller::Button::Right);
             }
 
-            if (GetKey(olc::Key::A).bHeld) {
+            if (GetKey(olc::Key::K_A).bHeld) {
                 nes->controller[0].pressButton(Controller::Button::Left);
             } else {
                 nes->controller[0].releaseButton(Controller::Button::Left);
             }
 
-            if (GetKey(olc::Key::W).bHeld) {
+            if (GetKey(olc::Key::K_W).bHeld) {
                 nes->controller[0].pressButton(Controller::Button::Up);
             } else {
                 nes->controller[0].releaseButton(Controller::Button::Up);
             }
 
-            if (GetKey(olc::Key::S).bHeld) {
+            if (GetKey(olc::Key::K_S).bHeld) {
                 nes->controller[0].pressButton(Controller::Button::Down);
             } else {
                 nes->controller[0].releaseButton(Controller::Button::Down);
             }
 
-            if (GetKey(olc::Key::L).bHeld) {
+            if (GetKey(olc::Key::K_L).bHeld) {
                 nes->controller[0].pressButton(Controller::Button::A);
             } else {
                 nes->controller[0].releaseButton(Controller::Button::A);
             }
 
-            if (GetKey(olc::Key::K).bHeld) {
+            if (GetKey(olc::Key::K_K).bHeld) {
                 nes->controller[0].pressButton(Controller::Button::B);
             } else {
                 nes->controller[0].releaseButton(Controller::Button::B);
             }
 
-            if (GetKey(olc::Key::P).bPressed) (++selectedPalette) &= 0x07;
+            if (GetKey(olc::Key::K_P).bPressed) (++selectedPalette) &= 0x07;
+
+            //if (GetKey(olc::Key::K_B).bPressed)
+            //    nes->cpu.SetFlag(nes->cpu.N, true);
+            //if (GetKey(olc::Key::K_V).bPressed)
+            //    nes->cpu.SetFlag(nes->cpu.N, false);
+
+
 
             int x = 10;
 

@@ -6,13 +6,58 @@ Mapper001::Mapper001(uint8_t p, uint8_t c) : Mapper(p, c)
 {
     writes = tmpreg = reg[1] = reg[2] = reg[3] = 0;
     reg[0] = 0x0C;
-    lastBankOffset = (p - 1) * 0x4000;
     lastBank = p - 1;
     vram.resize(0x2000);
 }
 
 Mapper001::~Mapper001()
 {
+}
+
+std::vector<std::string> Mapper001::getInfoStrings()
+{
+    if (updateInfo) {
+        char line[50];
+        uint8_t prgMode = ((reg[0] & 0b1100) >> 2);
+        uint8_t chrMode = reg[0] & 0x10;
+        infoString.clear();
+        
+        infoString.push_back("MAPPER 001:");
+
+        if (prgMode <= 1) {
+            infoString.push_back("PRGROM: Switch 32K @ $8000");
+            sprintf(line, "Selected bank: %d", reg[3] >> 1);
+            infoString.push_back(std::string(line));
+        } else if (prgMode == 2) {
+            infoString.push_back("PRGROM: Switch 16K @ $C000");
+            sprintf(line, "Selected bank: %d", reg[3] & 0xF);
+            infoString.push_back(std::string(line));
+        } else if (prgMode == 3) {
+            infoString.push_back("PRGROM: Switch 16K @ $8000");
+            sprintf(line, "Selected bank: %d", reg[3] & 0xF);
+            infoString.push_back(std::string(line));
+        }
+
+        if (chrBanks > 0) {
+            if (chrMode == 0) {
+                infoString.push_back("CHRROM: Switch 1 x 8K Bank");
+                sprintf(line, "Selected bank: %d", reg[1] >> 1);
+                infoString.push_back(std::string(line));
+            } else if (chrMode == 1) {
+                infoString.push_back("CHRROM: Switch 2 x 4K Banks");
+                sprintf(line, "Bank @ $0000: %d", reg[1] & 0x1F);
+                infoString.push_back(std::string(line));
+                sprintf(line, "Bank @ $1000: %d", reg[2] & 0x1F);
+                infoString.push_back(std::string(line));
+            }
+        } else {
+            infoString.push_back("No CHR ROM on cart");
+        }
+
+        updateInfo = false;
+    }
+
+    return infoString;
 }
 
 void Mapper001::reset()
@@ -52,13 +97,16 @@ void Mapper001::apply()
     } else {
         // Switch 1 8 KB bank
         chrROM->setBank(0x0000, ((reg[1] >> 1) << 1) + 0);
-        chrROM->setBank(0x0000, ((reg[1] >> 1) << 1) + 1);
+        chrROM->setBank(0x1000, ((reg[1] >> 1) << 1) + 1);
     }
+
+    updateInfo = true;
 }
 
 bool Mapper001::getMirrorType(int &data)
 {
-    data = reg[0] & 0x03;
+    data = reg[0] & 0b11;
+
     return true;
 }
 
@@ -118,14 +166,6 @@ bool Mapper001::ppuRead(uint16_t addr, uint32_t &mapped_addr)
     uint8_t fourKMode = (reg[0] & 0x10) >> 4;
     if (chrBanks > 0) {
         if (addr < 0x2000) {
-            //if (fourKMode) {
-            //    if (addr < 0x1000)
-            //        mapped_addr = (addr & 0x0FFF) + (reg[1] * 0x1000);
-            //    if (addr >= 0x1000 && addr < 0x2000)
-            //        mapped_addr = (addr & 0x0FFF) + (reg[2] * 0x1000);
-            //} else {
-            //    mapped_addr = (addr & 0x1FFF) + ((reg[1] >> 1) * 0x2000);
-            //}
             return true;
         }
     }

@@ -13,6 +13,25 @@ Mapper011::~Mapper011()
 {
 }
 
+std::vector<std::string> Mapper011::getInfoStrings()
+{
+    if (updateInfo) {
+        char line[50];
+
+        infoString.clear();
+        
+        infoString.push_back("MAPPER 011:");
+        sprintf(line, "PRG BANK: %d", selectedPrgBank);
+        infoString.push_back(std::string(line));
+        sprintf(line, "CHR BANK: %d", selectedChrBank);
+        infoString.push_back(std::string(line));
+
+        updateInfo = false;
+    }
+
+    return infoString;
+}
+
 void Mapper011::reset()
 {
     prgROM->setBank(0x8000, 0);
@@ -20,6 +39,8 @@ void Mapper011::reset()
 
     chrROM->setBank(0x0000, 0);
     chrROM->setBank(0x1000, 1);
+
+    updateInfo = true;
 }
 
 void Mapper011::apply()
@@ -29,6 +50,8 @@ void Mapper011::apply()
 
     chrROM->setBank(0x0000, (selectedChrBank * 2) + 0);
     chrROM->setBank(0x1000, (selectedChrBank * 2) + 1);
+
+    updateInfo = true;
 }
 
 bool Mapper011::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)

@@ -26,6 +26,11 @@ Mapper002::~Mapper002()
 {
 }
 
+std::vector<std::string> Mapper002::getInfoStrings()
+{
+    return infoString;
+}
+
 void Mapper002::reset()
 {
     prgROM->setBank(0x8000, 0);

@@ -3,6 +3,13 @@
 #include "../mapper.h"
 
 class Mapper011 : public Mapper {
+    private:
+        uint8_t  selectedPrgBank   = 0;
+        uint8_t  selectedChrBank   = 0;
+        std::vector<std::string> infoString;
+        bool updateInfo = true;
+        //std::vector<uint8_t> vram;
+        
     public:
         Mapper011(uint8_t p, uint8_t c);
         ~Mapper011();
@@ -20,8 +27,5 @@ class Mapper011 : public Mapper {
         void apply();
 
         int implementationStatus() override { return MI_WORKING; };
-    private:
-        uint8_t  selectedPrgBank   = 0;
-        uint8_t  selectedChrBank   = 0;
-        //std::vector<uint8_t> vram;
+        std::vector<std::string> getInfoStrings() override;
 };

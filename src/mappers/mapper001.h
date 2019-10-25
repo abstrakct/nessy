@@ -8,9 +8,10 @@ class Mapper001 : public Mapper {
         uint8_t writes;
         uint8_t tmpreg;
         uint8_t reg[4];
-        uint32_t lastBankOffset;
         uint16_t lastBank;
         std::vector<uint8_t> vram;
+        std::vector<std::string> infoString;
+        bool updateInfo = true;
 
     public:
         Mapper001(uint8_t p, uint8_t c);
@@ -27,6 +28,7 @@ class Mapper001 : public Mapper {
         void reset() override;
 
         int implementationStatus() override { return MI_DEVELOPMENT; };
+        std::vector<std::string> getInfoStrings() override;
 
         // Apply settings written to the mapper's registers
         void apply();

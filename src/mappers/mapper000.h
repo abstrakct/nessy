@@ -17,4 +17,7 @@ class Mapper000 : public Mapper {
         void reset() override;
 
         int implementationStatus() override { return MI_WORKING; };
+        std::vector<std::string> getInfoStrings() override { return infoString; };
+
+        const std::vector<std::string> infoString = { "MAPPER 000" };
 };

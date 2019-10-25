@@ -884,6 +884,7 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 
 void PPU::ppuWrite(uint16_t addr, uint8_t data)
 {
+    uint8_t mirrortype = cart->getMirrorType();
     addr &= 0x3FFF;
     
     //printf("ppuWrite: addr %04X  data %02X\n", addr, data);
@@ -919,16 +920,22 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
         if (addr >= 0x3000)
             addr -= 0x1000;
         // Write to nametables
-        if (cart->getMirrorType() == Cartridge::HORIZONTAL) {
+        if (mirrortype == Cartridge::HORIZONTAL) {
             if (addr < 0x2800)
                 nametable[0][addr & 0x03FF] = data;
             else
                 nametable[1][addr & 0x03FF] = data;
-        } else if (cart->getMirrorType() == Cartridge::VERTICAL) {
+        } else if (mirrortype == Cartridge::VERTICAL) {
             if ((addr & 0x07FF) >= 0x400)
                 nametable[1][addr & 0x03FF] = data;
             else
                 nametable[0][addr & 0x03FF] = data;
+        } else if (mirrortype == Cartridge::ONESCREEN_LO) {
+            // One-screen mirroring: All nametables refer to the same memory at any given time, and the mapper directly manipulates CIRAM address bit 10 (e.g. many Rare games using AxROM)
+            nametable[0][addr & 0x03FF] = data;
+        } else if (mirrortype == Cartridge::ONESCREEN_HI) {
+            // One-screen mirroring: All nametables refer to the same memory at any given time, and the mapper directly manipulates CIRAM address bit 10 (e.g. many Rare games using AxROM)
+            nametable[1][addr & 0x03FF] = data;
         }
     } else if (addr >= 0x3F00 && addr < 0x4000) {
         addr &= 0x001F;

@@ -31,6 +31,7 @@ bool cfgDisplayDisasm = false;
 bool cfgDisplayCpu = false;
 bool cfgDisplayHelp = false;
 bool cfgDisplayPPU = false;
+bool cfgDisplayMapper = false;
 
 // this is silly, move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
@@ -116,7 +117,17 @@ class Nessy : public olc::PixelGameEngine
             DrawString(x, y + 30, "  A: $" + hex(nes->cpu.a,  2) + "  [" + bin(nes->cpu.a) + "]");
             DrawString(x, y + 40, "  X: $" + hex(nes->cpu.x,  2) + "  [" + bin(nes->cpu.x) + "]");
             DrawString(x, y + 50, "  Y: $" + hex(nes->cpu.y,  2) + "  [" + bin(nes->cpu.y) + "]");
-            DrawString(x, y + 80, "Total cycles: " + std::to_string(nes->cpu.total_cycles));
+            DrawString(x, y + 60, "Total cycles: " + std::to_string(nes->cpu.total_cycles));
+        }
+
+        void DrawMapper(int x, int y)
+        {
+            std::vector<std::string> mapperInfo = nes->cart->getMapperInfo();
+            //DrawString(x, y, "MAPPER:");
+            for (auto it : mapperInfo) {
+                DrawString(x, y, it);
+                y += 10;
+            }
         }
 
         void DrawDisasm(int x, int y, int lines)
@@ -156,33 +167,6 @@ class Nessy : public olc::PixelGameEngine
         // Called once at start
         bool OnUserCreate() override
         {
-            
-            //// Set reset vector to 0x8000
-            //nes->cpuWrite(0xFFFC, 0x00);
-            //nes->cpuWrite(0xFFFD, 0x80);
-
-            //// put some instructions in ram if we are in debug/development mode
-            //if (debugmode) {
-            //    std::stringstream ss;
-            //    ss << "A2 02 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 B4 00 A1 01 B1 02 EA EA EA";
-            //    uint16_t offset = 0x8000;
-            //    while(!ss.eof()) {
-            //        std::string b;
-            //        ss >> b;
-            //        nes->cpuWrite(offset++, (uint8_t)std::stoul(b, nullptr, 16));
-            //    }
-            //}
-
-            //disasm = nes->cpu.disassemble(0x0000, 0xFFFF);
-
-            //nes->cpu.reset();
-
-            //// run the clock one cycle so the reset executes
-            //do {
-            //    nes->cpu.clock();
-            //    nes->ppu.clock();
-            //} while(!nes->cpu.complete());
-
             printf("[ Loading Cartridge      ]\n");
             cart = std::make_shared<Cartridge>(nesFilename);
 
@@ -263,14 +247,17 @@ class Nessy : public olc::PixelGameEngine
                 runmode = !runmode;
             }
 
-            if (GetKey(olc::Key::K1).bPressed)
+            if (GetKey(olc::Key::F1).bPressed)
                 cfgDisplayHelp = !cfgDisplayHelp;
 
-            if (GetKey(olc::Key::K2).bPressed)
+            if (GetKey(olc::Key::K1).bPressed)
                 cfgDisplayRam = !cfgDisplayRam;
 
-            if (GetKey(olc::Key::K3).bPressed)
+            if (GetKey(olc::Key::K2).bPressed)
                 cfgDisplayCpu = !cfgDisplayCpu;
+
+            if (GetKey(olc::Key::K3).bPressed)
+                cfgDisplayMapper = !cfgDisplayMapper;
 
             if (GetKey(olc::Key::K4).bPressed)
                 cfgDisplayDisasm = !cfgDisplayDisasm;
@@ -383,8 +370,11 @@ class Nessy : public olc::PixelGameEngine
             if (cfgDisplayCpu)
                 DrawCPU(x + 720, 12);
 
+            if (cfgDisplayMapper)
+                DrawMapper(x + 720, 100);
+
             if (cfgDisplayDisasm)
-                DrawDisasm(x + 720, 150, 16);
+                DrawDisasm(x + 720, 180, 16);
 
             if (cfgDisplayRam) {
                 DrawRAM(x + 10,  12, 0x0000,    16, 16);
@@ -395,7 +385,6 @@ class Nessy : public olc::PixelGameEngine
                 DrawString(x, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
                 DrawString(x, 470, "f = frame  spc = run   o/k = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
             }
-
 
             if (cfgDisplayPPU) {
                 x += 450;

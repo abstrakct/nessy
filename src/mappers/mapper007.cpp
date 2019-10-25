@@ -22,16 +22,45 @@ Mapper007::~Mapper007()
 {
 }
 
+std::vector<std::string> Mapper007::getInfoStrings()
+{
+    if (updateInfo) {
+        char line[50];
+
+        infoString.clear();
+        
+        infoString.push_back("MAPPER 007:");
+        sprintf(line, "PRG BANK: %d", prgBank);
+        infoString.push_back(std::string(line));
+        sprintf(line, "VRAM BANK: %d", vramBank);
+        infoString.push_back(std::string(line));
+
+        updateInfo = false;
+    }
+
+    return infoString;
+}
+
+bool Mapper007::getMirrorType(int &data)
+{
+    data = vramBank;
+    return true;
+}
+
 void Mapper007::reset()
 {
     prgROM->setBank(0x8000, 0);
     prgROM->setBank(0xC000, 1);
+
+    updateInfo = true;
 }
 
 void Mapper007::apply()
 {
     prgROM->setBank(0x8000, prgBank * 2);
     prgROM->setBank(0xC000, (prgBank * 2) + 1);
+    
+    updateInfo = true;
 }
 
 bool Mapper007::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
@@ -77,19 +106,24 @@ bool Mapper007::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper007::ppuReadData(uint16_t addr, uint8_t &data)
 {
-    if (addr > 0x0000 && addr < 0x3EFF) {
-        //printf("VRAM READ addr %04X\n", addr);
-        if (addr >= 0x2000) {
-            if (vramBank) {
-                if (addr >= 0x2400) {
-                    addr &= 0x23FF;
-                    addr += 0x400;
-                }
-            } else {
-                addr &= 0x23FF;
-            }
-        }
-        addr &= 0x1FFF;
+    //if (addr > 0x0000 && addr < 0x3EFF) {
+    //    //printf("VRAM READ addr %04X\n", addr);
+    //    if (addr >= 0x2000) {
+    //        if (vramBank) {
+    //            if (addr >= 0x2400) {
+    //                addr &= 0x23FF;
+    //                addr += 0x400;
+    //            }
+    //        } else {
+    //            addr &= 0x23FF;
+    //        }
+    //    }
+    //    addr &= 0x1FFF;
+    //    data = vram[addr];
+    //    return true;
+    //}
+
+    if (addr < 0x2000) {
         data = vram[addr];
         return true;
     }
@@ -105,22 +139,26 @@ bool Mapper007::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper007::ppuWriteData(uint16_t addr, uint8_t data)
 {
     //printf("VRAM WRITE addr %04X\n", addr);
-    if (addr > 0x0000 && addr < 0x3EFF) {
-        if (addr >= 0x2000) {
-            if (vramBank) {
-                if (addr >= 0x2400) {
-                    addr &= 0x23FF;
-                    addr += 0x400;
-                }
-            } else {
-                addr &= 0x23FF;
-            }
-        }
+    //if (addr > 0x0000 && addr < 0x3EFF) {
+    //    if (addr >= 0x2000) {
+    //        if (vramBank) {
+    //            if (addr >= 0x2400) {
+    //                addr &= 0x23FF;
+    //                addr += 0x400;
+    //            }
+    //        } else {
+    //            addr &= 0x23FF;
+    //        }
+    //    }
 
-        //printf("VRAM WRITE addr %04X   data %02X\n", addr, data);
-        addr &= 0x1FFF;
+    //    //printf("VRAM WRITE addr %04X   data %02X\n", addr, data);
+    //    addr &= 0x1FFF;
+    //    vram[addr] = data;
+    //    return true;
+    //}
+
+    if (addr < 0x2000) {
         vram[addr] = data;
-        return true;
     }
 
     return false;

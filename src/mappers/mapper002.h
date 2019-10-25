@@ -18,9 +18,11 @@ class Mapper002 : public Mapper {
         void reset() override;
 
         int implementationStatus() override { return MI_WORKING; };
+        std::vector<std::string> getInfoStrings() override;
     private:
         uint8_t  selectedBank   = 0;
         uint8_t lastBank = 0;
         std::vector<uint8_t> vram;
+        std::vector<std::string> infoString = { };
 };
 

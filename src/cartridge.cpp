@@ -5,6 +5,7 @@
 #include "mappers/mapper000.h"
 #include "mappers/mapper001.h"
 #include "mappers/mapper002.h"
+#include "mappers/mapper003.h"
 #include "mappers/mapper007.h"
 #include "mappers/mapper011.h"
 #include "mappers/mapper066.h"
@@ -41,11 +42,11 @@ Cartridge::Cartridge(const std::string& filename)
 
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
 
-        //if (header.mapper1 & 0x10) {
-        //    mirrorType = FOUR_SCREEN;
-        //} else {
-            mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
-        //}
+        if (header.mapper1 & 0x08) {
+            mirrorType = FOUR_SCREEN;
+        } else {
+          mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+        }
 
         // discover file format
         uint8_t filetype = 1;
@@ -64,8 +65,8 @@ Cartridge::Cartridge(const std::string& filename)
                 ifs.read((char*)tmp.data(), 0x4000);
                 prgROM->addBank(i, tmp);
 
-                // Special "workaround" for mapper 0 games with only 1 bank of prg rom
-                if (prgBanks == 1 && mapperNum == 0) {
+                // Special "workaround" for games with only 1 bank of prg rom
+                if (prgBanks == 1 && (mapperNum == 0 || mapperNum == 3)) {
                     prgROM->addBank(1, tmp);
                 }
             }
@@ -94,6 +95,8 @@ Cartridge::Cartridge(const std::string& filename)
                 mapper = std::make_shared<Mapper001>(prgBanks, chrBanks); break;
             case 2:
                 mapper = std::make_shared<Mapper002>(prgBanks, chrBanks); break;
+            case 3:
+                mapper = std::make_shared<Mapper003>(prgBanks, chrBanks); break;
             case 7:
                 mapper = std::make_shared<Mapper007>(prgBanks, chrBanks); break;
             case 11:
@@ -107,22 +110,21 @@ Cartridge::Cartridge(const std::string& filename)
                 break;
         }
 
-        mapper->setPrgROM(prgROM);
-        mapper->setChrROM(chrROM);
-        mapper->reset();
-
-        if (mapper && mapper->implementationStatus()) {
-            if (mapper->implementationStatus() == MI_DEVELOPMENT) {
-                printf("WARNING: Emulation of mapper %d is IN DEVELOPMENT!\n", mapperNum);
-            } else {
-                printf("Error: Emulation of mapper %d is not working\n", mapperNum);
-                exit(1);
-            }
-        }
-
-        ifs.close();
-
         if (valid) {
+            mapper->setPrgROM(prgROM);
+            mapper->setChrROM(chrROM);
+            mapper->reset();
+
+            if (mapper && mapper->implementationStatus()) {
+                if (mapper->implementationStatus() == MI_DEVELOPMENT) {
+                    printf("WARNING: Emulation of mapper %d is IN DEVELOPMENT!\n", mapperNum);
+                } else {
+                    printf("Error: Emulation of mapper %d is not working\n", mapperNum);
+                    exit(1);
+                }
+            }
+
+
             printf("\n");
             printf("\tFilename:  %s\n", filename.c_str());
             printf("\tMapper:    %d\n", mapperNum);
@@ -141,6 +143,8 @@ Cartridge::Cartridge(const std::string& filename)
 
             printf("\n\n");
         }
+
+        ifs.close();
     }
 }
 
@@ -151,6 +155,7 @@ Cartridge::~Cartridge()
 Cartridge::Mirror Cartridge::getMirrorType()
 {
     int tmp;
+    
     if (mapper->getMirrorType(tmp)) {
         mirrorType = (Cartridge::Mirror) tmp;
     }
@@ -161,6 +166,11 @@ Cartridge::Mirror Cartridge::getMirrorType()
 void Cartridge::reset()
 {
     mapper->reset();
+}
+
+std::vector<std::string> Cartridge::getMapperInfo()
+{
+    return mapper->getInfoStrings();
 }
 
 bool Cartridge::cpuRead(uint16_t addr, uint8_t &data)

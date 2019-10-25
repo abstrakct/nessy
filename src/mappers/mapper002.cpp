@@ -28,6 +28,17 @@ Mapper002::~Mapper002()
 
 std::vector<std::string> Mapper002::getInfoStrings()
 {
+    if (updateInfo) {
+        char line[50];
+
+        infoString.clear();
+        
+        infoString.push_back("MAPPER 002:");
+        sprintf(line, "PRG BANK: %d", selectedBank);
+        infoString.push_back(std::string(line));
+
+        updateInfo = false;
+    }
     return infoString;
 }
 
@@ -35,6 +46,8 @@ void Mapper002::reset()
 {
     prgROM->setBank(0x8000, 0);
     prgROM->setBank(0xC000, lastBank);
+
+    updateInfo = true;
 }
 
 
@@ -59,8 +72,8 @@ bool Mapper002::cpuWriteData(uint16_t addr, uint8_t data)
         selectedBank = data & 0b00000111;  // last 3 bits select bank. Could also be written as & 0x07
         prgROM->setBank(0x8000, selectedBank);
         
-        //printf("Mapper002: write %02x to %04x   selectedBank = %d\n", data, addr, selectedBank);
-        //
+        updateInfo = true;
+
         // TODO: if 'UOROM' variety, 4 bits are used to select bank.
         return true;
     }

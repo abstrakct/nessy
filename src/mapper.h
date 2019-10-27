@@ -12,7 +12,7 @@
 
 class Mapper {
     public:
-        Mapper(uint8_t p, uint8_t c);
+        Mapper(uint16_t p, uint16_t c);
         virtual ~Mapper();
 
         virtual bool cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram) = 0;
@@ -44,8 +44,8 @@ class Mapper {
         // Link back to the Cartridge
         //std::shared_ptr<Cartridge> cart;
     protected:
-        uint8_t prgBanks = 0;
-        uint8_t chrBanks = 0;
+        uint16_t prgBanks = 0;
+        uint16_t chrBanks = 0;
         std::shared_ptr<BankedMemory> prgROM;
         std::shared_ptr<BankedMemory> chrROM;
 };

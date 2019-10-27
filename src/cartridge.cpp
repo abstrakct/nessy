@@ -10,6 +10,7 @@
 #include "mappers/mapper007.h"
 #include "mappers/mapper011.h"
 #include "mappers/mapper013.h"
+#include "mappers/mapper033.h"
 #include "mappers/mapper066.h"
 
 extern Logger l;
@@ -61,8 +62,9 @@ Cartridge::Cartridge(const std::string& filename)
 
             const int defaultPrgBankSize = 0x4000;
             int bankSize = defaultPrgBankSize;
+            
             // TODO: ask mapper what bank size it wants
-            if (mapperNum == 4)
+            if (mapperNum == 4 || mapperNum == 33)
                 bankSize = 0x2000;
             
             prgBanks = (header.prg_rom_chunks * defaultPrgBankSize) / bankSize;
@@ -75,16 +77,20 @@ Cartridge::Cartridge(const std::string& filename)
                 ifs.read((char*)tmp.data(), bankSize);
                 prgROM->addBank(i, tmp);
 
+                printf(".");
+
                 // Special "workaround" for games with only 1 bank of prg rom
                 if (prgBanks == 1 && (mapperNum == 0 || mapperNum == 3)) {
                     prgROM->addBank(1, tmp);
                 }
             }
+            printf("\n");
 
             const int defaultChrBankSize = 0x2000;
             bankSize = defaultChrBankSize;
+
             // TODO: ask mapper what bank size it wants
-            if (mapperNum == 4)
+            if (mapperNum == 4 || mapperNum == 33)
                 bankSize = 0x400;
             else
                 bankSize = 0x1000;
@@ -98,7 +104,9 @@ Cartridge::Cartridge(const std::string& filename)
                 tmp.resize(bankSize);
                 ifs.read((char*)tmp.data(), bankSize);
                 chrROM->addBank(i, tmp);
+                printf(".");
             }
+            printf("\n");
 
             prgRamSize = header.prg_ram_size ? (header.prg_ram_size * 0x2000) : 0x2000;
             prgRAM.resize(prgRamSize);
@@ -126,6 +134,8 @@ Cartridge::Cartridge(const std::string& filename)
             case 12:
             case 13:
                 mapper = std::make_shared<Mapper013>(prgBanks, chrBanks); break;
+            case 33:
+                mapper = std::make_shared<Mapper033>(prgBanks, chrBanks); break;
             case 66:
                 mapper = std::make_shared<Mapper066>(prgBanks, chrBanks); break;
             default:

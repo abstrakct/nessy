@@ -378,10 +378,10 @@ class Nessy : public olc::PixelGameEngine
                 DrawCPU(x + 720, 12);
 
             if (cfgDisplayMapper)
-                DrawMapper(x + 720, 100);
+                DrawMapper(x + 720, 90);
 
             if (cfgDisplayDisasm)
-                DrawDisasm(x + 720, 180, 16);
+                DrawDisasm(x + 720, 200, 16);
 
             if (cfgDisplayRam) {
                 DrawRAM(x + 10,  12, 0x0000,    16, 16);

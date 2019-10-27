@@ -1,13 +1,19 @@
 #include "memory.h"
 
-BankedMemory::BankedMemory(uint16_t _bankNum, uint32_t _bankSize)
+BankedMemory::BankedMemory(uint16_t _bankNum, uint32_t _bankSize, bool initialize)
 {
     bankNum = _bankNum;
     bankSize = _bankSize;
 
     // Initialize with sane defaults
-    bank[0] = { 0x8000, 0xBFFF };
-    bank[1] = { 0xC000, 0xFFFF };
+    //bank[0] = { 0x8000, 0xBFFF };
+    //bank[1] = { 0xC000, 0xFFFF };
+    
+    if (initialize) {
+        for (int i = 0; i < bankNum; i++) {
+            bankData[i].resize(bankSize);
+        }
+    }
 }
 
 BankedMemory::~BankedMemory()

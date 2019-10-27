@@ -6,8 +6,10 @@
 #include "mappers/mapper001.h"
 #include "mappers/mapper002.h"
 #include "mappers/mapper003.h"
+#include "mappers/mapper004.h"
 #include "mappers/mapper007.h"
 #include "mappers/mapper011.h"
+#include "mappers/mapper013.h"
 #include "mappers/mapper066.h"
 
 extern Logger l;
@@ -57,12 +59,20 @@ Cartridge::Cartridge(const std::string& filename)
             firstBank = 0;
             lastBank = prgBanks - 1;
 
-            prgROM = std::make_shared<BankedMemory>(prgBanks, 0x4000);
+            const int defaultPrgBankSize = 0x4000;
+            int bankSize = defaultPrgBankSize;
+            // TODO: ask mapper what bank size it wants
+            if (mapperNum == 4)
+                bankSize = 0x2000;
+            
+            prgBanks = (header.prg_rom_chunks * defaultPrgBankSize) / bankSize;
+            prgROM = std::make_shared<BankedMemory>(prgBanks, bankSize);
 
+            printf("\n\tLoading %d PRG ROM banks of size %04X\n", prgBanks, bankSize);
             for (int i = 0; i < prgBanks; i++) {
                 std::vector<uint8_t> tmp;
-                tmp.resize(0x4000);
-                ifs.read((char*)tmp.data(), 0x4000);
+                tmp.resize(bankSize);
+                ifs.read((char*)tmp.data(), bankSize);
                 prgROM->addBank(i, tmp);
 
                 // Special "workaround" for games with only 1 bank of prg rom
@@ -71,12 +81,22 @@ Cartridge::Cartridge(const std::string& filename)
                 }
             }
 
-            chrROM = std::make_shared<BankedMemory>(chrBanks, 0x1000);
+            const int defaultChrBankSize = 0x2000;
+            bankSize = defaultChrBankSize;
+            // TODO: ask mapper what bank size it wants
+            if (mapperNum == 4)
+                bankSize = 0x400;
+            else
+                bankSize = 0x1000;
+            
+            chrBanks = (header.chr_rom_chunks * defaultChrBankSize) / bankSize;
+            chrROM = std::make_shared<BankedMemory>(chrBanks, bankSize);
 
-            for (int i = 0; i < (chrBanks*2); i++) {
+            printf("\tLoading %d CHR ROM banks of size %04X\n", chrBanks, bankSize);
+            for (int i = 0; i < chrBanks; i++) {
                 std::vector<uint8_t> tmp;
-                tmp.resize(0x1000);
-                ifs.read((char*)tmp.data(), 0x1000);
+                tmp.resize(bankSize);
+                ifs.read((char*)tmp.data(), bankSize);
                 chrROM->addBank(i, tmp);
             }
 
@@ -97,10 +117,15 @@ Cartridge::Cartridge(const std::string& filename)
                 mapper = std::make_shared<Mapper002>(prgBanks, chrBanks); break;
             case 3:
                 mapper = std::make_shared<Mapper003>(prgBanks, chrBanks); break;
+            case 4:
+                mapper = std::make_shared<Mapper004>(prgBanks, chrBanks); break;
             case 7:
                 mapper = std::make_shared<Mapper007>(prgBanks, chrBanks); break;
             case 11:
                 mapper = std::make_shared<Mapper011>(prgBanks, chrBanks); break;
+            case 12:
+            case 13:
+                mapper = std::make_shared<Mapper013>(prgBanks, chrBanks); break;
             case 66:
                 mapper = std::make_shared<Mapper066>(prgBanks, chrBanks); break;
             default:
@@ -117,9 +142,11 @@ Cartridge::Cartridge(const std::string& filename)
 
             if (mapper && mapper->implementationStatus()) {
                 if (mapper->implementationStatus() == MI_DEVELOPMENT) {
-                    printf("WARNING: Emulation of mapper %d is IN DEVELOPMENT!\n", mapperNum);
+                    printf("\tWARNING: Emulation of mapper %d is IN DEVELOPMENT!\n", mapperNum);
+                } else if (mapper->implementationStatus() == MI_NOT_WORKING) {
+                    printf("\tWARNING: Emulation of mapper %d is NOT WORKING!\n", mapperNum);
                 } else {
-                    printf("Error: Emulation of mapper %d is not working\n", mapperNum);
+                    printf("ERROR: Emulation of mapper %d is not implemented!\n", mapperNum);
                     exit(1);
                 }
             }
@@ -128,8 +155,8 @@ Cartridge::Cartridge(const std::string& filename)
             printf("\n");
             printf("\tFilename:  %s\n", filename.c_str());
             printf("\tMapper:    %d\n", mapperNum);
-            printf("\tPRG ROM:   %d x 16 KB [0x%06X bytes]\n", prgBanks, prgBanks * 0x4000);
-            printf("\tCHR ROM:   %d x  8 KB [0x%06X bytes]\n", chrBanks, chrBanks * 0x2000);
+            printf("\tPRG ROM:   %d x 16 KB [0x%06X bytes]\n", header.prg_rom_chunks, header.prg_rom_chunks * 0x4000);
+            printf("\tCHR ROM:   %d x  8 KB [0x%06X bytes]\n", header.chr_rom_chunks, header.chr_rom_chunks * 0x2000);
             printf("\tPRG RAM:   0x%04X bytes\n", prgRamSize);
             printf("\tMirroring: ");
             if (mirrorType == HORIZONTAL)

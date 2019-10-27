@@ -11,7 +11,7 @@ class BankedMemory {
         uint32_t bankSize;
         
     public:
-        BankedMemory(uint16_t _bankNum, uint32_t _bankSize);
+        BankedMemory(uint16_t _bankNum, uint32_t _bankSize, bool initialize = false);
         ~BankedMemory();
 
         // Add a bank with data

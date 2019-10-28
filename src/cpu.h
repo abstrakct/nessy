@@ -97,7 +97,7 @@ class CPU {
         struct Opcode {
                 uint8_t opcode;
                 std::string mnemonic;
-                uint8_t (CPU::*operate) (void) = nullptr;
+                //uint8_t (CPU::*operate) (void) = nullptr;
                 uint8_t (CPU::*addrmode)(void) = nullptr;
                 uint8_t bytes, cycles;
         };

@@ -59,12 +59,10 @@ class NessyApplication {
         //sf::RenderTexture renderTex;
         sf::Texture nesTex, ppuTex;
         sf::Sprite nesScreen, ppuSprite;
-        sf::Clock clock;
         sf::Font sfmlFont;
         sf::Text t;
         sf::RectangleShape rect;
         sf::Event event;
-        sf::Time startTime, endTime, elapsedTime, residualTime;
 
         int windowWidth, windowHeight;
         float scaleX, scaleY;
@@ -79,14 +77,7 @@ class NessyApplication {
         uint16_t ram2start = 0x8000;
         bool debugmode, runmode = false;
         int execspeed = 100;
-
-        // I don't know why I have to do this!
-#ifdef NDEBUG
-        float targetFPS = 180.0f;
-#else
         float targetFPS = 60.0f;
-#endif
-
         char log[100];
         uint8_t selectedPalette = 0;
 
@@ -116,12 +107,12 @@ class NessyApplication {
             nesTex.create(width, height);
             nesScreen.setTexture(nesTex);
             nesScreen.setTextureRect(sf::Rect(0, 0, 256, 240));
-            nesScreen.setPosition((width / 2) - 224 , cSize);
+            nesScreen.setPosition((width / 2) - 256 , cSize);
             nesScreen.scale(scaleX, scaleY);
 
             ppuTex.create(128, 128);
             ppuSprite.setTexture(ppuTex);
-            ppuSprite.scale(scaleX, scaleY);
+            ppuSprite.scale(2.0, 2.0);
 
             t.setFillColor(sf::Color::White);
             t.setFont(sfmlFont);
@@ -134,9 +125,6 @@ class NessyApplication {
                 printf("ERROR: couldn't load font file!\n");
                 return false;
             }
-
-            startTime = clock.getElapsedTime();
-            endTime = clock.getElapsedTime();
 
             running = true;
             return true;
@@ -247,17 +235,21 @@ class NessyApplication {
 
         void mainLoop()
         {
-            endTime = clock.getElapsedTime();
-            elapsedTime = endTime - startTime;
-            startTime = endTime;
-            
+            auto time1 = std::chrono::system_clock::now();
+            auto time2 = std::chrono::system_clock::now();
+            float residualTime = 0.0f, elapsed = 0.0f;
+
             while (window.isOpen() && running) {
+                time2 = std::chrono::system_clock::now();
+                std::chrono::duration<float> elapsedTime = time2 - time1;
+                elapsed = elapsedTime.count();
+                time1 = time2;
 
                 if (emuRunning) {
-                    if (residualTime.asSeconds() > 0.0f) {
-                        residualTime -= elapsedTime;
+                    if (residualTime > 0.0f) {
+                        residualTime -= elapsed;
                     } else {
-                        residualTime += sf::seconds(1.0f / targetFPS) - elapsedTime;
+                        residualTime += (1.0f / targetFPS) - elapsed;
 
                         do {
                             nes->clock();
@@ -409,6 +401,7 @@ class NessyApplication {
                 if (cfgDisplayHelp) {
                     drawString(x, 580, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
                     drawString(x, 600, "f = frame  spc = run   9/0 = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+                    drawString(x, 620, "residualTime: " + std::to_string(residualTime) + "  elapsed: " + std::to_string(elapsed));
                 }
 
                 // Draw RAM
@@ -417,6 +410,7 @@ class NessyApplication {
                     drawRAM(x + 10, 320, ram2start, 16, 16);
                 }
 
+                x += 264;
                 // Draw CPU status
                 if (cfgDisplayCpu)
                     drawCPU(x + 1200, 12);
@@ -431,7 +425,7 @@ class NessyApplication {
 
                 // Draw PPU
                 if (cfgDisplayPPU)
-                    drawPPU(x + 658, 518);
+                    drawPPU(20, 650);
                 
                 // Display the window
                 window.display();
@@ -480,7 +474,7 @@ int main(int argc, char *argv[])
     
     NessyApplication nessy(TheNES, argv[1]);
 
-    if (nessy.construct(1800, 960, 2, 2)) {
+    if (nessy.construct(1900, 960, 3, 3)) {
         printf("[ Starting Emulation     ]\n");
         nessy.start();
         nessy.mainLoop();

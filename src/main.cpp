@@ -400,8 +400,8 @@ class NessyApplication {
                 // Draw help text
                 // TODO: update!
                 if (cfgDisplayHelp) {
-                    drawString(x, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
-                    drawString(x, 470, "f = frame  spc = run   9/0 = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+                    drawString(x, 580, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
+                    drawString(x, 600, "f = frame  spc = run   9/0 = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
                 }
 
                 // Draw RAM

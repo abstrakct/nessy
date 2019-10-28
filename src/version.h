@@ -2,7 +2,7 @@
 #define VERSION_H
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
-#define VERSION_REVISION 39
-#define VERSION_HASH "g1876d72-dirty"
-#define VERSION_STRING "0.1.39.g1876d72-dirty"
+#define VERSION_REVISION 40
+#define VERSION_HASH "g737de58-dirty"
+#define VERSION_STRING "0.1.40.g737de58-dirty"
 #endif

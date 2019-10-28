@@ -3,7 +3,8 @@
 #include <memory>
 #include <cstdint>
 
-#include "olcPixelGameEngine.h"
+#include <SFML/Graphics.hpp>
+
 #include "cartridge.h"
 
 class Machine;
@@ -174,12 +175,9 @@ class PPU {
         void evaluateSprites();
         void loadSprites();
 
-        // Output
-        olc::Pixel  palScreen[0x40];
-        olc::Sprite sprScreen = olc::Sprite(256, 240);
-        olc::Sprite sprNametable[2]    = { olc::Sprite(256, 240), olc::Sprite(256, 240) };
-        olc::Sprite sprPatterntable[2] = { olc::Sprite(128, 128), olc::Sprite(128, 128) };
-        olc::Sprite sprOAM = { olc::Sprite(128, 128) };
+        // SFML Output
+        sf::Image nesScreen;
+        sf::Image sfmlPatterntable[2];
 
         // Inline functions
         inline int spriteHeight() {
@@ -197,11 +195,12 @@ class PPU {
         bool nmiOccurred = false;
 
         bool frame_complete = false;
-        olc::Sprite& GetScreen() { return sprScreen; };
-        olc::Sprite& GetNametable(uint8_t i) { return sprNametable[i]; };
-        olc::Sprite& GetPatterntable(uint8_t i, uint8_t palette);
-        olc::Sprite& GetOAM(uint8_t palette);
-        olc::Pixel& GetColorFromPaletteRam(uint8_t palette, uint8_t pixel);
+
+        // SFML stuff
+        sf::Color sfmlPalette[0x40];
+        sf::Color& GetColorFromPaletteRam(uint8_t palette, uint8_t pixel);
+        sf::Image& GetNesScreen() { return nesScreen; };
+        sf::Image& GetPatterntable(uint8_t i, uint8_t palette);
 
         // OAM stuff
         uint8_t oamAddr = 0;

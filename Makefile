@@ -7,7 +7,8 @@
 # The name of the executable to be created
 BIN_NAME = nessy
 # Compiler used
-CXX = ccache g++
+#CXX = ccache g++
+CXX = g++
 # Extension of source files used in the project
 SRC_EXT = cpp
 # Path to the source directory, relative to the makefile
@@ -26,7 +27,7 @@ INCLUDES = -I $(SRC_PATH)/ -I $(SRC_PATH)/../include -I $(SRC_PATH)/../lib
 #LINK_FLAGS = -ljsoncpp -lboost_program_options -lboost_random -lboost_serialization -lm -ltcodxx -Llib -Wl,-rpath=lib `sdl2-config --cflags --libs`
 #LINK_FLAGS = -lboost_random -Llib -Wl,-rpath=lib `sdl2-config --cflags --libs`
 #LINK_FLAGS = -Llib -Wl,-rpath=lib -lsfml-graphics -lsfml-window -lsfml-system
-LINK_FLAGS = -Llib -Wl,-rpath=lib -lX11 -lGL -lpthread -lpng
+LINK_FLAGS = -Llib -Wl,-rpath=lib -lX11 -lGL -lpthread -lpng -lsfml-graphics -lsfml-window -lsfml-system
 # Additional release-specific linker settings
 RLINK_FLAGS = 
 # Additional debug-specific linker settings

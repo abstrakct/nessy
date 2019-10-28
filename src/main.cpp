@@ -16,12 +16,12 @@
 #include <chrono>
 #include <thread>
 
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
+
 #include "version.h"
 #include "logger.h"
 #include "machine.h"
-
-#define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
 
 using namespace std;
 
@@ -53,34 +53,106 @@ std::string bin(uint8_t n)
     return b.to_string();
 }
 
-class Nessy : public olc::PixelGameEngine
-{
+class NessyApplication {
+    private:
+        sf::RenderWindow window;
+        //sf::RenderTexture renderTex;
+        sf::Texture nesTex, ppuTex;
+        sf::Sprite nesScreen, ppuSprite;
+        sf::Clock clock;
+        sf::Font sfmlFont;
+        sf::Text t;
+        sf::RectangleShape rect;
+        sf::Event event;
+        sf::Time startTime, endTime, elapsedTime, residualTime;
+
+        int windowWidth, windowHeight;
+        float scaleX, scaleY;
+        int cSize = 18;
+
+        bool running = false, emuRunning = false;
+
     public:
         std::shared_ptr<Machine> nes;
         std::map<uint16_t, std::string> disasm;
-        std::string nesFilename;
+        std::string appName, nesFilename;
         uint16_t ram2start = 0x8000;
         bool debugmode, runmode = false;
         int execspeed = 100;
-        float residualTime = 0.0f, targetFPS = 60.0f;
+        float targetFPS = 60.0f;
         char log[100];
         uint8_t selectedPalette = 0;
 
         std::shared_ptr<Cartridge> cart;
 
-        Nessy(std::shared_ptr<Machine> m, std::string filename, bool d = false)
+        NessyApplication(std::shared_ptr<Machine> m, std::string filename, bool d = false)
         { 
-            sAppName = "Nessy"; 
+            appName = "Nessy"; 
             nes = m;
-            debugmode = d;
             nesFilename = filename;
+            debugmode = d;
         }
 
-        ~Nessy() { }
+        ~NessyApplication() { }
 
-        void DrawRAM(int x, int y, uint16_t addr, int rows, int cols)
+        bool construct(int width, int height, float sX, float sY) {
+            windowWidth = width;
+            windowHeight = height;
+            scaleX = sX;
+            scaleY = sY;
+
+            window.create(sf::VideoMode(width, height), appName);
+            window.setVerticalSyncEnabled(true);
+            // TODO: NES color scheme? light/dark grey, black, red
+            window.clear(sf::Color::Blue);
+
+            nesTex.create(width, height);
+            nesScreen.setTexture(nesTex);
+            nesScreen.setTextureRect(sf::Rect(0, 0, 256, 240));
+            nesScreen.setPosition((width / 2) - 224 , cSize);
+            nesScreen.scale(scaleX, scaleY);
+
+            ppuTex.create(128, 128);
+            ppuSprite.setTexture(ppuTex);
+            ppuSprite.scale(scaleX, scaleY);
+
+            t.setFillColor(sf::Color::White);
+            t.setFont(sfmlFont);
+            t.setCharacterSize(cSize);
+            t.setStyle(sf::Text::Bold);
+
+            //rect.setSize(sf::Vector2f(pixelWidth, pixelHeight));
+            
+            if (!sfmlFont.loadFromFile("Courier Prime Code.ttf")) {
+                printf("ERROR: couldn't load font file!\n");
+                return false;
+            }
+
+            startTime = clock.getElapsedTime();
+            endTime = clock.getElapsedTime();
+
+            running = true;
+            return true;
+        };
+
+        void drawString(float x, float y, std::string text)
         {
-            // TODO: highlight current PC (også read/writes????!!!!) !!!
+            t.setPosition(x, y);
+            t.setString(text);
+            window.draw(t);
+        }
+
+        void drawString(float x, float y, std::string text, sf::Color color)
+        {
+            t.setFillColor(color);
+            t.setPosition(x, y);
+            t.setString(text);
+            window.draw(t);
+        }
+
+        void drawRAM(int x, int y, uint16_t addr, int rows, int cols)
+        {
+            // TODO: highlight current PC (and read/writes????!!!!) !!!
             int ramx = x, ramy = y;
             for (int row = 0; row < rows; row++) {
                 std::string s = "$" + hex(addr, 4) + ":";
@@ -88,84 +160,280 @@ class Nessy : public olc::PixelGameEngine
                     s += " " + hex(nes->cpuRead(addr, true), 2);
                     addr++;
                 }
-                //if (addr == nes->cpu->pc) {
-                //    DrawString(ramx, ramy, s, olc::GREEN);
-                //} else {
-                    DrawString(ramx, ramy, s);
-                //}
-                ramy += 10;
+                drawString(ramx, ramy, s);
+                ramy += cSize;
             }
         }
 
-        void DrawCPU(int x, int y)
+        void drawCPU(int x, int y)
         {
-            //std::string s = "CPU: ";
-            
             int xs = 32;
-            int space = 8;
-            DrawString(x, y, "CPU:", olc::WHITE);
-            DrawString(x + (xs + space * 1), y, "N", nes->cpu.GetFlag(nes->cpu.N) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 2), y, "V", nes->cpu.GetFlag(nes->cpu.V) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 3), y, "-", nes->cpu.GetFlag(nes->cpu.U) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 4), y, "B", nes->cpu.GetFlag(nes->cpu.B) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 5), y, "D", nes->cpu.GetFlag(nes->cpu.D) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 6), y, "I", nes->cpu.GetFlag(nes->cpu.I) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 7), y, "Z", nes->cpu.GetFlag(nes->cpu.Z) ? olc::GREEN : olc::RED);
-            DrawString(x + (xs + space * 8), y, "C", nes->cpu.GetFlag(nes->cpu.C) ? olc::GREEN : olc::RED);
-            DrawString(x, y + 10, " PC: $" + hex(nes->cpu.pc, 4));
-            DrawString(x, y + 20, " SP: $" + hex(nes->cpu.sp, 4));
-            DrawString(x, y + 30, "  A: $" + hex(nes->cpu.a,  2) + "  [" + bin(nes->cpu.a) + "]");
-            DrawString(x, y + 40, "  X: $" + hex(nes->cpu.x,  2) + "  [" + bin(nes->cpu.x) + "]");
-            DrawString(x, y + 50, "  Y: $" + hex(nes->cpu.y,  2) + "  [" + bin(nes->cpu.y) + "]");
-            DrawString(x, y + 60, "Total cycles: " + std::to_string(nes->cpu.total_cycles));
+            int space = cSize;
+            drawString(x, y, "CPU:", sf::Color::White);
+            drawString(x + (xs + space * 1), y, "N", nes->cpu.GetFlag(nes->cpu.N) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 2), y, "V", nes->cpu.GetFlag(nes->cpu.V) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 3), y, "-", nes->cpu.GetFlag(nes->cpu.U) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 4), y, "B", nes->cpu.GetFlag(nes->cpu.B) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 5), y, "D", nes->cpu.GetFlag(nes->cpu.D) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 6), y, "I", nes->cpu.GetFlag(nes->cpu.I) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 7), y, "Z", nes->cpu.GetFlag(nes->cpu.Z) ? sf::Color::Green : sf::Color::Red);
+            drawString(x + (xs + space * 8), y, "C", nes->cpu.GetFlag(nes->cpu.C) ? sf::Color::Green : sf::Color::Red);
+            drawString(x, y + cSize * 1, " PC: $" + hex(nes->cpu.pc, 4), sf::Color::White);
+            drawString(x, y + cSize * 2, " SP: $" + hex(nes->cpu.sp, 4));
+            drawString(x, y + cSize * 3, "  A: $" + hex(nes->cpu.a,  2) + "  [" + bin(nes->cpu.a) + "]");
+            drawString(x, y + cSize * 4, "  X: $" + hex(nes->cpu.x,  2) + "  [" + bin(nes->cpu.x) + "]");
+            drawString(x, y + cSize * 5, "  Y: $" + hex(nes->cpu.y,  2) + "  [" + bin(nes->cpu.y) + "]");
+            //drawString(x, y + cSize * 6, "Total cycles: " + std::to_string(nes->cpu.total_cycles));
         }
 
-        void DrawMapper(int x, int y)
+        void drawMapper(int x, int y)
         {
             std::vector<std::string> mapperInfo = nes->cart->getMapperInfo();
-            //DrawString(x, y, "MAPPER:");
             for (auto it : mapperInfo) {
-                DrawString(x, y, it);
-                y += 10;
+                drawString(x, y, it);
+                y += cSize;
             }
         }
 
-        void DrawDisasm(int x, int y, int lines)
+        void drawDisasm(int x, int y, int lines)
         {
             auto it = disasm.find(nes->cpu.pc);
             std::map<uint16_t, std::string> next;
             next = nes->cpu.disassemble(nes->cpu.pc, nes->cpu.pc);
 
-            int liney = (lines >> 1) * 10 + y;
+            int liney = (lines >> 1) * cSize + y;
 
             // Draw "live" disassembly of next instruction
-            DrawString(x, liney, next[nes->cpu.pc], olc::CYAN);
+            drawString(x, liney, next[nes->cpu.pc], sf::Color::Cyan);
 
             if (it != disasm.end()) {
-                //DrawString(x, liney, (*it).second, olc::CYAN);
-                while (liney < (lines * 10) + y) {
-                    liney += 10;
+                while (liney < (lines * cSize) + y) {
+                    liney += cSize;
                     if (++it != disasm.end()) {
-                        DrawString(x, liney, (*it).second);
+                        drawString(x, liney, (*it).second, sf::Color::White);
                     }
                 }
             }
 
             it = disasm.find(nes->cpu.pc);
-            liney = (lines >> 1) * 10 + y;
+            liney = (lines >> 1) * cSize + y;
             if (it != disasm.end()) {
-                //DrawString(x, liney, (*it).second, olc::CYAN);
                 while (liney > y) {
-                    liney -= 10;
+                    liney -= cSize;
                     if (--it != disasm.end()) {
-                        DrawString(x, liney, (*it).second);
+                        drawString(x, liney, (*it).second);
                     }
                 }
             }
         }
 
-        // Called once at start
-        bool OnUserCreate() override
+        void drawPPU(int x, int y)
+        {
+            ppuTex.update(nes->ppu.GetPatterntable(0, selectedPalette));
+            ppuSprite.setPosition(x, y);
+            window.draw(ppuSprite);
+
+            ppuTex.update(nes->ppu.GetPatterntable(1, selectedPalette));
+            ppuSprite.setPosition(x + 256 + 16, y);
+            window.draw(ppuSprite);
+        }
+
+        void mainLoop()
+        {
+            endTime = clock.getElapsedTime();
+            elapsedTime = endTime - startTime;
+            startTime = endTime;
+            
+            while (window.isOpen() && running) {
+
+                if (emuRunning) {
+                    if (residualTime.asSeconds() > 0.0f) {
+                        residualTime -= elapsedTime;
+                    } else {
+                        residualTime += sf::seconds(1.0f / targetFPS) - elapsedTime;
+
+                        do {
+                            nes->clock();
+                        } while (!nes->ppu.frame_complete);
+
+                        nes->ppu.frame_complete = false;
+
+                        if (cfgDisplayDisasm)
+                            //disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
+                            disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+                    }
+                }
+
+                while (window.pollEvent(event)) {
+                    if (event.type == sf::Event::Closed)
+                        running = false;
+                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+                        running = false;
+                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
+                        emuRunning = !emuRunning;
+
+                    if (!emuRunning) {
+                        if (event.type == sf::Event::KeyPressed) {
+                            if (event.key.code == sf::Keyboard::S) {
+                                do {
+                                    nes->clock();
+                                } while (!nes->cpu.complete());
+
+                                do {
+                                    nes->clock();
+                                } while (nes->cpu.complete());
+
+                                if (cfgDisplayDisasm)
+                                    disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+                            }
+
+                            if (event.key.code == sf::Keyboard::F) {
+                                do {
+                                    nes->clock();
+                                } while (!nes->ppu.frame_complete);
+
+                                do {
+                                    nes->clock();
+                                } while (!nes->cpu.complete());
+
+                                nes->ppu.frame_complete = false;
+
+                                if (cfgDisplayDisasm)
+                                    disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+                            }
+                        }
+                    }
+
+                    if (event.type == sf::Event::KeyReleased) {
+                        switch (event.key.code) {
+                            case sf::Keyboard::Enter:
+                                nes->controller[0].releaseButton(Controller::Button::Start); break;
+                            case sf::Keyboard::Tab:
+                                nes->controller[0].releaseButton(Controller::Button::Select); break;
+                            case sf::Keyboard::W:
+                                nes->controller[0].releaseButton(Controller::Button::Up); break;
+                            case sf::Keyboard::A:
+                                nes->controller[0].releaseButton(Controller::Button::Left); break;
+                            case sf::Keyboard::S:
+                                nes->controller[0].releaseButton(Controller::Button::Down); break;
+                            case sf::Keyboard::D:
+                                nes->controller[0].releaseButton(Controller::Button::Right); break;
+                            case sf::Keyboard::K:
+                                nes->controller[0].releaseButton(Controller::Button::B); break;
+                            case sf::Keyboard::L:
+                                nes->controller[0].releaseButton(Controller::Button::A); break;
+                            default: break;
+                        }
+                    }
+
+                    if (event.type == sf::Event::KeyPressed) {
+                        switch (event.key.code) {
+                            // Controller 1
+                            case sf::Keyboard::Enter:
+                                nes->controller[0].pressButton(Controller::Button::Start); break;
+                            case sf::Keyboard::Tab:
+                                nes->controller[0].pressButton(Controller::Button::Select); break;
+                            case sf::Keyboard::W:
+                                nes->controller[0].pressButton(Controller::Button::Up); break;
+                            case sf::Keyboard::A:
+                                nes->controller[0].pressButton(Controller::Button::Left); break;
+                            case sf::Keyboard::S:
+                                nes->controller[0].pressButton(Controller::Button::Down); break;
+                            case sf::Keyboard::D:
+                                nes->controller[0].pressButton(Controller::Button::Right); break;
+                            case sf::Keyboard::K:
+                                nes->controller[0].pressButton(Controller::Button::B); break;
+                            case sf::Keyboard::L:
+                                nes->controller[0].pressButton(Controller::Button::A); break;
+
+                            // UI
+                            case sf::Keyboard::F1:
+                                cfgDisplayHelp = !cfgDisplayHelp; break;
+                            case sf::Keyboard::Num1:
+                                cfgDisplayRam = !cfgDisplayRam; break;
+                            case sf::Keyboard::Num2:
+                                cfgDisplayCpu = !cfgDisplayCpu; break;
+                            case sf::Keyboard::Num3:
+                                cfgDisplayMapper = !cfgDisplayMapper; break;
+                            case sf::Keyboard::Num4:
+                                cfgDisplayDisasm = !cfgDisplayDisasm; break;
+                            case sf::Keyboard::Num5:
+                                cfgDisplayPPU = !cfgDisplayPPU; break;
+                            case sf::Keyboard::Num9:
+                                targetFPS -= 5; break;
+                            case sf::Keyboard::Num0:
+                                targetFPS += 5; break;
+                            case sf::Keyboard::P:
+                                (++selectedPalette) &= 0x07; break;
+                            case sf::Keyboard::Up:
+                                ram2start += 0x100; break;
+                            case sf::Keyboard::PageDown:
+                                ram2start += 0x1000; break;
+                            case sf::Keyboard::Down:
+                                ram2start -= 0x100; break;
+                            case sf::Keyboard::PageUp:
+                                ram2start -= 0x1000; break;
+
+                            case sf::Keyboard::R:
+                                nes->reset(); break;
+                            case sf::Keyboard::I:
+                                nes->cpu.irq(); break;
+                            case sf::Keyboard::N:
+                                nes->cpu.nmi(); break;
+
+
+                            default: break;
+                        }
+                    }
+                }
+
+                //renderTex.clear(sf::Color::Blue);
+
+                window.clear(sf::Color::Blue);
+
+                // Update and draw NES Screen
+                nesTex.update(nes->ppu.GetNesScreen());
+                window.draw(nesScreen);
+
+                int x = 10;
+
+                // Draw help text
+                // TODO: update!
+                if (cfgDisplayHelp) {
+                    drawString(x, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
+                    drawString(x, 470, "f = frame  spc = run   9/0 = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+                }
+
+                // Draw RAM
+                if (cfgDisplayRam) {
+                    drawRAM(x + 10, 12,  0x0000,    16, 16);
+                    drawRAM(x + 10, 320, ram2start, 16, 16);
+                }
+
+                // Draw CPU status
+                if (cfgDisplayCpu)
+                    drawCPU(x + 1200, 12);
+
+                // Draw mapper info
+                if (cfgDisplayMapper)
+                    drawMapper(x + 1200, cSize * 8);
+
+                // Draw disassembly
+                if (cfgDisplayDisasm)
+                    drawDisasm(x + 1200, cSize * 16, 16);
+
+                // Draw PPU
+                if (cfgDisplayPPU)
+                    drawPPU(x + 658, 518);
+                
+                // Display the window
+                window.display();
+
+                //sf::sleep(sf::microseconds(10));
+            }
+        };
+
+        void start()
         {
             printf("[ Loading Cartridge      ]\n");
             cart = std::make_shared<Cartridge>(nesFilename);
@@ -183,301 +451,11 @@ class Nessy : public olc::PixelGameEngine
 
             printf("[ Resetting NES          ]\n");
             nes->reset();
-
-            return true;
-        }
-
-        // Called once per frame
-        bool OnUserUpdate(float fElapsedTime) override
-        {
-            Clear(olc::DARK_BLUE);
-
-            if (GetKey(olc::Key::ESCAPE).bReleased)
-                return false;
-
-            if (runmode) {
-                if (residualTime > 0.0f) {
-                    residualTime -= fElapsedTime;
-                } else {
-                    residualTime += (1.0f / targetFPS) - fElapsedTime;
-
-                    do {
-                        nes->clock();
-                    } while (!nes->ppu.frame_complete);
-
-                    nes->ppu.frame_complete = false;
-
-                    if (cfgDisplayDisasm)
-                        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
-                }
-            } else {
-                // Advance one instruction
-                if (GetKey(olc::Key::K_S).bPressed) {
-                    do {
-                        nes->clock();
-                    } while (!nes->cpu.complete());
-
-                    do {
-                        nes->clock();
-                    } while (nes->cpu.complete());
-
-                    if (cfgDisplayDisasm)
-                        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
-                }
-
-                // Advance one frame
-                if (GetKey(olc::Key::K_F).bPressed) {
-                    do {
-                        nes->clock();
-                    } while (!nes->ppu.frame_complete);
-
-                    do {
-                        nes->clock();
-                    } while (!nes->cpu.complete());
-
-                    nes->ppu.frame_complete = false;
-
-                    if (cfgDisplayDisasm)
-                        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
-                }
-            }
-
-            if (GetKey(olc::Key::SPACE).bPressed) {
-                // Run Mode! Run machine until stopped!
-                runmode = !runmode;
-            }
-
-            if (GetKey(olc::Key::F1).bPressed)
-                cfgDisplayHelp = !cfgDisplayHelp;
-
-            if (GetKey(olc::Key::K1).bPressed)
-                cfgDisplayRam = !cfgDisplayRam;
-
-            if (GetKey(olc::Key::K2).bPressed)
-                cfgDisplayCpu = !cfgDisplayCpu;
-
-            if (GetKey(olc::Key::K3).bPressed)
-                cfgDisplayMapper = !cfgDisplayMapper;
-
-            if (GetKey(olc::Key::K4).bPressed)
-                cfgDisplayDisasm = !cfgDisplayDisasm;
-
-            if (GetKey(olc::Key::K5).bPressed)
-                cfgDisplayPPU = !cfgDisplayPPU;
-
-            if (GetKey(olc::Key::K_R).bPressed)
-                nes->cpu.reset();
-
-            if (GetKey(olc::Key::K_I).bPressed)
-                nes->cpu.irq();
-
-            if (GetKey(olc::Key::K_N).bPressed)
-                nes->cpu.nmi();
-
-            if (GetKey(olc::Key::UP).bPressed) {
-                ram2start += 0x100;
-            }
-
-            if (GetKey(olc::Key::PGDN).bPressed) {
-                ram2start += 0x1000;
-            }
-
-            if (GetKey(olc::Key::DOWN).bPressed) {
-                ram2start -= 0x100;
-            }
-
-            if (GetKey(olc::Key::PGUP).bPressed) {
-                ram2start -= 0x1000;
-            }
-
-            if (GetKey(olc::Key::K9).bPressed) {
-                // increase execution speed which means decrease sleep time
-                if (targetFPS > 5)
-                    targetFPS -= 5;
-                else if (targetFPS > 1)   // zero fps makes no sense...
-                    targetFPS --;
-
-            }
-
-            if (GetKey(olc::Key::K0).bPressed) {
-                if (targetFPS < 5)
-                    targetFPS ++;
-                else
-                    targetFPS += 5;
-            }
-
-            // Keys mapped to NES controller 1
-
-            if (GetKey(olc::Key::ENTER).bPressed) {
-                nes->controller[0].pressButton(Controller::Button::Start);
-            }
-
-            if (GetKey(olc::Key::ENTER).bReleased) {
-                nes->controller[0].releaseButton(Controller::Button::Start);
-            }
-
-            if (GetKey(olc::Key::TAB).bPressed) {
-                nes->controller[0].pressButton(Controller::Button::Select);
-            }
-
-            if (GetKey(olc::Key::TAB).bReleased) {
-                nes->controller[0].releaseButton(Controller::Button::Select);
-            }
-
-            if (GetKey(olc::Key::K_D).bHeld) {
-                nes->controller[0].pressButton(Controller::Button::Right);
-            } else {
-                nes->controller[0].releaseButton(Controller::Button::Right);
-            }
-
-            if (GetKey(olc::Key::K_A).bHeld) {
-                nes->controller[0].pressButton(Controller::Button::Left);
-            } else {
-                nes->controller[0].releaseButton(Controller::Button::Left);
-            }
-
-            if (GetKey(olc::Key::K_W).bHeld) {
-                nes->controller[0].pressButton(Controller::Button::Up);
-            } else {
-                nes->controller[0].releaseButton(Controller::Button::Up);
-            }
-
-            if (GetKey(olc::Key::K_S).bHeld) {
-                nes->controller[0].pressButton(Controller::Button::Down);
-            } else {
-                nes->controller[0].releaseButton(Controller::Button::Down);
-            }
-
-            if (GetKey(olc::Key::K_L).bHeld) {
-                nes->controller[0].pressButton(Controller::Button::A);
-            } else {
-                nes->controller[0].releaseButton(Controller::Button::A);
-            }
-
-            if (GetKey(olc::Key::K_K).bHeld) {
-                nes->controller[0].pressButton(Controller::Button::B);
-            } else {
-                nes->controller[0].releaseButton(Controller::Button::B);
-            }
-
-            if (GetKey(olc::Key::K_P).bPressed) (++selectedPalette) &= 0x07;
-
-            //if (GetKey(olc::Key::K_B).bPressed)
-            //    nes->cpu.SetFlag(nes->cpu.N, true);
-            //if (GetKey(olc::Key::K_V).bPressed)
-            //    nes->cpu.SetFlag(nes->cpu.N, false);
-
-
-
-            int x = 10;
-
-            // Draw the NES Screen!
-            DrawSprite(x + 450,  10, &nes->ppu.GetScreen());
-
-            if (cfgDisplayCpu)
-                DrawCPU(x + 720, 12);
-
-            if (cfgDisplayMapper)
-                DrawMapper(x + 720, 90);
-
-            if (cfgDisplayDisasm)
-                DrawDisasm(x + 720, 200, 16);
-
-            if (cfgDisplayRam) {
-                DrawRAM(x + 10,  12, 0x0000,    16, 16);
-                DrawRAM(x + 10, 192, ram2start, 16, 16);
-            }
-
-            if (cfgDisplayHelp) {
-                DrawString(x, 460, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
-                DrawString(x, 470, "f = frame  spc = run   o/k = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
-            }
-
-            if (cfgDisplayPPU) {
-                x += 450;
-                DrawSprite(x, 260, &nes->ppu.GetPatterntable(0, selectedPalette));
-                DrawSprite(x + 130, 260, &nes->ppu.GetPatterntable(1, selectedPalette));
-                //DrawSprite(x + 260, 260, &nes->ppu.GetOAM(selectedPalette));
-
-                // Visualize the palettes
-                const int sz = 6;
-                for (int p = 0; p < 8; p++) {
-                    for (int s = 0; s < 4; s++) {
-                        FillRect(x + 10 + p * (sz * 5) + (s * sz), 390, sz, sz, nes->ppu.GetColorFromPaletteRam(p, s));
-                    }
-                }
-                DrawRect(x + 10 + selectedPalette * (sz * 5) - 1, 389, (sz * 4), sz, olc::WHITE);
-            }
-
-            //if (runmode)
-            //    std::this_thread::sleep_for(std::chrono::milliseconds(execspeed));
-
-            return true;
         }
 };
 
 int main(int argc, char *argv[])
 {
-    //std::vector<uint8_t> data;
-    //char *header;
-    //int mapper;
-    //ifstream file(argv[1], ios::binary);
-    //streampos size;
-    //streampos headersize = 16;
-    //int prgromsize = 0;
-
-    //file.seekg(headersize, ios::end);
-    //size = file.tellg();
-    //cout << "ROM size is " << size << " bytes." << endl;
-    //file.seekg(0, ios::beg);
-    //
-    //header = new char[headersize];
-    //file.read(header, headersize);
-
-    //std::vector<uint8_t> contents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    //for (auto it : contents) {
-    //    data.push_back(it);
-    //}
-    ////file.read(data, size);
-    //
-    //if(header[0] == 'N' && header[1] == 'E' && header[2] == 'S' && header[3] == 0x1A) {
-    //    cout << "Header OK" << endl;
-    //    prgromsize = (int) header[4] * 16384;
-    //    cout << "PRG ROM: " << (int) header[4] << " x 16 KB (" << prgromsize << ")" << endl;
-    //    if (header[5]) {
-    //        cout << "CHR ROM: " << (int) header[5] << " x  8 KB" << endl;
-    //    } else {
-    //        cout << "Board uses CHR RAM" << endl;
-    //    }
-    // 
-    //    cout << "Byte 6 flags:" << endl;
-    //    if (header[6] & 0b00000001) {
-    //        cout << "Mirroring: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)" << endl;
-    //    } else {
-    //        cout << "Mirroring: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)" << endl;
-    //    }
-    //    if (header[6] & 0b00000010) {
-    //        cout << "Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory" << endl;
-    //    }
-    //    if (header[6] & 0b00000100) {
-    //        cout << "512-byte trainer at $7000-$71FF (stored before PRG data)" << endl;
-    //    }
-    //    if (header[6] & 0b00001000) {
-    //        cout << "Ignore mirroring control or above mirroring bit; instead provide four-screen VRAM" << endl;
-    //    }
-
-    //    mapper = (header[7] & 0xF0) | ((header[6] & 0xF0) >> 4);
-    //    cout << "Mapper number: " << mapper << endl;
-
-
-    //    cout << "Byte 7 flags:" << endl;
-    //    if (header[7] & 0b00000001) {
-    //        cout << "VS Unisystem ROM" << endl;
-    //    }
-    //    if (header[7] & 0b00000010) {
-    //        cout << "PlayChoice-10 ROM (8KB of Hint Screen data stored after CHR data)" << endl;
-    //    }
-    //}
 
     printf("\nNESSY v%s\n\n", VERSION_STRING);
 
@@ -490,12 +468,20 @@ int main(int argc, char *argv[])
     TheNES = make_shared<Machine>();
 
     printf("[ Constructing Interface ]\n");
-    Nessy ui(TheNES, argv[1]);
 
-    if (ui.Construct(958, 480, 2, 2, false)) {
+    // SFML
+    
+    NessyApplication nessy(TheNES, argv[1]);
+
+    if (nessy.construct(1800, 960, 2, 2)) {
         printf("[ Starting Emulation     ]\n");
-        ui.Start();
+        nessy.start();
+        nessy.mainLoop();
+    } else {
+        printf("ERROR during application initialization!\n");
+        exit(1);
     }
+
 
     printf("\n");
     return 0;

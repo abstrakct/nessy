@@ -388,7 +388,7 @@ class NessyApplication {
 
                 //renderTex.clear(sf::Color::Blue);
 
-                window.clear(sf::Color::Blue);
+                window.clear(sf::Color::Black);
 
                 // Update and draw NES Screen
                 nesTex.update(nes->ppu.GetNesScreen());

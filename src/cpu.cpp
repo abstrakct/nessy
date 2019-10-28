@@ -947,10 +947,6 @@ void CPU::clock()
         }
 
 
-
-
-
-
         cycles += (add1 & add2);
 #if LOG_LEVEL > LOG_LEVEL_NOP
         sprintf(log, "%10ld: PC:%04X [Opcode %02X] A:%02X X:%02X Y:%02X", total_cycles, log_pc, opcode, a, x, y);
@@ -963,23 +959,6 @@ void CPU::clock()
 }
 
 
-
-// Addressing modes
-// These set up stuff for use later.
-//uint8_t CPU::Implied()
-//{
-//    operand = a;
-//    return 0;
-//}
-
-//uint8_t CPU::Immediate()
-//{
-//    // ++ postfix means:
-//    // address = pc; pc += 1;
-//    address = pc++;
-//    return 0;
-//}
-
 uint8_t CPU::Relative()
 {
     address_rel = read(pc) & 0x00FF;
@@ -989,36 +968,6 @@ uint8_t CPU::Relative()
     //printf("address_rel set to %04X (%d)\n", address_rel, (int8_t)address_rel);
     return 0;
 }
-
-//uint8_t CPU::ZeroPage()
-//{
-//    address = (read(pc) & 0x00FF);
-//    pc++;
-//    return 0;
-//}
-
-//uint8_t CPU::ZeroPageX()
-//{
-//    address = (read(pc) + x) & 0x00FF;
-//    pc++;
-//    return 0;
-//}
-
-//uint8_t CPU::ZeroPageY()
-//{
-//    address = (read(pc) + y) & 0x00FF;
-//    pc++;
-//    return 0;
-//}
-
-//uint8_t CPU::Absolute()
-//{
-//    address = (uint16_t) read(pc);
-//    pc++;
-//    address |= (uint16_t) (read(pc) << 8);
-//    pc++;
-//    return 0;
-//}
 
 uint8_t CPU::AbsoluteX()
 {

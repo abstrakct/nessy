@@ -383,7 +383,573 @@ void CPU::clock()
         cycles = lookup[opcode].cycles;
 
         int add1 = (this->*lookup[opcode].addrmode)();
-        int add2 = (this->*lookup[opcode].operate)();
+        int add2 = 0; //(this->*lookup[opcode].operate)();
+
+        uint16_t value = 0;
+
+        // THE BIG SWITCH
+        switch (opcode) {
+            case 0x00: // BRK
+                pc++;
+
+                SetFlag(I, true);
+                push16(pc);
+
+                SetFlag(B, true);
+                push(flags);
+
+                pc = (((uint16_t)read(0xFFFF) << 8) | (uint16_t)read(0xFFFE));
+                break;
+            case 0x01: // ORA
+            case 0x05: // ORA
+            case 0x09: // ORA
+            case 0x0D: // ORA
+            case 0x11: // ORA
+            case 0x15: // ORA
+            case 0x19: // ORA
+            case 0x1D: // ORA
+                fetch();
+                a |= operand;
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a  & 0x80);
+                add2 = 1;
+                break;
+            case 0x06: // ASL
+            case 0x0A: // ASL
+            case 0x0E: // ASL
+            case 0x16: // ASL
+            case 0x1E: // ASL
+                fetch();
+                temp = (uint16_t)operand << 1;
+                SetFlag(C, (temp & 0xFF00) > 0);
+                SetFlag(Z, (temp & 0x00FF) == 0x00);
+                SetFlag(N, (temp & 0x0080));
+
+                if (lookup[opcode].addrmode == &CPU::Implied)
+                    a = temp & 0x00FF;
+                else
+                    write(address, temp & 0x00FF);
+                break;
+            case 0x08: // PHP
+                // apparently PHP always pushes B as '1' (but doesn't actually set it)
+                push(flags | B | U);
+                SetFlag(B, false);
+                SetFlag(U, false);
+                break;
+            case 0x10: // BPL
+                if (!GetFlag(N)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0x18: // CLC
+                SetFlag(C, false);
+                break;
+            case 0x20: // JSR
+                pc--;
+                push16(pc);
+                pc = address;
+                break;
+            case 0x21: // AND
+            case 0x25: // AND
+            case 0x29: // AND
+            case 0x2D: // AND
+            case 0x31: // AND
+            case 0x35: // AND
+            case 0x39: // AND
+            case 0x3D: // AND
+                fetch();
+                a = a & operand;
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a & 0x80);
+                add2 = 1;
+                break;
+            case 0x24: // BIT
+            case 0x2C: // BIT
+                fetch();
+                temp = a & operand;
+                SetFlag(Z, (temp & 0x00FF) == 0x00);
+                SetFlag(N, operand & 0x80);
+                SetFlag(V, operand & 0x40);
+                break;
+            case 0x26: // ROL
+            case 0x2A: // ROL
+            case 0x2E: // ROL
+            case 0x36: // ROL
+            case 0x3E: // ROL
+                fetch();
+                temp = (uint16_t) (operand << 1) | GetFlag(C);
+                SetFlag(C, temp & 0xFF00);
+                SetFlag(Z, (temp & 0x00FF) == 0x0000);
+                SetFlag(N, temp & 0x0080);
+                if (lookup[opcode].addrmode == &CPU::Implied)
+                    a = temp & 0x00FF;
+                else
+                    write(address, temp & 0x00FF);
+                break;
+            case 0x28: // PLP
+                flags = pop();
+                SetFlag(U);
+                break;
+            case 0x30: // BMI
+                if (GetFlag(N)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0x38: // SEC
+                SetFlag(C);
+                break;
+            case 0x40: // RTI
+                flags = pop();
+                SetFlag(B, false);
+                SetFlag(U, false);
+                pc = pop16();
+                break;
+            case 0x41: // EOR
+            case 0x45: // EOR
+            case 0x49: // EOR
+            case 0x4D: // EOR
+            case 0x51: // EOR
+            case 0x55: // EOR
+            case 0x59: // EOR
+            case 0x5D: // EOR
+                fetch();
+                a = a ^ operand;
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a  & 0x80);
+                break;
+            case 0x46: // LSR
+            case 0x4A: // LSR
+            case 0x4E: // LSR
+            case 0x56: // LSR
+            case 0x5E: // LSR
+                fetch();
+
+                temp = (uint16_t) operand >> 1;
+                SetFlag(C, operand & 0x0001);
+                SetFlag(Z, (temp & 0x00FF) == 0x00);
+                SetFlag(N, (temp & 0x0080));
+
+                if (lookup[opcode].addrmode == &CPU::Implied)
+                    a = temp & 0x00FF;
+                else
+                    write(address, temp & 0x00FF);
+
+                break;
+            case 0x48: // PHA
+                push(a);
+                break;
+            case 0x4C: // JMP
+            case 0x6C: // JMP
+                pc = address;
+                break;
+            case 0x50: // BVC
+                if (!GetFlag(V)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0x58: // CLI
+                SetFlag(I, false);
+                break;
+            case 0x60: // RTS
+                pc = pop16();
+                pc++;
+                break;
+            case 0x61: // ADC
+            case 0x65: // ADC
+            case 0x69: // ADC
+            case 0x6D: // ADC
+            case 0x71: // ADC
+            case 0x75: // ADC
+            case 0x79: // ADC
+            case 0x7D: // ADC
+                fetch();
+                temp = (uint16_t)a + (uint16_t)operand + (uint16_t)(GetFlag(C) ? 1 : 0);
+                SetFlag(C, temp > 255);
+                SetFlag(Z, (temp & 0x00FF) == 0);
+                // I have no idea what's going on here lol
+                // Taken from OneLoneCoder
+                SetFlag(V, (~((uint16_t)a ^ (uint16_t)operand) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
+                SetFlag(N, temp & 0x0080);
+                a = temp & 0x00FF;
+                add2 = 1;
+                break;
+            case 0x66: // ROR
+            case 0x6A: // ROR
+            case 0x6E: // ROR
+            case 0x76: // ROR
+            case 0x7E: // ROR
+                fetch();
+                temp = (uint16_t)(GetFlag(C) << 7) | (operand >> 1);
+                SetFlag(C, operand & 0x01);
+                SetFlag(Z, (temp & 0x00FF) == 0x00);
+                SetFlag(N, temp & 0x0080);
+                if (lookup[opcode].addrmode == &CPU::Implied)
+                    a = temp & 0x00FF;
+                else
+                    write(address, temp & 0x00FF);
+                break;
+            case 0x68: // PLA
+                a = pop();
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a  & 0x80);
+                break;
+            case 0x70: // BVS
+                if (GetFlag(V)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0x78: // SEI
+                SetFlag(I);
+                break;
+            case 0x81: // STA
+            case 0x85: // STA
+            case 0x8D: // STA
+            case 0x91: // STA
+            case 0x95: // STA
+            case 0x9D: // STA
+            case 0x99: // STA
+                write(address, a);
+                break;
+            case 0x84: // STY
+            case 0x8C: // STY
+            case 0x94: // STY
+                write(address, y);
+                break;
+            case 0x86: // STX
+            case 0x8E: // STX
+            case 0x96: // STX
+                write(address, x);
+                break;
+            case 0x88: // DEY
+                y--;
+                SetFlag(Z, y == 0x00);
+                SetFlag(N, y  & 0x80);
+                break;
+            case 0x8A: // TXA
+                a = x;
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a  & 0x80);
+                break;
+            case 0x98: // TYA
+                a = y;
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a  & 0x80);
+                break;
+            case 0x9A: // TXS
+                sp = x;
+                break;
+            case 0x90: // BCC
+                if (!GetFlag(C)) {
+                    // cycles++ if branch succeeds
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0xA0: // LDY
+            case 0xA4: // LDY
+            case 0xAC: // LDY
+            case 0xB4: // LDY
+            case 0xBC: // LDY
+                fetch();
+                y = operand;
+                SetFlag(Z, y == 0x00);
+                SetFlag(N, y  & 0x80);
+                add2 = 1;
+                break;
+            case 0xA1: // LDA
+            case 0xA5: // LDA
+            case 0xA9: // LDA
+            case 0xAD: // LDA
+            case 0xB1: // LDA
+            case 0xB5: // LDA
+            case 0xB9: // LDA
+            case 0xBD: // LDA
+                fetch();
+                a = operand;
+                SetFlag(Z, a == 0x00);
+                SetFlag(N, a  & 0x80);
+                add2 = 1;
+                break;
+            case 0xA2: // LDX
+            case 0xA6: // LDX
+            case 0xAE: // LDX
+            case 0xB6: // LDX
+            case 0xBE: // LDX
+                fetch();
+                x = operand;
+                SetFlag(Z, x == 0x00);
+                SetFlag(N, x  & 0x80);
+                add2 = 1;
+                break;
+            case 0xA8: // TAY
+                y = a;
+                SetFlag(Z, y == 0x00);
+                SetFlag(N, y  & 0x80);
+                break;
+            case 0xAA: // TAX
+                x = a;
+                SetFlag(Z, x == 0x00);
+                SetFlag(N, x  & 0x80);
+                break;
+            case 0xBA: // TSX
+                x = sp;
+                SetFlag(Z, x == 0x00);
+                SetFlag(N, x  & 0x80);
+                break;
+            case 0xB0: // BCS
+                if (GetFlag(C)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0xB8: // CLV
+                SetFlag(V, false);
+                break;
+            case 0xC0: // CPY
+            case 0xC4: // CPY
+            case 0xCC: // CPY
+                fetch();
+                temp = (uint16_t)y - (uint16_t)operand;
+                SetFlag(C, y >= operand);
+                SetFlag(Z, y == operand);
+                SetFlag(N, temp & 0x0080);
+                add2 = 1;
+                break;
+            case 0xC1: // CMP
+            case 0xC5: // CMP
+            case 0xC9: // CMP
+            case 0xCD: // CMP
+            case 0xD1: // CMP
+            case 0xD5: // CMP
+            case 0xD9: // CMP
+            case 0xDD: // CMP
+                fetch();
+                temp = (uint16_t)a - (uint16_t)operand;
+                //printf("temp: %04X  a: %02X  operand: %02X\n", temp, a, operand);
+                SetFlag(C, a >= operand);
+                SetFlag(Z, a == operand);
+                SetFlag(N, temp & 0x0080);
+                add2 = 1;
+                break;
+            case 0xE0: // CPX
+            case 0xE4: // CPX
+            case 0xEC: // CPX
+                fetch();
+                temp = (uint16_t)x - (uint16_t)operand;
+                SetFlag(C, x >= operand);
+                SetFlag(Z, x == operand);
+                SetFlag(N, temp & 0x0080);
+                add2 = 1;
+                break;
+            case 0xC6: // DEC
+            case 0xCE: // DEC
+            case 0xD6: // DEC
+            case 0xDE: // DEC
+                fetch();
+                temp = operand - 1;
+                SetFlag(Z, (temp & 0x00FF) == 0x00);
+                SetFlag(N,  temp & 0x0080);
+                write(address, temp);
+                break;
+            case 0xC8: // INY
+                y++;
+                SetFlag(Z, y == 0x00);
+                SetFlag(N, y  & 0x80);
+                break;
+            case 0xCA: // DEX
+                x--;
+                SetFlag(Z, x == 0x00);
+                SetFlag(N, x  & 0x80);
+                break;
+            case 0xD0: // BNE
+                if (!GetFlag(Z)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0xD8: // CLD
+                SetFlag(D, false);
+                break;
+            case 0xE1: // SBC
+            case 0xE5: // SBC
+            case 0xE9: // SBC
+            case 0xED: // SBC
+            case 0xF1: // SBC
+            case 0xF5: // SBC
+            case 0xF9: // SBC
+            case 0xFD: // SBC
+                // Taken from OLC. I haven't made an effort to fully understand it...
+                fetch();
+
+                // Invert the bottom 8 bits (makes the operand negative)
+                value = ((uint16_t) operand) ^ 0x00FF;
+                // After that it's exactly the same as ADC ?!??
+                // (adding a negative number is equal to subtracting the positive equivalent of that number)
+                temp = (uint16_t)a + value + (uint16_t) (GetFlag(C) ? 1 : 0);
+                SetFlag(C, temp & 0xFF00);
+                SetFlag(Z, (temp & 0x00FF) == 0);
+                // I have no idea what's going on here lol
+                SetFlag(V, (temp ^ (uint16_t)a) & (temp ^ value) & 0x0080);
+                SetFlag(N, temp & 0x0080);
+                a = temp & 0x00FF;
+
+                add2 = 1;
+                break;
+            case 0xE6: // INC
+            case 0xEE: // INC
+            case 0xF6: // INC
+            case 0xFE: // INC
+                fetch();
+                temp = operand + 1;
+                SetFlag(Z, (temp & 0x00FF) == 0x00);
+                SetFlag(N,  temp & 0x0080);
+                write(address, temp);
+                break;
+            case 0xE8: // INX
+                x++;
+                SetFlag(Z, x == 0x00);
+                SetFlag(N, x  & 0x80);
+                break;
+            case 0xEA: // NOP
+                break;
+            case 0xF0: // BEQ
+                if (GetFlag(Z)) {
+                    cycles++;
+                    // Set address to branch to
+                    address = pc + address_rel;
+                    // Check for page boundary crossed
+                    if ((address & 0xFF00) != (pc & 0xFF00))
+                        cycles++;
+
+                    pc = address;
+                }
+                break;
+            case 0xF8: // SED
+                SetFlag(D);
+                break;
+            //case 0x5A: // XXX
+            //case 0x5B: // XXX
+            //case 0x5C: // XXX
+            //case 0x5F: // XXX
+            //case 0x62: // XXX
+            //case 0x63: // XXX
+            //case 0x64: // XXX
+            //case 0x67: // XXX
+            //case 0x6B: // XXX
+            //case 0x6F: // XXX
+            //case 0x72: // XXX
+            //case 0x73: // XXX
+            //case 0x74: // XXX
+            //case 0x77: // XXX
+            //case 0x7A: // XXX
+            //case 0x7B: // XXX
+            //case 0x7C: // XXX
+            //case 0x7F: // XXX
+            //case 0x80: // XXX
+            //case 0x82: // XXX
+            //case 0x83: // XXX
+            //case 0x87: // XXX
+            //case 0x89: // XXX
+            //case 0x8B: // XXX
+            //case 0x8F: // XXX
+            //case 0x92: // XXX
+            //case 0x93: // XXX
+            //case 0x97: // XXX
+            //case 0x9B: // XXX
+            //case 0x9C: // XXX
+            //case 0x9E: // XXX
+            //case 0x9F: // XXX
+            //case 0xA3: // XXX
+            //case 0xA7: // XXX
+            //case 0xAB: // XXX
+            //case 0xAF: // XXX
+            //case 0xB2: // XXX
+            //case 0xB3: // XXX
+            //case 0xB7: // XXX
+            //case 0xBB: // XXX
+            //case 0xBF: // XXX
+            //case 0xC2: // XXX
+            //case 0xC3: // XXX
+            //case 0xC7: // XXX
+            //case 0xCB: // XXX
+            //case 0xCF: // XXX
+            //case 0xD2: // XXX
+            //case 0xD3: // XXX
+            //case 0xD4: // XXX
+            //case 0xD7: // XXX
+            //case 0xDA: // XXX
+            //case 0xDB: // XXX
+            //case 0xDC: // XXX
+            //case 0xDF: // XXX
+            //case 0xE2: // XXX
+            //case 0xE3: // XXX
+            //case 0xE7: // XXX
+            //case 0xEB: // XXX
+            //case 0xEF: // XXX
+            //case 0xF2: // XXX
+            //case 0xF3: // XXX
+            //case 0xF4: // XXX
+            //case 0xF7: // XXX
+            //case 0xFA: // XXX
+            //case 0xFB: // XXX
+            //case 0xFC: // XXX
+            //case 0xFF: // XXX
+
+            default:
+                printf("Illegal opcode %02X encountered!\n", opcode);
+                add2 = 0; break;
+        }
+
+
+
+
+
 
         cycles += (add1 & add2);
 #if LOG_LEVEL > LOG_LEVEL_NOP
@@ -576,588 +1142,6 @@ uint16_t CPU::GetAddrIDY(uint16_t addr)
     ret = ((hi << 8) | lo) + y;
     return ret;
 }
-
-////////////////
-// Operations //
-////////////////
-uint8_t CPU::NOP()
-{
-    return 0;
-}
-
-uint8_t CPU::XXX()
-{
-    // TODO: add all unofficial opcodes that make sense to add (e.g. some 2-byte NOPs)
-    l.w("Illegal opcode encountered!");
-    return 0;
-}
-
-// Like a lot in this project, this is mainly taken from OLC
-uint8_t CPU::ADC()
-{
-    fetch();
-    temp = (uint16_t)a + (uint16_t)operand + (uint16_t)(GetFlag(C) ? 1 : 0);
-    SetFlag(C, temp > 255);
-    SetFlag(Z, (temp & 0x00FF) == 0);
-    // I have no idea what's going on here lol
-    SetFlag(V, (~((uint16_t)a ^ (uint16_t)operand) & ((uint16_t)a ^ (uint16_t)temp)) & 0x0080);
-    SetFlag(N, temp & 0x0080);
-    a = temp & 0x00FF;
-    return 1;
-}
-
-uint8_t CPU::AND()
-{
-    // Fetch the operand (M)
-    fetch();
-
-    // OPERATE
-    a = a & operand;
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a & 0x80);
-
-    return 1;
-}
-
-uint8_t CPU::ASL()
-{
-    fetch();
-
-    temp = (uint16_t)operand << 1;
-    SetFlag(C, (temp & 0xFF00) > 0);
-    // litt usikker på Z her...
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N, (temp & 0x0080));
-
-    if (lookup[opcode].addrmode == &CPU::Implied)
-        a = temp & 0x00FF;
-    else
-        write(address, temp & 0x00FF);
-
-    return 0;
-}
-
-uint8_t CPU::BCC()
-{
-    if (!GetFlag(C)) {
-        // cycles++ if branch succeeds
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BCS()
-{
-    if (GetFlag(C)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BEQ()
-{
-    if (GetFlag(Z)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BIT()
-{
-    fetch();
-    temp = a & operand;
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N, operand & 0x80);
-    SetFlag(V, operand & 0x40);
-
-    return 0;
-}
-
-uint8_t CPU::BMI()
-{
-    if (GetFlag(N)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BNE()
-{
-    if (!GetFlag(Z)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BPL()
-{
-    if (!GetFlag(N)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BVC()
-{
-    if (!GetFlag(V)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BVS()
-{
-    if (GetFlag(V)) {
-        cycles++;
-        // Set address to branch to
-        address = pc + address_rel;
-        // Check for page boundary crossed
-        if ((address & 0xFF00) != (pc & 0xFF00))
-            cycles++;
-
-        pc = address;
-    }
-
-    return 0;
-}
-
-uint8_t CPU::BRK()
-{
-    pc++;
-
-    SetFlag(I, true);
-    push16(pc);
-
-    SetFlag(B, true);
-    push(flags);
-
-    pc = (((uint16_t)read(0xFFFF) << 8) | (uint16_t)read(0xFFFE));
-
-    return 0;
-}
-
-uint8_t CPU::CLC()
-{
-    SetFlag(C, false);
-    return 0;
-}
-
-uint8_t CPU::CLD()
-{
-    SetFlag(D, false);
-    return 0;
-}
-
-uint8_t CPU::CLI()
-{
-    SetFlag(I, false);
-    return 0;
-}
-
-uint8_t CPU::CLV()
-{
-    SetFlag(V, false);
-    return 0;
-}
-
-uint8_t CPU::CMP()
-{
-    fetch();
-    temp = (uint16_t)a - (uint16_t)operand;
-    //printf("temp: %04X  a: %02X  operand: %02X\n", temp, a, operand);
-    SetFlag(C, a >= operand);
-    SetFlag(Z, a == operand);
-    SetFlag(N, temp & 0x0080);
-    return 1;
-}
-
-uint8_t CPU::CPX()
-{
-    fetch();
-    temp = (uint16_t)x - (uint16_t)operand;
-    SetFlag(C, x >= operand);
-    SetFlag(Z, x == operand);
-    SetFlag(N, temp & 0x0080);
-    return 1;
-}
-
-uint8_t CPU::CPY()
-{
-    fetch();
-    temp = (uint16_t)y - (uint16_t)operand;
-    SetFlag(C, y >= operand);
-    SetFlag(Z, y == operand);
-    SetFlag(N, temp & 0x0080);
-    return 1;
-}
-
-uint8_t CPU::DEC()
-{
-    fetch();
-    temp = operand - 1;
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N,  temp & 0x0080);
-    write(address, temp);
-    return 0;
-}
-
-uint8_t CPU::DEX()
-{
-    x--;
-    SetFlag(Z, x == 0x00);
-    SetFlag(N, x  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::DEY()
-{
-    y--;
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, y  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::EOR()
-{
-    fetch();
-    a = a ^ operand;
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a  & 0x80);
-    return 1;
-}
-
-uint8_t CPU::INC()
-{
-    fetch();
-    temp = operand + 1;
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N,  temp & 0x0080);
-    write(address, temp);
-    return 0;
-}
-
-uint8_t CPU::INX()
-{
-    x++;
-    SetFlag(Z, x == 0x00);
-    SetFlag(N, x  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::INY()
-{
-    y++;
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, y  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::JMP()
-{
-    pc = address;
-    return 0;
-}
-
-uint8_t CPU::JSR()
-{
-    pc--;
-    push16(pc);
-    pc = address;
-    return 0;
-}
-
-uint8_t CPU::LDA()
-{
-    fetch();
-    a = operand;
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a  & 0x80);
-    return 1;
-}
-
-uint8_t CPU::LDX()
-{
-    fetch();
-    x = operand;
-    SetFlag(Z, x == 0x00);
-    SetFlag(N, x  & 0x80);
-    return 1;
-}
-
-uint8_t CPU::LDY()
-{
-    fetch();
-    y = operand;
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, y  & 0x80);
-    return 1;
-}
-
-uint8_t CPU::LSR()
-{
-    fetch();
-
-    temp = (uint16_t) operand >> 1;
-    SetFlag(C, operand & 0x0001);
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N, (temp & 0x0080));
-
-    if (lookup[opcode].addrmode == &CPU::Implied)
-        a = temp & 0x00FF;
-    else
-        write(address, temp & 0x00FF);
-
-    return 0;
-}
-
-uint8_t CPU::ORA()
-{
-    fetch();
-    a |= operand;
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a  & 0x80);
-    return 1;
-}
-
-// Push A
-uint8_t CPU::PHA()
-{
-    push(a);
-    return 0;
-}
-
-// Push flags/status
-uint8_t CPU::PHP()
-{
-    // apparently PHP always pushes B as '1' (but doesn't actually set it)
-    push(flags | B | U);
-    SetFlag(B, false);
-    SetFlag(U, false);
-    return 0;
-}
-
-uint8_t CPU::PLA()
-{
-    a = pop();
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::PLP()
-{
-    flags = pop();
-    SetFlag(U);
-    return 0;
-}
-
-uint8_t CPU::ROL()
-{
-    fetch();
-    temp = (uint16_t) (operand << 1) | GetFlag(C);
-    SetFlag(C, temp & 0xFF00);
-    SetFlag(Z, (temp & 0x00FF) == 0x0000);
-    SetFlag(N, temp & 0x0080);
-    if (lookup[opcode].addrmode == &CPU::Implied)
-        a = temp & 0x00FF;
-    else
-        write(address, temp & 0x00FF);
-
-    return 0;
-}
-
-uint8_t CPU::ROR()
-{
-    fetch();
-    temp = (uint16_t)(GetFlag(C) << 7) | (operand >> 1);
-    SetFlag(C, operand & 0x01);
-    SetFlag(Z, (temp & 0x00FF) == 0x00);
-    SetFlag(N, temp & 0x0080);
-    if (lookup[opcode].addrmode == &CPU::Implied)
-        a = temp & 0x00FF;
-    else
-        write(address, temp & 0x00FF);
-
-    return 0;
-}
-
-uint8_t CPU::RTI()
-{
-    // TODO: set/clear B+U flags??
-    flags = pop();
-    SetFlag(B, false);
-    SetFlag(U, false);
-
-    pc = pop16();
-    return 0;
-}
-
-uint8_t CPU::RTS()
-{
-    pc = pop16();
-    pc++;
-    //printf("RTS: pc set to %04x\n", pc);
-    return 0;
-}
-
-// Taken from OLC. I haven't made an effort to fully understand it...
-uint8_t CPU::SBC()
-{
-    fetch();
-
-    // Invert the bottom 8 bits (makes the operand negative)
-    uint16_t value = ((uint16_t) operand) ^ 0x00FF;
-    // After that it's exactly the same as ADC ?!??
-    // (adding a negative number is equal to subtracting the positive equivalent of that number)
-    temp = (uint16_t)a + value + (uint16_t) (GetFlag(C) ? 1 : 0);
-    SetFlag(C, temp & 0xFF00);
-    SetFlag(Z, (temp & 0x00FF) == 0);
-    // I have no idea what's going on here lol
-    SetFlag(V, (temp ^ (uint16_t)a) & (temp ^ value) & 0x0080);
-    SetFlag(N, temp & 0x0080);
-    a = temp & 0x00FF;
-    
-    return 1;
-}
-
-uint8_t CPU::SEC()
-{
-    SetFlag(C);
-    return 0;
-}
-
-uint8_t CPU::SED()
-{
-    SetFlag(D);
-    return 0;
-}
-
-uint8_t CPU::SEI()
-{
-    SetFlag(I);
-    return 0;
-}
-
-uint8_t CPU::STA()
-{
-    write(address, a);
-    return 0;
-}
-
-uint8_t CPU::STX()
-{
-    write(address, x);
-    return 0;
-}
-
-uint8_t CPU::STY()
-{
-    write(address, y);
-    return 0;
-}
-
-uint8_t CPU::TAX()
-{
-    x = a;
-    SetFlag(Z, x == 0x00);
-    SetFlag(N, x  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::TAY()
-{
-    y = a;
-    SetFlag(Z, y == 0x00);
-    SetFlag(N, y  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::TSX()
-{
-    x = sp;
-    SetFlag(Z, x == 0x00);
-    SetFlag(N, x  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::TXA()
-{
-    a = x;
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a  & 0x80);
-    return 0;
-}
-
-uint8_t CPU::TXS()
-{
-    sp = x;
-    return 0;
-}
-
-uint8_t CPU::TYA()
-{
-    a = y;
-    SetFlag(Z, a == 0x00);
-    SetFlag(N, a  & 0x80);
-    return 0;
-}
-
 
 // Disassembler
 // Heavily based on OLC's work

@@ -79,7 +79,14 @@ class NessyApplication {
         uint16_t ram2start = 0x8000;
         bool debugmode, runmode = false;
         int execspeed = 100;
+
+        // I don't know why I have to do this!
+#ifdef NDEBUG
+        float targetFPS = 180.0f;
+#else
         float targetFPS = 60.0f;
+#endif
+
         char log[100];
         uint8_t selectedPalette = 0;
 

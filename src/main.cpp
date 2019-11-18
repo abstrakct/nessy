@@ -63,12 +63,15 @@ class NessyApplication {
         sf::Text t;
         sf::RectangleShape rect;
         sf::Event event;
+        sf::Joystick joystick;
 
         int windowWidth, windowHeight;
         float scaleX, scaleY;
         int cSize = 18;
 
         bool running = false, emuRunning = false;
+        bool breakpoint = false;
+        int breakpointAddress;
 
     public:
         std::shared_ptr<Machine> nes;
@@ -83,12 +86,14 @@ class NessyApplication {
 
         std::shared_ptr<Cartridge> cart;
 
-        NessyApplication(std::shared_ptr<Machine> m, std::string filename, bool d = false)
+        NessyApplication(std::shared_ptr<Machine> m, std::string filename, bool _breakpoint, int _breakpointAddress, bool d = false)
         { 
             appName = "Nessy"; 
             nes = m;
             nesFilename = filename;
             debugmode = d;
+            breakpoint = _breakpoint;
+            breakpointAddress = _breakpointAddress;
         }
 
         ~NessyApplication() { }
@@ -124,6 +129,19 @@ class NessyApplication {
             if (!sfmlFont.loadFromFile("Courier Prime Code.ttf")) {
                 printf("ERROR: couldn't load font file!\n");
                 return false;
+            }
+
+            // TODO: more checking
+            if (joystick.isConnected(0)) {
+                std::cout << "        Found controller: " << std::string(joystick.getIdentification(0).name) << std::endl;
+                printf("\tController has %d buttons\n", joystick.getButtonCount(0));
+                if (joystick.hasAxis(0,sf::Joystick::Axis::X)) {
+                    printf("\tController has X axis\n");
+                }
+                if (joystick.hasAxis(0,sf::Joystick::Axis::Y)) {
+                    printf("\tController has Y axis\n");
+                }
+
             }
 
             running = true;
@@ -271,6 +289,9 @@ class NessyApplication {
                     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
                         emuRunning = !emuRunning;
 
+                    if (breakpoint && (nes->cpu.pc == breakpointAddress))
+                        emuRunning = false;
+
                     if (!emuRunning) {
                         if (event.type == sf::Event::KeyPressed) {
                             if (event.key.code == sf::Keyboard::S) {
@@ -300,6 +321,80 @@ class NessyApplication {
                                 if (cfgDisplayDisasm)
                                     disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
                             }
+                        }
+                    }
+
+                    Controller::Button b;
+                    if (event.type == sf::Event::JoystickMoved) {
+                        // TODO: FIX THIS!
+                        // maybe getAxisPosition is better?
+                        //printf("Joystick moved: %f\n", event.joystickMove.position);
+                        if (event.joystickMove.axis == sf::Joystick::Axis::X) {
+                            if (event.joystickMove.position < 0) {
+                                nes->controller[0].pressButton(Controller::Button::Left);
+                                nes->controller[0].releaseButton(Controller::Button::Right);
+                                //nes->controller[0].releaseButton(Controller::Button::Up);
+                                //nes->controller[0].releaseButton(Controller::Button::Down);
+                                b = Controller::Button::Left;
+                            }
+                            if (event.joystickMove.position > 0) {
+                                nes->controller[0].pressButton(Controller::Button::Right);
+                                nes->controller[0].releaseButton(Controller::Button::Left);
+                                //nes->controller[0].releaseButton(Controller::Button::Up);
+                                //nes->controller[0].releaseButton(Controller::Button::Down);
+                                b = Controller::Button::Right;
+                            }
+                        }
+                        if (event.joystickMove.axis == sf::Joystick::Axis::Y) {
+                            if (event.joystickMove.position < 0) {
+                                nes->controller[0].pressButton(Controller::Button::Up);
+                                //nes->controller[0].releaseButton(Controller::Button::Left);
+                                //nes->controller[0].releaseButton(Controller::Button::Right);
+                                nes->controller[0].releaseButton(Controller::Button::Down);
+                                b = Controller::Button::Up;
+                            }
+                            if (event.joystickMove.position > 0) {
+                                nes->controller[0].pressButton(Controller::Button::Down);
+                                //nes->controller[0].releaseButton(Controller::Button::Left);
+                                //nes->controller[0].releaseButton(Controller::Button::Right);
+                                nes->controller[0].releaseButton(Controller::Button::Up);
+                                b = Controller::Button::Down;
+                            }
+                        }
+                        if (event.joystickMove.position == 0) {
+                                nes->controller[0].releaseButton(b);
+                        //        nes->controller[0].releaseButton(Controller::Button::Left);
+                        //        nes->controller[0].releaseButton(Controller::Button::Right);
+                        //        nes->controller[0].releaseButton(Controller::Button::Up);
+                        //        nes->controller[0].releaseButton(Controller::Button::Down);
+                        }
+                    }
+
+                    if (event.type == sf::Event::JoystickButtonReleased) {
+                        //printf("Joystick button %d pressed\n", event.joystickButton.button);
+                        switch (event.joystickButton.button) {
+                            case 0: // B
+                                nes->controller[0].releaseButton(Controller::Button::B); break;
+                            case 1: // A
+                                nes->controller[0].releaseButton(Controller::Button::A); break;
+                            case 8: // Select
+                                nes->controller[0].releaseButton(Controller::Button::Select); break;
+                            case 9: // Start
+                                nes->controller[0].releaseButton(Controller::Button::Start); break;
+                        }
+                    }
+
+                    if (event.type == sf::Event::JoystickButtonPressed) {
+                        //printf("Joystick button %d pressed\n", event.joystickButton.button);
+                        switch (event.joystickButton.button) {
+                            case 0: // B
+                                nes->controller[0].pressButton(Controller::Button::B); break;
+                            case 1: // A
+                                nes->controller[0].pressButton(Controller::Button::A); break;
+                            case 8: // Select
+                                nes->controller[0].pressButton(Controller::Button::Select); break;
+                            case 9: // Start
+                                nes->controller[0].pressButton(Controller::Button::Start); break;
                         }
                     }
 
@@ -457,12 +552,21 @@ class NessyApplication {
 
 int main(int argc, char *argv[])
 {
-
+    bool breakpoint = false;
+    int breakpointAddress = 0;
     printf("\nNESSY v%s\n\n", VERSION_STRING);
 
     if (argc < 2) {
         printf("Provide ROM filename.\n");
         exit(0);
+    }
+
+    if (argc > 3) {
+        std::string s = string(argv[2]);
+        if (s == "-b") {
+            breakpoint = true;
+            breakpointAddress = std::stoi(string(argv[3]), nullptr, 16);
+        }
     }
 
     printf("[ Constructing Machine   ]\n");
@@ -472,7 +576,7 @@ int main(int argc, char *argv[])
 
     // SFML
     
-    NessyApplication nessy(TheNES, argv[1]);
+    NessyApplication nessy(TheNES, argv[1], breakpoint, breakpointAddress);
 
     if (nessy.construct(1900, 960, 3, 3)) {
         printf("[ Starting Emulation     ]\n");

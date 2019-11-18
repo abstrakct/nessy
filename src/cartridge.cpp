@@ -70,7 +70,7 @@ Cartridge::Cartridge(const std::string& filename)
             prgBanks = (header.prg_rom_chunks * defaultPrgBankSize) / bankSize;
             prgROM = std::make_shared<BankedMemory>(prgBanks, bankSize);
 
-            printf("\n\tLoading %d PRG ROM banks of size %04X\n", prgBanks, bankSize);
+            printf("\n\tLoading %d PRG ROM banks of size 0x%04X", prgBanks, bankSize);
             for (int i = 0; i < prgBanks; i++) {
                 std::vector<uint8_t> tmp;
                 tmp.resize(bankSize);
@@ -98,7 +98,7 @@ Cartridge::Cartridge(const std::string& filename)
             chrBanks = (header.chr_rom_chunks * defaultChrBankSize) / bankSize;
             chrROM = std::make_shared<BankedMemory>(chrBanks, bankSize);
 
-            printf("\tLoading %d CHR ROM banks of size %04X\n", chrBanks, bankSize);
+            printf("\tLoading %d CHR ROM banks of size 0x%04X", chrBanks, bankSize);
             for (int i = 0; i < chrBanks; i++) {
                 std::vector<uint8_t> tmp;
                 tmp.resize(bankSize);

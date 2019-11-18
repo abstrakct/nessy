@@ -271,6 +271,12 @@ class NessyApplication {
 
                         do {
                             nes->clock();
+
+                            if (breakpoint && (nes->cpu.pc == breakpointAddress)) {
+                                emuRunning = false;
+                                break;
+                            }
+
                         } while (!nes->ppu.frame_complete);
 
                         nes->ppu.frame_complete = false;
@@ -288,9 +294,6 @@ class NessyApplication {
                         running = false;
                     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
                         emuRunning = !emuRunning;
-
-                    if (breakpoint && (nes->cpu.pc == breakpointAddress))
-                        emuRunning = false;
 
                     if (!emuRunning) {
                         if (event.type == sf::Event::KeyPressed) {

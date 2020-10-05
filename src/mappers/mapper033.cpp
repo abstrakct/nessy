@@ -2,8 +2,6 @@
 #include "mapper033.h"
 #include "../cartridge.h"
 
-
-
 Mapper033::Mapper033(uint16_t p, uint16_t c) : Mapper(p, c)
 {
 }
@@ -14,12 +12,13 @@ Mapper033::~Mapper033()
 
 std::vector<std::string> Mapper033::getInfoStrings()
 {
-    if (updateInfo) {
+    if (updateInfo)
+    {
         char line[50];
 
         infoString.clear();
-        
-        infoString.push_back("MAPPER 033:");
+
+        infoString.push_back("MAPPER 033");
         sprintf(line, "PRG BANK @ $8000: %d", prgBank[0]);
         infoString.push_back(std::string(line));
         sprintf(line, "PRG BANK @ $A000: %d", prgBank[1]);
@@ -83,7 +82,8 @@ bool Mapper033::getMirrorType(int &data)
 bool Mapper033::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000) {
+    if (addr >= 0x8000)
+    {
         return true;
     }
 
@@ -97,34 +97,36 @@ bool Mapper033::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper033::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000 && addr < 0xC000) {
-        switch (addr & 0xA003) {
-            case 0x8000:
-                //printf("%02X written to $8000\n", data);
-                mirror = data & 0x40;
-                prgBank[0] = data & (prgBanks - 1);
-                break;
-            case 0x8001:
-                prgBank[1] = data & (prgBanks - 1);
-                break;
-            case 0x8002:
-                chrBank[0] = data;
-                break;
-            case 0x8003:
-                chrBank[1] = data;
-                break;
-            case 0xA000:
-                chrBank[2] = data;
-                break;
-            case 0xA001:
-                chrBank[3] = data;
-                break;
-            case 0xA002:
-                chrBank[4] = data;
-                break;
-            case 0xA003:
-                chrBank[5] = data;
-                break;
+    if (addr >= 0x8000 && addr < 0xC000)
+    {
+        switch (addr & 0xA003)
+        {
+        case 0x8000:
+            //printf("%02X written to $8000\n", data);
+            mirror = data & 0x40;
+            prgBank[0] = data & (prgBanks - 1);
+            break;
+        case 0x8001:
+            prgBank[1] = data & (prgBanks - 1);
+            break;
+        case 0x8002:
+            chrBank[0] = data;
+            break;
+        case 0x8003:
+            chrBank[1] = data;
+            break;
+        case 0xA000:
+            chrBank[2] = data;
+            break;
+        case 0xA001:
+            chrBank[3] = data;
+            break;
+        case 0xA002:
+            chrBank[4] = data;
+            break;
+        case 0xA003:
+            chrBank[5] = data;
+            break;
         }
         apply();
         updateInfo = true;

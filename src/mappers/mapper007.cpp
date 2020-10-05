@@ -1,7 +1,6 @@
 #include <iostream>
 #include "mapper007.h"
 
-
 // CPU $8000 - $FFFF: 32 KB switchable PRG ROM bank
 //
 // PRG ROMS:
@@ -24,12 +23,13 @@ Mapper007::~Mapper007()
 
 std::vector<std::string> Mapper007::getInfoStrings()
 {
-    if (updateInfo) {
+    if (updateInfo)
+    {
         char line[50];
 
         infoString.clear();
-        
-        infoString.push_back("MAPPER 007:");
+
+        infoString.push_back("MAPPER 007");
         sprintf(line, "PRG BANK: %d", prgBank);
         infoString.push_back(std::string(line));
         sprintf(line, "VRAM BANK: %d", vramBank);
@@ -59,14 +59,15 @@ void Mapper007::apply()
 {
     prgROM->setBank(0x8000, prgBank * 2);
     prgROM->setBank(0xC000, (prgBank * 2) + 1);
-    
+
     updateInfo = true;
 }
 
 bool Mapper007::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000) {
+    if (addr >= 0x8000)
+    {
         //mapped_addr = (addr - 0x8000) + (prgBank * 0x8000);
         return true;
     }
@@ -80,8 +81,9 @@ bool Mapper007::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper007::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000) {
-        prgBank  =  data & 0b00000111;  // last 3 bits select bank. Could also be written as & 0x07
+    if (addr >= 0x8000)
+    {
+        prgBank = data & 0b00000111; // last 3 bits select bank. Could also be written as & 0x07
         vramBank = (data & 0b00010000) >> 4;
 
         apply();
@@ -123,7 +125,8 @@ bool Mapper007::ppuReadData(uint16_t addr, uint8_t &data)
     //    return true;
     //}
 
-    if (addr < 0x2000) {
+    if (addr < 0x2000)
+    {
         data = vram[addr];
         return true;
     }
@@ -157,10 +160,10 @@ bool Mapper007::ppuWriteData(uint16_t addr, uint8_t data)
     //    return true;
     //}
 
-    if (addr < 0x2000) {
+    if (addr < 0x2000)
+    {
         vram[addr] = data;
     }
 
     return false;
 }
-

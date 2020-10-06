@@ -1,0 +1,19 @@
+{
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "make debug",
+      "command": "bash",
+      "args": ["-c", "make debug -j8"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": ["$gcc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ],
+  "version": "2.0.0"
+}

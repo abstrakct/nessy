@@ -1,12 +1,14 @@
 
 #pragma once
 
-#include <iostream>
-#include <string>
-#include <map>
-#include <vector>
-#include <cstdint>
 #include <bitset>
+#include <cstdint>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+
+typedef std::vector<std::map<uint16_t, std::string>> DisassemblyType;
 
 class Machine;
 
@@ -26,8 +28,6 @@ class Machine;
 //    Accumulator,
 //};
 
-
-
 //class Memory {
 //    private:
 //        std::vector<uint8_t> ram;
@@ -41,144 +41,162 @@ class Machine;
 //        ~Memory() { }
 //};
 
-class CPU {
-    public:
-        CPU();
-        ~CPU();
+class CPU
+{
+    struct Opcode {
+        uint8_t opcode;
+        std::string mnemonic;
+        //uint8_t (CPU::*operate) (void) = nullptr;
+        uint8_t (CPU::*addrmode)(void) = nullptr;
+        uint8_t bytes, cycles;
+    };
 
-        const uint8_t C = 0x01;
-        const uint8_t Z = 0x02;
-        const uint8_t I = 0x04;
-        const uint8_t D = 0x08;
-        const uint8_t B = 0x10;
-        const uint8_t U = 0x20;
-        const uint8_t V = 0x40;
-        const uint8_t N = 0x80;
+public:
+    CPU();
+    ~CPU();
 
-        // Program Counter
-        uint16_t pc    = 0x0000;
-        // Registers
-        uint8_t  a     = 0x00;
-        uint8_t  x     = 0x00;
-        uint8_t  y     = 0x00;
-        uint8_t  flags = 0x00;      // aka processor status
-        uint8_t  sp    = 0x00;      // stack pointer
+    const uint8_t C = 0x01;
+    const uint8_t Z = 0x02;
+    const uint8_t I = 0x04;
+    const uint8_t D = 0x08;
+    const uint8_t B = 0x10;
+    const uint8_t U = 0x20;
+    const uint8_t V = 0x40;
+    const uint8_t N = 0x80;
 
-        uint64_t total_cycles = 0;
+    // Program Counter
+    uint16_t pc = 0x0000;
+    // Registers
+    uint8_t a = 0x00;
+    uint8_t x = 0x00;
+    uint8_t y = 0x00;
+    uint8_t flags = 0x00; // aka processor status
+    uint8_t sp = 0x00;    // stack pointer
 
-        void ConnectMachine(Machine *n) { nes = n; }
-        void clock();
-        void TestOpcodes();
+    uint64_t total_cycles = 0;
 
-        inline bool GetFlag(int f) {
-            return ((flags & f) > 0) ? 1 : 0;
-            //return (flags & f);
-        }
-        inline void SetFlag(int f, bool v = true) {
-            if (v)
-                flags |= f;
-            else
-                flags &= ~(f);
-        }
+    void ConnectMachine(Machine *n) { nes = n; }
+    void clock();
+    void TestOpcodes();
 
-        void reset();
-        void irq();
-        void nmi();
-        void interrupt(uint16_t addr);
-        bool complete();
+    inline bool GetFlag(int f) const
+    {
+        return ((flags & f) > 0) ? 1 : 0;
+        //return (flags & f);
+    }
 
-        std::map<uint16_t, std::string> disassemble(uint16_t start, uint16_t end);
+    inline void SetFlag(int f, bool v = true)
+    {
+        if (v)
+            flags |= f;
+        else
+            flags &= ~(f);
+    }
 
-    private:
-        Machine *nes = nullptr;
-        void write(uint16_t addr, uint8_t data);
-        uint8_t read(uint16_t addr);
+    void reset();
+    void irq();
+    void nmi();
+    void interrupt(uint16_t addr);
+    bool complete();
 
-        struct Opcode {
-                uint8_t opcode;
-                std::string mnemonic;
-                //uint8_t (CPU::*operate) (void) = nullptr;
-                uint8_t (CPU::*addrmode)(void) = nullptr;
-                uint8_t bytes, cycles;
-        };
-        std::vector<Opcode> lookup;
-        uint8_t opcode, operand;
-        uint8_t cycles = 0;
-        uint16_t address = 0;
-        uint16_t address_rel = 0;
-        uint16_t temp = 0;
-        
-        inline uint8_t fetch() {
-            // only read if needed
-            if (!(lookup[opcode].addrmode == &CPU::Implied))
-                operand = read(address);
+    DisassemblyType disassemble(uint16_t start, uint16_t end);
+    Opcode &lookup(uint8_t i) { return lookupTable[i]; }
 
-            return operand;
-        }
+private:
+    friend class Disassembler;
+    Machine *nes = nullptr;
+    void write(uint16_t addr, uint8_t data);
+    uint8_t read(uint16_t addr) const;
 
+    std::vector<Opcode> lookupTable;
+    uint8_t opcode, operand;
+    uint8_t cycles = 0;
+    uint16_t address = 0;
+    uint16_t address_rel = 0;
+    uint16_t temp = 0;
 
-        // Adressing Modes
-        // (partially stolen from OneLoneCoder)
-        // Implied: no operand
-        // Immediate: operand is the value for the operation
-        // ZeroPage: fetches value from 8-bit address on the zero page
-        // ZeroPageX: value = operand + x (on zero page)
-        // ZeroPageY: value = operand + y (on zero page)
-        // Relative: 8-bit signed offset relative to current PC (for branching)
-        // Absolute: fetches value from 16-bit address anywhere in memory
-        // AbsoluteX: fetches value from operand + X
-        // AbsoluteY: fetches value from operand + Y
-        // Indirect: JMP instruction has a special addrmode that can jump to the address
-        //           stored in a 16-bit pointer anywhere in memory
-        // IndirectX: madness
-        // IndirectY: more madness
-        inline uint8_t Implied() {
-            operand = a;
-            return 0;
-        }
+    inline uint8_t fetch()
+    {
+        // only read if needed
+        if (!(lookupTable[opcode].addrmode == &CPU::Implied))
+            operand = read(address);
 
-        inline uint8_t Immediate() {
-            address = pc++;
-            return 0;
-        }
+        return operand;
+    }
 
-        inline uint8_t ZeroPage() {
-            address = (read(pc) & 0x00FF);
-            pc++;
-            return 0;
-        }
-        
-        inline uint8_t ZeroPageX() {
-            address = (read(pc) + x) & 0x00FF;
-            pc++;
-            return 0;
-        }
+    // Adressing Modes
+    // (partially stolen from OneLoneCoder)
+    // Implied: no operand
+    // Immediate: operand is the value for the operation
+    // ZeroPage: fetches value from 8-bit address on the zero page
+    // ZeroPageX: value = operand + x (on zero page)
+    // ZeroPageY: value = operand + y (on zero page)
+    // Relative: 8-bit signed offset relative to current PC (for branching)
+    // Absolute: fetches value from 16-bit address anywhere in memory
+    // AbsoluteX: fetches value from operand + X
+    // AbsoluteY: fetches value from operand + Y
+    // Indirect: JMP instruction has a special addrmode that can jump to the address
+    //           stored in a 16-bit pointer anywhere in memory
+    // IndirectX: madness
+    // IndirectY: more madness
+    inline uint8_t Implied()
+    {
+        operand = a;
+        return 0;
+    }
 
-        inline uint8_t ZeroPageY() {
-            address = (read(pc) + y) & 0x00FF;
-            pc++;
-            return 0;
-        }
+    inline uint8_t Immediate()
+    {
+        address = pc++;
+        return 0;
+    }
 
-        inline uint8_t Absolute() {
-            address = (uint16_t) read(pc++);
-            address |= (uint16_t) (read(pc++) << 8);
-            return 0;
-        }
+    inline uint8_t ZeroPage()
+    {
+        address = (read(pc) & 0x00FF);
+        pc++;
+        return 0;
+    }
 
-        uint8_t Relative();  uint8_t AbsoluteX();
-        uint8_t Indirect();  uint8_t AbsoluteY();
-        uint8_t IndirectX(); uint8_t IndirectY();
+    inline uint8_t ZeroPageX()
+    {
+        address = (read(pc) + x) & 0x00FF;
+        pc++;
+        return 0;
+    }
 
-        // Utility functions for getting effective address for indexed/indirect addressing modes
-        // These are used in the disassembler
-        uint16_t GetAddrZP (uint16_t addr);
-        uint16_t GetAddrZPX(uint16_t addr); uint16_t GetAddrZPY(uint16_t addr);
-        uint16_t GetAddrIDX(uint16_t addr); uint16_t GetAddrIDY(uint16_t addr);
+    inline uint8_t ZeroPageY()
+    {
+        address = (read(pc) + y) & 0x00FF;
+        pc++;
+        return 0;
+    }
 
-        // Utility functions
-        void push(uint8_t data, uint16_t offset = 0x100);
-        void push16(uint16_t data);
-        uint8_t pop(uint16_t offset = 0x100);
-        uint16_t pop16();
+    inline uint8_t Absolute()
+    {
+        address = (uint16_t)read(pc++);
+        address |= (uint16_t)(read(pc++) << 8);
+        return 0;
+    }
+
+    uint8_t Relative();
+    uint8_t AbsoluteX();
+    uint8_t Indirect();
+    uint8_t AbsoluteY();
+    uint8_t IndirectX();
+    uint8_t IndirectY();
+
+    // Utility functions for getting effective address for indexed/indirect addressing modes
+    // These are used in the disassembler
+    uint16_t GetAddrZP(uint16_t addr);
+    uint16_t GetAddrZPX(uint16_t addr);
+    uint16_t GetAddrZPY(uint16_t addr);
+    uint16_t GetAddrIDX(uint16_t addr);
+    uint16_t GetAddrIDY(uint16_t addr);
+
+    // Utility functions
+    void push(uint8_t data, uint16_t offset = 0x100);
+    void push16(uint16_t data);
+    uint8_t pop(uint16_t offset = 0x100);
+    uint16_t pop16();
 };

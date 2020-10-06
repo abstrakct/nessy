@@ -76,8 +76,6 @@ void Machine::clock()
         }
     }
 
-    
-
     if (ppu.nmiOccurred) {
         ppu.nmiOccurred = false;
         cpu.nmi();
@@ -86,7 +84,7 @@ void Machine::clock()
     systemClockCounter++;
 }
 
-void Machine::insertCartridge(const std::shared_ptr<Cartridge>& cartridge)
+void Machine::insertCartridge(const std::shared_ptr<Cartridge> &cartridge)
 {
     this->cart = cartridge;
     ppu.connectCartridge(cartridge);

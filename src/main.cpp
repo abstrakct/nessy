@@ -5,26 +5,26 @@
  *
  */
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <memory>
-#include <cstdint>
 #include <bitset>
 #include <chrono>
+#include <cstdint>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
 #include <thread>
+#include <vector>
 
-#include "imgui/imgui.h"
 #include "imgui/imgui-SFML.h"
+#include "imgui/imgui.h"
 
-#include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
 
-#include "version.h"
 #include "logger.h"
 #include "machine.h"
+#include "version.h"
 
 using namespace std;
 
@@ -79,7 +79,8 @@ private:
 
 public:
     std::shared_ptr<Machine> nes;
-    std::map<uint16_t, std::string> disasm;
+    DisassemblyType disasm;
+    Disassembler disassembler;
     std::string appName, nesFilename;
     uint16_t ram2start = 0x8000;
     bool debugmode, runmode = false;
@@ -133,26 +134,24 @@ public:
 
         //rect.setSize(sf::Vector2f(pixelWidth, pixelHeight));
 
-        if (!sfmlFont.loadFromFile("Courier Prime Code.ttf"))
-        {
+        if (!sfmlFont.loadFromFile("Courier Prime Code.ttf")) {
             printf("ERROR: couldn't load font file!\n");
             return false;
         }
 
         // TODO: more checking
-        if (joystick.isConnected(0))
-        {
+        if (joystick.isConnected(0)) {
             std::cout << "        Found controller: " << std::string(joystick.getIdentification(0).name) << std::endl;
             printf("\tController has %d buttons\n", joystick.getButtonCount(0));
-            if (joystick.hasAxis(0, sf::Joystick::Axis::X))
-            {
+            if (joystick.hasAxis(0, sf::Joystick::Axis::X)) {
                 printf("\tController has X axis\n");
             }
-            if (joystick.hasAxis(0, sf::Joystick::Axis::Y))
-            {
+            if (joystick.hasAxis(0, sf::Joystick::Axis::Y)) {
                 printf("\tController has Y axis\n");
             }
         }
+
+        disassembler.ConnectMachine(nes);
 
         running = true;
         return true;
@@ -177,11 +176,9 @@ public:
     {
         // TODO: highlight current PC (and read/writes????!!!!) !!!
         int ramx = x, ramy = y;
-        for (int row = 0; row < rows; row++)
-        {
+        for (int row = 0; row < rows; row++) {
             std::string s = "$" + hex(addr, 4) + ":";
-            for (int col = 0; col < cols; col++)
-            {
+            for (int col = 0; col < cols; col++) {
                 s += " " + hex(nes->cpuRead(addr, true), 2);
                 addr++;
             }
@@ -192,45 +189,30 @@ public:
 
     void drawCPU()
     {
-        // int xs = 32;
-        // int space = cSize;
-        // drawString(x, y, "CPU:", sf::Color::White);
-        // drawString(x + (xs + space * 1), y, "N", nes->cpu.GetFlag(nes->cpu.N) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 2), y, "V", nes->cpu.GetFlag(nes->cpu.V) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 3), y, "-", nes->cpu.GetFlag(nes->cpu.U) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 4), y, "B", nes->cpu.GetFlag(nes->cpu.B) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 5), y, "D", nes->cpu.GetFlag(nes->cpu.D) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 6), y, "I", nes->cpu.GetFlag(nes->cpu.I) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 7), y, "Z", nes->cpu.GetFlag(nes->cpu.Z) ? sf::Color::Green : sf::Color::Red);
-        // drawString(x + (xs + space * 8), y, "C", nes->cpu.GetFlag(nes->cpu.C) ? sf::Color::Green : sf::Color::Red);
-        //drawString(x, y + cSize * 6, "Total cycles: " + std::to_string(nes->cpu.total_cycles));
         ImGui::Begin("CPU"); // begin window
         ImGui::Text("Flags: ");
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.N) ? sf::Color::Green : sf::Color::Red, "N");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.N ? sf::Color::Green : sf::Color::Red, "N");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.V) ? sf::Color::Green : sf::Color::Red, "V");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.V ? sf::Color::Green : sf::Color::Red, "V");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.U) ? sf::Color::Green : sf::Color::Red, "-");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.U ? sf::Color::Green : sf::Color::Red, "-");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.B) ? sf::Color::Green : sf::Color::Red, "B");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.B ? sf::Color::Green : sf::Color::Red, "B");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.D) ? sf::Color::Green : sf::Color::Red, "D");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.D ? sf::Color::Green : sf::Color::Red, "D");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.I) ? sf::Color::Green : sf::Color::Red, "I");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.I ? sf::Color::Green : sf::Color::Red, "I");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.Z) ? sf::Color::Green : sf::Color::Red, "Z");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.Z ? sf::Color::Green : sf::Color::Red, "Z");
         ImGui::SameLine();
-        ImGui::TextColored(nes->cpu.GetFlag(nes->cpu.C) ? sf::Color::Green : sf::Color::Red, "C");
+        ImGui::TextColored(nes->cpu.flags & nes->cpu.C ? sf::Color::Green : sf::Color::Red, "C");
 
         ImGui::Text("PC: %04X", nes->cpu.pc);
         ImGui::Text("SP: %04X", nes->cpu.sp);
         ImGui::Text(" A: %02X [%s]", nes->cpu.a, bin(nes->cpu.a).c_str());
         ImGui::Text(" X: %02X [%s]", nes->cpu.x, bin(nes->cpu.x).c_str());
         ImGui::Text(" Y: %02X [%s]", nes->cpu.y, bin(nes->cpu.y).c_str());
-        // drawString(x, y + cSize * 2, " SP: $" + hex(nes->cpu.sp, 4));
-        // drawString(x, y + cSize * 3, "  A: $" + hex(nes->cpu.a, 2) + "  [" + bin(nes->cpu.a) + "]");
-        // drawString(x, y + cSize * 4, "  X: $" + hex(nes->cpu.x, 2) + "  [" + bin(nes->cpu.x) + "]");
-        // drawString(x, y + cSize * 5, "  Y: $" + hex(nes->cpu.y, 2) + "  [" + bin(nes->cpu.y) + "]");
+
         ImGui::End();
     }
 
@@ -238,51 +220,65 @@ public:
     {
         std::vector<std::string> mapperInfo = nes->cart->getMapperInfo();
         ImGui::Begin("Mapper");
-        for (auto it : mapperInfo)
-        {
-            // drawString(x, y, it);
-            // y += cSize;
+        for (auto it : mapperInfo) {
             ImGui::Text("%s", it.c_str());
         }
         ImGui::End();
     }
 
-    void drawDisasm(int x, int y, int lines)
+    void drawDisasm()
     {
-        auto it = disasm.find(nes->cpu.pc);
-        std::map<uint16_t, std::string> next;
-        next = nes->cpu.disassemble(nes->cpu.pc, nes->cpu.pc);
+        // int lines = 31;
+        // auto it = disasm.find(nes->cpu.pc);
+        // auto next = nes->cpu.disassemble(nes->cpu.pc, nes->cpu.pc);
 
-        int liney = (lines >> 1) * cSize + y;
+        // int liney = (lines >> 1) * cSize + y;
 
+        ImGui::Begin("Disassembly", NULL, ImGuiWindowFlags_HorizontalScrollbar);
+
+        // auto newdisasm = disassembler.get(nes->cpu.pc, nes->cpu.pc + 16);
+        // auto it = disasm.find(nes->cpu.pc);
+        // auto it = newdisasm.begin();
+        // while ((*it).begin()->first != nes->cpu.pc)
+        //     it++;
+
+        // it -= lines / 2;
+        // if (it != newdisasm.end()) {
+        //     for (int i = 0; i < lines; i++) {
+        //         if (++it != newdisasm.end()) {
+        //             if (it->address == nes->cpu.pc) {
+        //                 ImGui::TextColored(sf::Color::Cyan, "%s", next.begin()->begin()->second.c_str());
+        //             } else {
+        //                 ImGui::Text("%s", (*it).begin()->second.c_str());
+        //             }
+        //         }
+        //     }
+        // }
+
+        ImGui::End();
         // Draw "live" disassembly of next instruction
-        drawString(x, liney, next[nes->cpu.pc], sf::Color::Cyan);
+        // drawString(x, liney, next[nes->cpu.pc], sf::Color::Cyan);
 
-        if (it != disasm.end())
-        {
-            while (liney < (lines * cSize) + y)
-            {
-                liney += cSize;
-                if (++it != disasm.end())
-                {
-                    drawString(x, liney, (*it).second, sf::Color::White);
-                }
-            }
-        }
+        // it = disasm.find(nes->cpu.pc);
+        // if (it != disasm.end()) {
+        //     while (liney < (lines * cSize) + y) {
+        //         liney += cSize;
+        //         if (++it != disasm.end()) {
+        //             drawString(x, liney, (*it).second, sf::Color::White);
+        //         }
+        //     }
+        // }
 
-        it = disasm.find(nes->cpu.pc);
-        liney = (lines >> 1) * cSize + y;
-        if (it != disasm.end())
-        {
-            while (liney > y)
-            {
-                liney -= cSize;
-                if (--it != disasm.end())
-                {
-                    drawString(x, liney, (*it).second);
-                }
-            }
-        }
+        // it = disasm.find(nes->cpu.pc);
+        // liney = (lines >> 1) * cSize + y;
+        // if (it != disasm.end()) {
+        //     while (liney > y) {
+        //         liney -= cSize;
+        //         if (--it != disasm.end()) {
+        //             drawString(x, liney, (*it).second);
+        //         }
+        //     }
+        // }
     }
 
     void drawPPU(int x, int y)
@@ -308,29 +304,22 @@ public:
         sf::Color bgColor;
 
         // window.resetGLStates();
-        while (window.isOpen() && running)
-        {
+        while (window.isOpen() && running) {
             time2 = std::chrono::system_clock::now();
             std::chrono::duration<float> elapsedTime = time2 - time1;
             elapsed = elapsedTime.count();
             time1 = time2;
 
-            if (emuRunning)
-            {
-                if (residualTime > 0.0f)
-                {
+            if (emuRunning) {
+                if (residualTime > 0.0f) {
                     residualTime -= elapsed;
-                }
-                else
-                {
+                } else {
                     residualTime += (1.0f / targetFPS) - elapsed;
 
-                    do
-                    {
+                    do {
                         nes->clock();
 
-                        if (breakpoint && (nes->cpu.pc == breakpointAddress))
-                        {
+                        if (breakpoint && (nes->cpu.pc == breakpointAddress)) {
                             emuRunning = false;
                             break;
                         }
@@ -345,8 +334,7 @@ public:
                 }
             }
 
-            while (window.pollEvent(event))
-            {
+            while (window.pollEvent(event)) {
                 ImGui::SFML::ProcessEvent(event);
                 if (event.type == sf::Event::Closed)
                     running = false;
@@ -355,19 +343,14 @@ public:
                 if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
                     emuRunning = !emuRunning;
 
-                if (!emuRunning)
-                {
-                    if (event.type == sf::Event::KeyPressed)
-                    {
-                        if (event.key.code == sf::Keyboard::S)
-                        {
-                            do
-                            {
+                if (!emuRunning) {
+                    if (event.type == sf::Event::KeyPressed) {
+                        if (event.key.code == sf::Keyboard::S) {
+                            do {
                                 nes->clock();
                             } while (!nes->cpu.complete());
 
-                            do
-                            {
+                            do {
                                 nes->clock();
                             } while (nes->cpu.complete());
 
@@ -375,15 +358,12 @@ public:
                                 disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
                         }
 
-                        if (event.key.code == sf::Keyboard::F)
-                        {
-                            do
-                            {
+                        if (event.key.code == sf::Keyboard::F) {
+                            do {
                                 nes->clock();
                             } while (!nes->ppu.frame_complete);
 
-                            do
-                            {
+                            do {
                                 nes->clock();
                             } while (!nes->cpu.complete());
 
@@ -396,23 +376,19 @@ public:
                 }
 
                 Controller::Button b;
-                if (event.type == sf::Event::JoystickMoved)
-                {
+                if (event.type == sf::Event::JoystickMoved) {
                     // TODO: FIX THIS!
                     // maybe getAxisPosition is better?
                     //printf("Joystick moved: %f\n", event.joystickMove.position);
-                    if (event.joystickMove.axis == sf::Joystick::Axis::X)
-                    {
-                        if (event.joystickMove.position < 0)
-                        {
+                    if (event.joystickMove.axis == sf::Joystick::Axis::X) {
+                        if (event.joystickMove.position < 0) {
                             nes->controller[0].pressButton(Controller::Button::Left);
                             nes->controller[0].releaseButton(Controller::Button::Right);
                             //nes->controller[0].releaseButton(Controller::Button::Up);
                             //nes->controller[0].releaseButton(Controller::Button::Down);
                             b = Controller::Button::Left;
                         }
-                        if (event.joystickMove.position > 0)
-                        {
+                        if (event.joystickMove.position > 0) {
                             nes->controller[0].pressButton(Controller::Button::Right);
                             nes->controller[0].releaseButton(Controller::Button::Left);
                             //nes->controller[0].releaseButton(Controller::Button::Up);
@@ -420,18 +396,15 @@ public:
                             b = Controller::Button::Right;
                         }
                     }
-                    if (event.joystickMove.axis == sf::Joystick::Axis::Y)
-                    {
-                        if (event.joystickMove.position < 0)
-                        {
+                    if (event.joystickMove.axis == sf::Joystick::Axis::Y) {
+                        if (event.joystickMove.position < 0) {
                             nes->controller[0].pressButton(Controller::Button::Up);
                             //nes->controller[0].releaseButton(Controller::Button::Left);
                             //nes->controller[0].releaseButton(Controller::Button::Right);
                             nes->controller[0].releaseButton(Controller::Button::Down);
                             b = Controller::Button::Up;
                         }
-                        if (event.joystickMove.position > 0)
-                        {
+                        if (event.joystickMove.position > 0) {
                             nes->controller[0].pressButton(Controller::Button::Down);
                             //nes->controller[0].releaseButton(Controller::Button::Left);
                             //nes->controller[0].releaseButton(Controller::Button::Right);
@@ -439,8 +412,7 @@ public:
                             b = Controller::Button::Down;
                         }
                     }
-                    if (event.joystickMove.position == 0)
-                    {
+                    if (event.joystickMove.position == 0) {
                         nes->controller[0].releaseButton(b);
                         //        nes->controller[0].releaseButton(Controller::Button::Left);
                         //        nes->controller[0].releaseButton(Controller::Button::Right);
@@ -449,11 +421,9 @@ public:
                     }
                 }
 
-                if (event.type == sf::Event::JoystickButtonReleased)
-                {
+                if (event.type == sf::Event::JoystickButtonReleased) {
                     //printf("Joystick button %d pressed\n", event.joystickButton.button);
-                    switch (event.joystickButton.button)
-                    {
+                    switch (event.joystickButton.button) {
                     case 0: // B
                         nes->controller[0].releaseButton(Controller::Button::B);
                         break;
@@ -469,11 +439,9 @@ public:
                     }
                 }
 
-                if (event.type == sf::Event::JoystickButtonPressed)
-                {
+                if (event.type == sf::Event::JoystickButtonPressed) {
                     //printf("Joystick button %d pressed\n", event.joystickButton.button);
-                    switch (event.joystickButton.button)
-                    {
+                    switch (event.joystickButton.button) {
                     case 0: // B
                         nes->controller[0].pressButton(Controller::Button::B);
                         break;
@@ -489,10 +457,8 @@ public:
                     }
                 }
 
-                if (event.type == sf::Event::KeyReleased)
-                {
-                    switch (event.key.code)
-                    {
+                if (event.type == sf::Event::KeyReleased) {
+                    switch (event.key.code) {
                     case sf::Keyboard::Enter:
                         nes->controller[0].releaseButton(Controller::Button::Start);
                         break;
@@ -522,10 +488,8 @@ public:
                     }
                 }
 
-                if (event.type == sf::Event::KeyPressed)
-                {
-                    switch (event.key.code)
-                    {
+                if (event.type == sf::Event::KeyPressed) {
+                    switch (event.key.code) {
                     // Controller 1
                     case sf::Keyboard::Enter:
                         nes->controller[0].pressButton(Controller::Button::Start);
@@ -613,8 +577,9 @@ public:
 
             ImGui::Begin("Options"); // begin window
 
-            if (ImGui::ColorEdit3("Background color", color))
-            {
+            // ImGui::ShowDemoWindow();
+
+            if (ImGui::ColorEdit3("Background color", color)) {
                 bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);
                 bgColor.g = static_cast<sf::Uint8>(color[1] * 255.f);
                 bgColor.b = static_cast<sf::Uint8>(color[2] * 255.f);
@@ -643,16 +608,37 @@ public:
 
             // Draw help text
             // TODO: update!
-            if (cfgDisplayHelp)
-            {
-                drawString(x, 580, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
-                drawString(x, 600, "f = frame  spc = run   9/0 = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
-                drawString(x, 620, "residualTime: " + std::to_string(residualTime) + "  elapsed: " + std::to_string(elapsed));
+            if (cfgDisplayHelp) {
+                ImGui::Begin("Help");
+                // drawString(x, 580, "s = step     r = reset   i = irq  n = nmi  up/down/pgup/pgdn = change ram view");
+                // drawString(x, 600, "f = frame  spc = run   9/0 = +/- fps (" + std::to_string((int)targetFPS) + " fps)  ESC = quit");
+                // drawString(x, 620, "residualTime: " + std::to_string(residualTime) + "  elapsed: " + std::to_string(elapsed));
+
+                ImGui::Text("space - start/stop emulation");
+                ImGui::Text("i - irq");
+                ImGui::Text("n - nmi");
+                ImGui::Text("r - reset");
+                ImGui::Text("1 - show memory editor");
+                ImGui::Text("2 - show cpu status");
+                ImGui::Text("3 - show mapper status");
+                ImGui::Text("4 - show disassembly");
+                ImGui::Text("5 - show ppu status");
+                ImGui::Text("9 - decrease fps");
+                ImGui::Text("0 - increase fps");
+                ImGui::Text("esc - quit");
+                ImGui::Text(" ");
+                ImGui::Text("controller 1:");
+                ImGui::Text("wasd - up/down/left/right");
+                ImGui::Text("k/l - b/a");
+                ImGui::Text(" ");
+                ImGui::Text("when emulation is stopped:");
+                ImGui::Text("f - advance one frame");
+                ImGui::Text("s - step cpu");
+                ImGui::End();
             }
 
             // Draw RAM
-            if (cfgDisplayRam)
-            {
+            if (cfgDisplayRam) {
                 drawRAM(x + 10, 12, 0x0000, 16, 16);
                 drawRAM(x + 10, 320, ram2start, 16, 16);
             }
@@ -668,7 +654,7 @@ public:
 
             // Draw disassembly
             if (cfgDisplayDisasm)
-                drawDisasm(x + 1200, cSize * 16, 16);
+                drawDisasm();
 
             // Draw PPU
             if (cfgDisplayPPU)
@@ -691,14 +677,15 @@ public:
         printf("[ Inserting Cartridge    ]\n");
         nes->insertCartridge(cart);
 
-        if (!cart->isValid())
-        {
+        if (!cart->isValid()) {
             printf("Invalid or unusable NES file!\n");
             exit(1);
         }
 
-        printf("[ Disassembling code     ]\n");
-        disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
+        // printf("[ Disassembling code     ]\n");
+        // disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
+        printf("[ Preparing Disassembly  ]\n");
+        disassembler.disassemble(0x8000, 0xFFFF);
 
         printf("[ Resetting NES          ]\n");
         nes->reset();
@@ -711,17 +698,14 @@ int main(int argc, char *argv[])
     int breakpointAddress = 0;
     printf("\nNESSY v%s\n\n", VERSION_STRING);
 
-    if (argc < 2)
-    {
+    if (argc < 2) {
         printf("Provide ROM filename.\n");
         exit(0);
     }
 
-    if (argc > 3)
-    {
+    if (argc > 3) {
         std::string s = string(argv[2]);
-        if (s == "-b")
-        {
+        if (s == "-b") {
             breakpoint = true;
             breakpointAddress = std::stoi(string(argv[3]), nullptr, 16);
         }
@@ -736,14 +720,12 @@ int main(int argc, char *argv[])
 
     NessyApplication nessy(TheNES, argv[1], breakpoint, breakpointAddress);
 
-    if (nessy.construct(1900, 960, 3, 3))
-    {
+    if (nessy.construct(1900, 960, 3, 3)) {
         printf("[ Starting Emulation     ]\n");
         nessy.start();
+
         nessy.mainLoop();
-    }
-    else
-    {
+    } else {
         printf("ERROR during application initialization!\n");
         exit(1);
     }

@@ -7,6 +7,7 @@ Mapper004::Mapper004(uint8_t p, uint8_t c) : Mapper(p, c)
     vram.resize(0x2000);
 
     lastBank = p - 1;
+    reg[0] = 0;
 }
 
 Mapper004::~Mapper004()

@@ -74,6 +74,7 @@ private:
 
     int windowWidth, windowHeight;
     float scaleX, scaleY;
+    float NESScale = 1.0, PPUNTScale = 1.0;
     int cSize = 18;
 
     bool running = false, emuRunning = false;
@@ -303,12 +304,13 @@ public:
 
     void drawPPU(int x, int y)
     {
-        // TODO: add slider for scaling
         // TODO: add palette selector
-        float scale = 2.0;
-        ImVec2 size = ImVec2(128 * scale, 128 * scale);
+        ImVec2 size = ImVec2(128 * PPUNTScale, 128 * PPUNTScale);
 
         ImGui::Begin("PPU Pattern Tables");
+
+        // ImGui::SliderFloat("Scale", &PPUNTScale, 0.00f, 8.0f);
+        ImGui::DragFloat("Scale", &PPUNTScale, 0.05f, 0.0f, 8.0f);
 
         ppuNTTex1.update(nes->ppu.GetPatterntable(0, selectedPalette));
         ImGui::Image(ppuNTTex1, size);
@@ -605,35 +607,9 @@ public:
 
             ImGui::SFML::Update(window, deltaClock.restart());
 
-            ImGui::Begin("Options"); // begin window
-
-            // ImGui::ShowDemoWindow();
-
-            if (ImGui::ColorEdit3("Background color", color)) {
-                bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);
-                bgColor.g = static_cast<sf::Uint8>(color[1] * 255.f);
-                bgColor.b = static_cast<sf::Uint8>(color[2] * 255.f);
-            }
-
-            // // Window title text edit
-            // ImGui::InputText("Window title", windowTitle, 255);
-
-            // if (ImGui::Button("Update window title"))
-            // {
-            //     // this code gets if user clicks on the button
-            //     // yes, you could have written if(ImGui::InputText(...))
-            //     // but I do this to show how buttons work :)
-            //     window.setTitle(windowTitle);
-            // }
-
-            //renderTex.clear(sf::Color::Blue);
-
-            window.clear(bgColor);
-
             // Update and draw NES Screen
             if (cfgDisplayNES) {
-                float scale = 2.0;
-                ImVec2 size = ImVec2(256 * scale, 240 * scale);
+                ImVec2 size = ImVec2(256 * NESScale, 240 * NESScale);
 
                 ImGui::Begin("NES");
 
@@ -642,6 +618,25 @@ public:
 
                 ImGui::End();
             }
+
+            // ImGui::ShowDemoWindow();
+
+            //////// Options window
+            // TODO: hotkey to toggle showing or not
+            ImGui::Begin("Options"); // begin window
+
+            ImGui::DragFloat("Scale NES Screen", &NESScale, 0.05f);
+
+            if (ImGui::ColorEdit3("Background color", color)) {
+                bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);
+                bgColor.g = static_cast<sf::Uint8>(color[1] * 255.f);
+                bgColor.b = static_cast<sf::Uint8>(color[2] * 255.f);
+            }
+
+            ImGui::End();
+            //////// END options window
+
+            window.clear(bgColor);
 
             int x = 10;
 
@@ -701,7 +696,6 @@ public:
             if (cfgDisplayPPU)
                 drawPPU(20, 650);
 
-            ImGui::End();
             ImGui::SFML::Render(window);
             // Display the window
             window.display();

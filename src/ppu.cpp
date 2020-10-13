@@ -29,11 +29,10 @@
 // NN= Base nametable address
 //     0: 0x2000  1: 0x2400  2: 0x2800  3: 0x2C00
 
-
-#include <cstring>
-#include "machine.h"
 #include "ppu.h"
 #include "logger.h"
+#include "machine.h"
+#include <cstring>
 
 extern Logger l;
 
@@ -42,7 +41,6 @@ PPU::PPU()
     nesScreen.create(340, 260, sf::Color::Black);
     sfmlPatterntable[0].create(128, 128, sf::Color::Black);
     sfmlPatterntable[1].create(128, 128, sf::Color::Black);
-
 
     // set PPU to power-up state
     ctrl.reg = 0;
@@ -56,87 +54,86 @@ PPU::PPU()
     //reg[PPUAddr] = 0;    // latch, might need changing?
     //reg[PPUData] = 0;
 
-	// palette
-	sfmlPalette[0x00] = sf::Color(84, 84, 84);
-	sfmlPalette[0x01] = sf::Color(0, 30, 116);
-	sfmlPalette[0x02] = sf::Color(8, 16, 144);
-	sfmlPalette[0x03] = sf::Color(48, 0, 136);
-	sfmlPalette[0x04] = sf::Color(68, 0, 100);
-	sfmlPalette[0x05] = sf::Color(92, 0, 48);
-	sfmlPalette[0x06] = sf::Color(84, 4, 0);
-	sfmlPalette[0x07] = sf::Color(60, 24, 0);
-	sfmlPalette[0x08] = sf::Color(32, 42, 0);
-	sfmlPalette[0x09] = sf::Color(8, 58, 0);
-	sfmlPalette[0x0A] = sf::Color(0, 64, 0);
-	sfmlPalette[0x0B] = sf::Color(0, 60, 0);
-	sfmlPalette[0x0C] = sf::Color(0, 50, 60);
-	sfmlPalette[0x0D] = sf::Color(0, 0, 0);
-	sfmlPalette[0x0E] = sf::Color(0, 0, 0);
-	sfmlPalette[0x0F] = sf::Color(0, 0, 0);
+    // palette
+    sfmlPalette[0x00] = sf::Color(84, 84, 84);
+    sfmlPalette[0x01] = sf::Color(0, 30, 116);
+    sfmlPalette[0x02] = sf::Color(8, 16, 144);
+    sfmlPalette[0x03] = sf::Color(48, 0, 136);
+    sfmlPalette[0x04] = sf::Color(68, 0, 100);
+    sfmlPalette[0x05] = sf::Color(92, 0, 48);
+    sfmlPalette[0x06] = sf::Color(84, 4, 0);
+    sfmlPalette[0x07] = sf::Color(60, 24, 0);
+    sfmlPalette[0x08] = sf::Color(32, 42, 0);
+    sfmlPalette[0x09] = sf::Color(8, 58, 0);
+    sfmlPalette[0x0A] = sf::Color(0, 64, 0);
+    sfmlPalette[0x0B] = sf::Color(0, 60, 0);
+    sfmlPalette[0x0C] = sf::Color(0, 50, 60);
+    sfmlPalette[0x0D] = sf::Color(0, 0, 0);
+    sfmlPalette[0x0E] = sf::Color(0, 0, 0);
+    sfmlPalette[0x0F] = sf::Color(0, 0, 0);
 
-	sfmlPalette[0x10] = sf::Color(152, 150, 152);
-	sfmlPalette[0x11] = sf::Color(8, 76, 196);
-	sfmlPalette[0x12] = sf::Color(48, 50, 236);
-	sfmlPalette[0x13] = sf::Color(92, 30, 228);
-	sfmlPalette[0x14] = sf::Color(136, 20, 176);
-	sfmlPalette[0x15] = sf::Color(160, 20, 100);
-	sfmlPalette[0x16] = sf::Color(152, 34, 32);
-	sfmlPalette[0x17] = sf::Color(120, 60, 0);
-	sfmlPalette[0x18] = sf::Color(84, 90, 0);
-	sfmlPalette[0x19] = sf::Color(40, 114, 0);
-	sfmlPalette[0x1A] = sf::Color(8, 124, 0);
-	sfmlPalette[0x1B] = sf::Color(0, 118, 40);
-	sfmlPalette[0x1C] = sf::Color(0, 102, 120);
-	sfmlPalette[0x1D] = sf::Color(0, 0, 0);
-	sfmlPalette[0x1E] = sf::Color(0, 0, 0);
-	sfmlPalette[0x1F] = sf::Color(0, 0, 0);
+    sfmlPalette[0x10] = sf::Color(152, 150, 152);
+    sfmlPalette[0x11] = sf::Color(8, 76, 196);
+    sfmlPalette[0x12] = sf::Color(48, 50, 236);
+    sfmlPalette[0x13] = sf::Color(92, 30, 228);
+    sfmlPalette[0x14] = sf::Color(136, 20, 176);
+    sfmlPalette[0x15] = sf::Color(160, 20, 100);
+    sfmlPalette[0x16] = sf::Color(152, 34, 32);
+    sfmlPalette[0x17] = sf::Color(120, 60, 0);
+    sfmlPalette[0x18] = sf::Color(84, 90, 0);
+    sfmlPalette[0x19] = sf::Color(40, 114, 0);
+    sfmlPalette[0x1A] = sf::Color(8, 124, 0);
+    sfmlPalette[0x1B] = sf::Color(0, 118, 40);
+    sfmlPalette[0x1C] = sf::Color(0, 102, 120);
+    sfmlPalette[0x1D] = sf::Color(0, 0, 0);
+    sfmlPalette[0x1E] = sf::Color(0, 0, 0);
+    sfmlPalette[0x1F] = sf::Color(0, 0, 0);
 
-	sfmlPalette[0x20] = sf::Color(236, 238, 236);
-	sfmlPalette[0x21] = sf::Color(76, 154, 236);
-	sfmlPalette[0x22] = sf::Color(120, 124, 236);
-	sfmlPalette[0x23] = sf::Color(176, 98, 236);
-	sfmlPalette[0x24] = sf::Color(228, 84, 236);
-	sfmlPalette[0x25] = sf::Color(236, 88, 180);
-	sfmlPalette[0x26] = sf::Color(236, 106, 100);
-	sfmlPalette[0x27] = sf::Color(212, 136, 32);
-	sfmlPalette[0x28] = sf::Color(160, 170, 0);
-	sfmlPalette[0x29] = sf::Color(116, 196, 0);
-	sfmlPalette[0x2A] = sf::Color(76, 208, 32);
-	sfmlPalette[0x2B] = sf::Color(56, 204, 108);
-	sfmlPalette[0x2C] = sf::Color(56, 180, 204);
-	sfmlPalette[0x2D] = sf::Color(60, 60, 60);
-	sfmlPalette[0x2E] = sf::Color(0, 0, 0);
-	sfmlPalette[0x2F] = sf::Color(0, 0, 0);
+    sfmlPalette[0x20] = sf::Color(236, 238, 236);
+    sfmlPalette[0x21] = sf::Color(76, 154, 236);
+    sfmlPalette[0x22] = sf::Color(120, 124, 236);
+    sfmlPalette[0x23] = sf::Color(176, 98, 236);
+    sfmlPalette[0x24] = sf::Color(228, 84, 236);
+    sfmlPalette[0x25] = sf::Color(236, 88, 180);
+    sfmlPalette[0x26] = sf::Color(236, 106, 100);
+    sfmlPalette[0x27] = sf::Color(212, 136, 32);
+    sfmlPalette[0x28] = sf::Color(160, 170, 0);
+    sfmlPalette[0x29] = sf::Color(116, 196, 0);
+    sfmlPalette[0x2A] = sf::Color(76, 208, 32);
+    sfmlPalette[0x2B] = sf::Color(56, 204, 108);
+    sfmlPalette[0x2C] = sf::Color(56, 180, 204);
+    sfmlPalette[0x2D] = sf::Color(60, 60, 60);
+    sfmlPalette[0x2E] = sf::Color(0, 0, 0);
+    sfmlPalette[0x2F] = sf::Color(0, 0, 0);
 
-	sfmlPalette[0x30] = sf::Color(236, 238, 236);
-	sfmlPalette[0x31] = sf::Color(168, 204, 236);
-	sfmlPalette[0x32] = sf::Color(188, 188, 236);
-	sfmlPalette[0x33] = sf::Color(212, 178, 236);
-	sfmlPalette[0x34] = sf::Color(236, 174, 236);
-	sfmlPalette[0x35] = sf::Color(236, 174, 212);
-	sfmlPalette[0x36] = sf::Color(236, 180, 176);
-	sfmlPalette[0x37] = sf::Color(228, 196, 144);
-	sfmlPalette[0x38] = sf::Color(204, 210, 120);
-	sfmlPalette[0x39] = sf::Color(180, 222, 120);
-	sfmlPalette[0x3A] = sf::Color(168, 226, 144);
-	sfmlPalette[0x3B] = sf::Color(152, 226, 180);
-	sfmlPalette[0x3C] = sf::Color(160, 214, 228);
-	sfmlPalette[0x3D] = sf::Color(160, 162, 160);
-	sfmlPalette[0x3E] = sf::Color(0, 0, 0);
-	sfmlPalette[0x3F] = sf::Color(0, 0, 0);
+    sfmlPalette[0x30] = sf::Color(236, 238, 236);
+    sfmlPalette[0x31] = sf::Color(168, 204, 236);
+    sfmlPalette[0x32] = sf::Color(188, 188, 236);
+    sfmlPalette[0x33] = sf::Color(212, 178, 236);
+    sfmlPalette[0x34] = sf::Color(236, 174, 236);
+    sfmlPalette[0x35] = sf::Color(236, 174, 212);
+    sfmlPalette[0x36] = sf::Color(236, 180, 176);
+    sfmlPalette[0x37] = sf::Color(228, 196, 144);
+    sfmlPalette[0x38] = sf::Color(204, 210, 120);
+    sfmlPalette[0x39] = sf::Color(180, 222, 120);
+    sfmlPalette[0x3A] = sf::Color(168, 226, 144);
+    sfmlPalette[0x3B] = sf::Color(152, 226, 180);
+    sfmlPalette[0x3C] = sf::Color(160, 214, 228);
+    sfmlPalette[0x3D] = sf::Color(160, 162, 160);
+    sfmlPalette[0x3E] = sf::Color(0, 0, 0);
+    sfmlPalette[0x3F] = sf::Color(0, 0, 0);
 }
 
 PPU::~PPU()
 {
 }
 
-
-inline sf::Color& PPU::GetColorFromPaletteRam(uint8_t palette, uint8_t pixel)
+inline sf::Color &PPU::GetColorFromPaletteRam(uint8_t palette, uint8_t pixel)
 {
     return sfmlPalette[ppuRead(0x3F00 + (palette << 2) + pixel)];
 }
 
-sf::Image& PPU::GetPatterntable(uint8_t i, uint8_t palette)
+sf::Image &PPU::GetPatterntable(uint8_t i, uint8_t palette)
 {
     for (uint16_t tileY = 0; tileY < 16; tileY++) {
         for (uint16_t tileX = 0; tileX < 16; tileX++) {
@@ -149,10 +146,9 @@ sf::Image& PPU::GetPatterntable(uint8_t i, uint8_t palette)
                     tile_lo >>= 1;
                     tile_hi >>= 1;
                     sfmlPatterntable[i].setPixel(
-                            (tileX * 8) + (7 - col),
-                            (tileY * 8) + row,
-                            GetColorFromPaletteRam(palette, pixel)
-                            );
+                        (tileX * 8) + (7 - col),
+                        (tileY * 8) + row,
+                        GetColorFromPaletteRam(palette, pixel));
                 }
             }
         }
@@ -163,30 +159,30 @@ sf::Image& PPU::GetPatterntable(uint8_t i, uint8_t palette)
 
 void PPU::evaluateSprites()
 {
-//    int n = 0;
-//    for (int i = 0; i < 64; i++) {
-//        int line = (scanline == 261 ? -1 : scanline) - oam[i*4 + 0];
-//        // If the sprite is in the scanline, copy its properties into secondary OAM:
-//        if (line >= 0 && line < spriteHeight()) {
-//            oamBuf2[n].id   = i;
-//            oamBuf2[n].y    = oam[i*4 + 0];
-//            oamBuf2[n].tile = oam[i*4 + 1];
-//            oamBuf2[n].attr = oam[i*4 + 2];
-//            oamBuf2[n].x    = oam[i*4 + 3];
-//
-//            if (++n > 8) {
-//                status.spriteOverflow = true;
-//                break;
-//            }
-//        }
-//    }
+    //    int n = 0;
+    //    for (int i = 0; i < 64; i++) {
+    //        int line = (scanline == 261 ? -1 : scanline) - oam[i*4 + 0];
+    //        // If the sprite is in the scanline, copy its properties into secondary OAM:
+    //        if (line >= 0 && line < spriteHeight()) {
+    //            oamBuf2[n].id   = i;
+    //            oamBuf2[n].y    = oam[i*4 + 0];
+    //            oamBuf2[n].tile = oam[i*4 + 1];
+    //            oamBuf2[n].attr = oam[i*4 + 2];
+    //            oamBuf2[n].x    = oam[i*4 + 3];
+    //
+    //            if (++n > 8) {
+    //                status.spriteOverflow = true;
+    //                break;
+    //            }
+    //        }
+    //    }
 }
 
 void PPU::loadSprites()
 {
     uint16_t addr;
     for (int i = 0; i < 8; i++) {
-        oamBuf[i] = oamBuf2[i];  // Copy secondary OAM into primary.
+        oamBuf[i] = oamBuf2[i]; // Copy secondary OAM into primary.
 
         // Different address modes depending on the sprite height:
         if (spriteHeight() == 16)
@@ -194,10 +190,10 @@ void PPU::loadSprites()
         else
             addr = (ctrl.spritePatternTable * 0x1000) + (oamBuf[i].tile * 16);
 
-        unsigned sprY = (scanline - oamBuf[i].y) % spriteHeight();  // Line inside the sprite.
+        unsigned sprY = (scanline - oamBuf[i].y) % spriteHeight(); // Line inside the sprite.
         if (oamBuf[i].attr & 0x80)
-            sprY ^= spriteHeight() - 1;       // Vertical flip.
-        addr += sprY + (sprY & 0x08);         // Select the second tile if on 8x16.
+            sprY ^= spriteHeight() - 1; // Vertical flip.
+        addr += sprY + (sprY & 0x08);   // Select the second tile if on 8x16.
 
         oamBuf[i].dataL = ppuRead(addr + 0);
         oamBuf[i].dataH = ppuRead(addr + 8);
@@ -206,10 +202,9 @@ void PPU::loadSprites()
 
 void PPU::clock()
 {
-    auto IncrementScrollX = [&]()
-    {
+    auto IncrementScrollX = [&]() {
         if (mask.renderBackground || mask.renderSprites) {
-            if(vramAddress.coarseX == 31) {
+            if (vramAddress.coarseX == 31) {
                 vramAddress.coarseX = 0;
                 vramAddress.nametableX = ~vramAddress.nametableX;
             } else {
@@ -218,8 +213,7 @@ void PPU::clock()
         }
     };
 
-    auto IncrementScrollY = [&]()
-    {
+    auto IncrementScrollY = [&]() {
         if (mask.renderBackground || mask.renderSprites) {
             if (vramAddress.fineY < 7) {
                 vramAddress.fineY++;
@@ -237,16 +231,14 @@ void PPU::clock()
         }
     };
 
-    auto TransferAddressX = [&]()
-    {
+    auto TransferAddressX = [&]() {
         if (mask.renderBackground || mask.renderSprites) {
             vramAddress.nametableX = tramAddress.nametableX;
             vramAddress.coarseX = tramAddress.coarseX;
         }
     };
 
-    auto TransferAddressY = [&]()
-    {
+    auto TransferAddressY = [&]() {
         if (mask.renderBackground || mask.renderSprites) {
             vramAddress.nametableY = tramAddress.nametableY;
             vramAddress.coarseY = tramAddress.coarseY;
@@ -254,21 +246,19 @@ void PPU::clock()
         }
     };
 
-    auto LoadBackgroundShifters = [&]()
-    {
+    auto LoadBackgroundShifters = [&]() {
         bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLo;
         bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileHi;
-        bgShifterAttribLo  = (bgShifterAttribLo  & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
-        bgShifterAttribHi  = (bgShifterAttribHi  & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
+        bgShifterAttribLo = (bgShifterAttribLo & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
+        bgShifterAttribHi = (bgShifterAttribHi & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
     };
 
-    auto UpdateShifters = [&]()
-    {
+    auto UpdateShifters = [&]() {
         if (mask.renderBackground) {
             bgShifterPatternLo <<= 1;
             bgShifterPatternHi <<= 1;
-            bgShifterAttribLo  <<= 1;
-            bgShifterAttribHi  <<= 1;
+            bgShifterAttribLo <<= 1;
+            bgShifterAttribHi <<= 1;
         }
 
         if (mask.renderSprites && cycle >= 1 && cycle < 258) {
@@ -319,7 +309,7 @@ void PPU::clock()
         //                // y will be 238
         //                // 239 - 1
         //                if (spriteY == (239 - scanline)) {
-        //                    for (int i = 1; i < 4; i++) 
+        //                    for (int i = 1; i < 4; i++)
         //                        oam2[oam2index + i] = oam[spriteNum * 4 + i];
         //                    oam2index++;
         //                    if (spriteNum >= 64) {
@@ -334,40 +324,34 @@ void PPU::clock()
         //    }
         //}
         //
-        
 
         // Load Background data
         if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
             UpdateShifters();
 
             switch ((cycle - 1) % 8) {
-                case 0: 
-                    LoadBackgroundShifters();
-                    bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
-                    break;
-                case 2:
-                    // I HAVE NO IDEA WHAT'S GOING ON LOL
-                    bgNextTileAttrib = ppuRead(0x23C0 |  (vramAddress.nametableY << 11)
-                            |  (vramAddress.nametableX << 10)
-                            | ((vramAddress.coarseY >> 2) << 3)
-                            |  (vramAddress.coarseX >> 2));
-                    if (vramAddress.coarseY & 0x02) bgNextTileAttrib >>= 4;
-                    if (vramAddress.coarseX & 0x02) bgNextTileAttrib >>= 2;
-                    bgNextTileAttrib &= 0x03;
-                    break;
-                case 4:
-                    bgNextTileLo = ppuRead((ctrl.bgPatternTable << 12)
-                            + ((uint16_t)bgNextTileId << 4)
-                            + (vramAddress.fineY));
-                    break;
-                case 6:
-                    bgNextTileHi = ppuRead((ctrl.bgPatternTable << 12)
-                            + ((uint16_t)bgNextTileId << 4)
-                            + (vramAddress.fineY) + 8);
-                    break;
-                case 7:
-                    IncrementScrollX();
-                    break;
+            case 0:
+                LoadBackgroundShifters();
+                bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
+                break;
+            case 2:
+                // I HAVE NO IDEA WHAT'S GOING ON LOL
+                bgNextTileAttrib = ppuRead(0x23C0 | (vramAddress.nametableY << 11) | (vramAddress.nametableX << 10) | ((vramAddress.coarseY >> 2) << 3) | (vramAddress.coarseX >> 2));
+                if (vramAddress.coarseY & 0x02)
+                    bgNextTileAttrib >>= 4;
+                if (vramAddress.coarseX & 0x02)
+                    bgNextTileAttrib >>= 2;
+                bgNextTileAttrib &= 0x03;
+                break;
+            case 4:
+                bgNextTileLo = ppuRead((ctrl.bgPatternTable << 12) + ((uint16_t)bgNextTileId << 4) + (vramAddress.fineY));
+                break;
+            case 6:
+                bgNextTileHi = ppuRead((ctrl.bgPatternTable << 12) + ((uint16_t)bgNextTileId << 4) + (vramAddress.fineY) + 8);
+                break;
+            case 7:
+                IncrementScrollX();
+                break;
             }
         }
 
@@ -382,7 +366,6 @@ void PPU::clock()
 
         if (cycle == 338 || cycle == 340)
             bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
-
 
         // Sprites / Foreground
         //
@@ -407,13 +390,10 @@ void PPU::clock()
         //    loadSprites();
         //}
 
-
-
         if (scanline == -1 && cycle >= 280 && cycle < 305) {
             // End of vblank period, reset Y address
             TransferAddressY();
         }
-
 
         // SPRITE STUFF
         // performs all sprite evaluation in one hit - this is not how the nes actually does it!
@@ -427,7 +407,7 @@ void PPU::clock()
             }
 
             uint8_t oamEntry = 0;
-            spriteZeroHitPossible =  false;
+            spriteZeroHitPossible = false;
 
             while (oamEntry < 64 && spriteCount < 9) {
                 int16_t diff = ((int16_t)scanline - (int16_t)oam[oamEntry].y);
@@ -452,37 +432,25 @@ void PPU::clock()
                 if (!ctrl.spriteSize) { // 8x8
                     if (!(spriteScanline[i].attr & 0x80)) {
                         // Sprite is NOT flipped vertically
-                        spritePatternAddrLo = (ctrl.spritePatternTable << 12)
-                            | (spriteScanline[i].id << 4)
-                            | (scanline - spriteScanline[i].y);
+                        spritePatternAddrLo = (ctrl.spritePatternTable << 12) | (spriteScanline[i].id << 4) | (scanline - spriteScanline[i].y);
                     } else {
                         // Sprite IS flipped vertically
-                        spritePatternAddrLo = (ctrl.spritePatternTable << 12)
-                            | (spriteScanline[i].id << 4)
-                            | (7 - (scanline - spriteScanline[i].y));
+                        spritePatternAddrLo = (ctrl.spritePatternTable << 12) | (spriteScanline[i].id << 4) | (7 - (scanline - spriteScanline[i].y));
                     }
                 } else { // 8x16
                     if (!(spriteScanline[i].attr & 0x80)) {
                         // NOT flipped vertically
                         if (scanline - spriteScanline[i].y < 8) {
-                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
-                                | ((spriteScanline[i].id & 0xFE) << 4)
-                                | ((scanline - spriteScanline[i].y) & 0x07);
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12) | ((spriteScanline[i].id & 0xFE) << 4) | ((scanline - spriteScanline[i].y) & 0x07);
                         } else {
-                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
-                                |(((spriteScanline[i].id & 0xFE) + 1) << 4)
-                                | ((scanline - spriteScanline[i].y) & 0x07);
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12) | (((spriteScanline[i].id & 0xFE) + 1) << 4) | ((scanline - spriteScanline[i].y) & 0x07);
                         }
                     } else {
                         // FLIPPED vertically
                         if (scanline - spriteScanline[i].y < 8) {
-                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
-                                |(((spriteScanline[i].id & 0xFE) + 1) << 4)
-                                | ((7 - (scanline - spriteScanline[i].y)) & 0x07);
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12) | (((spriteScanline[i].id & 0xFE) + 1) << 4) | ((7 - (scanline - spriteScanline[i].y)) & 0x07);
                         } else {
-                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12)
-                                |(((spriteScanline[i].id & 0xFE)) << 4)
-                                | ((7 - (scanline - spriteScanline[i].y)) & 0x07);
+                            spritePatternAddrLo = ((spriteScanline[i].id & 0x01) << 12) | (((spriteScanline[i].id & 0xFE)) << 4) | ((7 - (scanline - spriteScanline[i].y)) & 0x07);
                         }
                     }
                 }
@@ -497,8 +465,7 @@ void PPU::clock()
                     // so 0b11100000 becomes 0b00000111. It's very
                     // clever, and stolen completely from here:
                     // https://stackoverflow.com/a/2602885
-                    auto flipbyte = [](uint8_t b)
-                    {
+                    auto flipbyte = [](uint8_t b) {
                         b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
                         b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
                         b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
@@ -574,7 +541,7 @@ void PPU::clock()
     //                     ((oamBuf[i].dataL >> (7 - sprX)) & 0x01));
 
     //        if (sprPixel == 0) continue;
-    //        
+    //
     //        if (oamBuf[i].id == 0 && sprPixel && x != 255)
     //            status.spriteZeroHit = 1;
 
@@ -582,7 +549,7 @@ void PPU::clock()
     //    }
     //}
     //
-    
+
     uint8_t sprPixel = 0, sprPalette = 0;
     bool front = false;
     if (mask.renderSprites) {
@@ -664,44 +631,65 @@ uint8_t PPU::cpuRead(uint16_t addr, bool readOnly)
 
     if (readOnly) {
         switch (addr & 0x0007) {
-            case PPUCtrl: data = ctrl.reg; break;
-            case PPUMask: data = mask.reg; break;
-            case PPUStatus: data = status.reg; break;
-            case OAMAddr: data = oamAddr; break;
-            case OAMData: data = oamPointer[oamAddr]; break;
-            case PPUScroll: data = 0; break;
-            case PPUAddr: data = 0; break;
-            case PPUData: data = vramBuffer; break;
+        case PPUCtrl:
+            data = ctrl.reg;
+            break;
+        case PPUMask:
+            data = mask.reg;
+            break;
+        case PPUStatus:
+            data = status.reg;
+            break;
+        case OAMAddr:
+            data = oamAddr;
+            break;
+        case OAMData:
+            data = oamPointer[oamAddr];
+            break;
+        case PPUScroll:
+            data = 0;
+            break;
+        case PPUAddr:
+            data = 0;
+            break;
+        case PPUData:
+            data = vramBuffer;
+            break;
         }
     } else {
         switch (addr & 0x0007) {
-            case PPUCtrl: break; // write only
-            case PPUMask: break; // write only
-            case PPUStatus:
-                          data = (status.reg & 0xE0) | (vramBuffer & 0x1F);
-                          status.verticalBlank = 0;
-                          //vramAddress.reg = 0;
-                          flip = false;
-                          break;
-            case OAMAddr: break; // write only
-            case OAMData:
-                          //if (status.verticalBlank)
-                          data = oamPointer[oamAddr];
-                          break;
-            case PPUScroll: break; // write only
-            case PPUAddr: break; // write only
-            case PPUData:
-                          // Read data
-                          data = vramBuffer;
-                          vramBuffer = this->ppuRead(vramAddress.reg);
-                          if (vramAddress.reg >= 0x3F00 && vramAddress.reg < 0x4000) {
-                              data = vramBuffer;
-                              vramBuffer = ppuRead(vramAddress.reg - 0x1000);
-                          }
+        case PPUCtrl:
+            break; // write only
+        case PPUMask:
+            break; // write only
+        case PPUStatus:
+            data = (status.reg & 0xE0) | (vramBuffer & 0x1F);
+            status.verticalBlank = 0;
+            //vramAddress.reg = 0;
+            flip = false;
+            break;
+        case OAMAddr:
+            break; // write only
+        case OAMData:
+            //if (status.verticalBlank)
+            data = oamPointer[oamAddr];
+            break;
+        case PPUScroll:
+            break; // write only
+        case PPUAddr:
+            break; // write only
+        case PPUData:
+            // Read data
+            data = vramBuffer;
+            vramBuffer = this->ppuRead(vramAddress.reg);
+            if (vramAddress.reg >= 0x3F00 && vramAddress.reg < 0x4000) {
+                data = vramBuffer;
+                vramBuffer = ppuRead(vramAddress.reg - 0x1000);
+            }
 
-                          // Increment address
-                          vramAddress.reg += vramInc;
-                          break;
+            // Increment address
+            vramAddress.reg += vramInc;
+            break;
         }
     }
 
@@ -713,58 +701,64 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
     vramBuffer = data;
     if (addr >= 0x2000 && addr < 0x4000) {
         switch (addr & 0x0007) {
-            case PPUCtrl: {
-                //auto old = ctrl;
-                ctrl.reg = data;
-                //bool vOn = (!(old.enableNmi)) && (ctrl.enableNmi);
-                vramInc = (ctrl.incrementMode ? 32 : 1);
+        case PPUCtrl: {
+            //auto old = ctrl;
+            ctrl.reg = data;
+            //bool vOn = (!(old.enableNmi)) && (ctrl.enableNmi);
+            vramInc = (ctrl.incrementMode ? 32 : 1);
 
-                tramAddress.nametableX = ctrl.nametableX;
-                tramAddress.nametableY = ctrl.nametableY;
+            tramAddress.nametableX = ctrl.nametableX;
+            tramAddress.nametableY = ctrl.nametableY;
 
-                //if (vOn) {
-                    // if NMI flag was changed from off to on, do an NMI
-                    //nes->cpu.nmi();
-                    //nmiOccurred = true;
-                //}
+            //if (vOn) {
+            // if NMI flag was changed from off to on, do an NMI
+            //nes->cpu.nmi();
+            //nmiOccurred = true;
+            //}
 
-                break;
+            break;
+        }
+        case PPUMask:
+            mask.reg = data;
+            break;
+        case PPUStatus:
+            break; // read only
+        case OAMAddr:
+            oamAddr = data;
+            break;
+        case OAMData:
+            oamPointer[oamAddr] = data;
+            break;
+        case PPUScroll:
+            if (!flip) {
+                fineX = data & 0x07;
+                tramAddress.coarseX = data >> 3;
+                flip = true;
+            } else {
+                tramAddress.fineY = data & 0x07;
+                tramAddress.coarseY = data >> 3;
+                flip = false;
             }
-            case PPUMask: mask.reg = data; break;
-            case PPUStatus: break; // read only
-            case OAMAddr:
-                oamAddr = data; break;
-            case OAMData:
-                oamPointer[oamAddr] = data; break;
-            case PPUScroll:
-                if (!flip) {
-                    fineX = data & 0x07;
-                    tramAddress.coarseX = data >> 3;
-                    flip = true;
-                } else {
-                    tramAddress.fineY = data & 0x07;
-                    tramAddress.coarseY = data >> 3;
-                    flip = false;
-                }
-                break;
-            case PPUAddr:
-                // write twice to set address
-                if (!flip) {
-                    tramAddress.reg = (uint16_t)((data & 0x3F) << 8) | (tramAddress.reg & 0x00FF);
-                    flip = true;
-                } else {
-                    tramAddress.reg = (tramAddress.reg & 0xFF00) | data;
-                    vramAddress = tramAddress;
-                    flip = false;
-                }
-                break;
-            case PPUData: 
-                // Write data
-                this->ppuWrite(vramAddress.reg, data);
-                // Increment address
-                vramAddress.reg += vramInc;
-                break;
-            default: break;
+            break;
+        case PPUAddr:
+            // write twice to set address
+            if (!flip) {
+                tramAddress.reg = (uint16_t)((data & 0x3F) << 8) | (tramAddress.reg & 0x00FF);
+                flip = true;
+            } else {
+                tramAddress.reg = (tramAddress.reg & 0xFF00) | data;
+                vramAddress = tramAddress;
+                flip = false;
+            }
+            break;
+        case PPUData:
+            // Write data
+            this->ppuWrite(vramAddress.reg, data);
+            // Increment address
+            vramAddress.reg += vramInc;
+            break;
+        default:
+            break;
         }
     }
 }
@@ -772,7 +766,7 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
 // THIS IS A BIT MESSY
 uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 {
-    char out[100];
+    // char out[100];
     uint8_t data = 0x00;
 
     addr &= 0x3FFF;
@@ -813,12 +807,16 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         }
     } else if (addr >= 0x3F00 && addr < 0x4000) {
         addr &= 0x001F;
-        if (addr == 0x0010) addr = 0x0000;
-        if (addr == 0x0014) addr = 0x0004;
-        if (addr == 0x0018) addr = 0x0008;
-        if (addr == 0x001C) addr = 0x000C;
+        if (addr == 0x0010)
+            addr = 0x0000;
+        if (addr == 0x0014)
+            addr = 0x0004;
+        if (addr == 0x0018)
+            addr = 0x0008;
+        if (addr == 0x001C)
+            addr = 0x000C;
         data = palette[addr] & (mask.grayscale ? 0x30 : 0x3F);
-    /*} else if (addr >= 0x3000) {
+        /*} else if (addr >= 0x3000) {
         data = ppuRead(addr - 0x1000);
         printf("suspicious ppu read from addr %04x\n", addr);
         */
@@ -833,7 +831,7 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
 {
     uint8_t mirrortype = cart->getMirrorType();
     addr &= 0x3FFF;
-    
+
     //printf("ppuWrite: addr %04X  data %02X\n", addr, data);
 
     //if (addr <= 0x3EFF)
@@ -865,18 +863,22 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
         }
     } else if (addr >= 0x3F00 && addr < 0x4000) {
         addr &= 0x001F;
-        if (addr == 0x0010) addr = 0x0000;
-        if (addr == 0x0014) addr = 0x0004;
-        if (addr == 0x0018) addr = 0x0008;
-        if (addr == 0x001C) addr = 0x000C;
+        if (addr == 0x0010)
+            addr = 0x0000;
+        if (addr == 0x0014)
+            addr = 0x0004;
+        if (addr == 0x0018)
+            addr = 0x0008;
+        if (addr == 0x001C)
+            addr = 0x000C;
         palette[addr] = data;
-    }/* else if (addr >= 0x3000) {
+    } /* else if (addr >= 0x3000) {
         ppuWrite(addr - 0x1000, data);
         printf("suspicious ppu write to addr %04x\n", addr);
     }*/
 }
 
-void PPU::connectCartridge(const std::shared_ptr<Cartridge>& cartridge)
+void PPU::connectCartridge(const std::shared_ptr<Cartridge> &cartridge)
 {
     this->cart = cartridge;
 }
@@ -902,6 +904,5 @@ void PPU::reset()
     mask.reg = 0x00;
     flip = false;
 }
-
 
 // vim: fdm=syntax

@@ -1,6 +1,5 @@
 #include "mapper000.h"
 
-
 Mapper000::Mapper000(uint8_t p, uint8_t c) : Mapper(p, c)
 {
 }
@@ -30,7 +29,7 @@ bool Mapper000::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 bool Mapper000::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 {
     if (addr >= 0x8000) {
-        printf("WRITING TO ROM?!?!?!\n");
+        // printf("WRITING TO ROM?!?!?!\n");
         mapped_addr = addr & (prgBanks > 1 ? 0x7FFF : 0x3FFF);
         return true;
     }
@@ -54,4 +53,9 @@ bool Mapper000::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
         }
     }
     return false;
+}
+
+void Mapper000::romOverwrite(uint16_t addr, uint8_t data)
+{
+    prgROM->write(addr, data);
 }

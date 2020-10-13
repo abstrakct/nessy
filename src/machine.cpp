@@ -49,6 +49,9 @@ void Machine::editorCpuWrite(const uint8_t *data, size_t address, uint8_t input)
         cpuRam[address & 0x07FF] = input;
     } else if (address >= 0x2000 && address < 0x4000) {
         ppu.cpuWrite(address, input);
+    } else if (address >= 0x8000) {
+        // Overwrite data in ROM!
+        cart->romOverwrite(address, input);
     }
 }
 

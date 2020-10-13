@@ -1,7 +1,6 @@
 
-#include <fstream>
-#include "logger.h"
 #include "cartridge.h"
+#include "logger.h"
 #include "mappers/mapper000.h"
 #include "mappers/mapper001.h"
 #include "mappers/mapper002.h"
@@ -12,10 +11,11 @@
 #include "mappers/mapper013.h"
 #include "mappers/mapper033.h"
 #include "mappers/mapper066.h"
+#include <fstream>
 
 extern Logger l;
 
-Cartridge::Cartridge(const std::string& filename)
+Cartridge::Cartridge(const std::string &filename)
 {
     struct header_struct {
         char name[4];
@@ -24,7 +24,7 @@ Cartridge::Cartridge(const std::string& filename)
         uint8_t mapper1, mapper2;
         uint8_t prg_ram_size;
         uint8_t tv_system1, tv_system2;
-        char unused[5];   // there can be information here, implement/use later
+        char unused[5]; // there can be information here, implement/use later
     } header;
 
     valid = false;
@@ -38,9 +38,9 @@ Cartridge::Cartridge(const std::string& filename)
 
     if (ifs.is_open()) {
         // TODO: check first 4 bytes
-        ifs.read((char*)&header, sizeof(header_struct));
+        ifs.read((char *)&header, sizeof(header_struct));
 
-        if (header.mapper1 & 0x04)   // then 512 bytes of trainer data
+        if (header.mapper1 & 0x04) // then 512 bytes of trainer data
             ifs.seekg(512, std::ios_base::cur);
 
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
@@ -48,7 +48,7 @@ Cartridge::Cartridge(const std::string& filename)
         if (header.mapper1 & 0x08) {
             mirrorType = FOUR_SCREEN;
         } else {
-          mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
+            mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
         }
 
         // discover file format
@@ -62,11 +62,11 @@ Cartridge::Cartridge(const std::string& filename)
 
             const int defaultPrgBankSize = 0x4000;
             int bankSize = defaultPrgBankSize;
-            
+
             // TODO: ask mapper what bank size it wants
             if (mapperNum == 4 || mapperNum == 33)
                 bankSize = 0x2000;
-            
+
             prgBanks = (header.prg_rom_chunks * defaultPrgBankSize) / bankSize;
             prgROM = std::make_shared<BankedMemory>(prgBanks, bankSize);
 
@@ -74,7 +74,7 @@ Cartridge::Cartridge(const std::string& filename)
             for (int i = 0; i < prgBanks; i++) {
                 std::vector<uint8_t> tmp;
                 tmp.resize(bankSize);
-                ifs.read((char*)tmp.data(), bankSize);
+                ifs.read((char *)tmp.data(), bankSize);
                 prgROM->addBank(i, tmp);
 
                 printf(".");
@@ -94,7 +94,7 @@ Cartridge::Cartridge(const std::string& filename)
                 bankSize = 0x400;
             else
                 bankSize = 0x1000;
-            
+
             chrBanks = (header.chr_rom_chunks * defaultChrBankSize) / bankSize;
             chrROM = std::make_shared<BankedMemory>(chrBanks, bankSize);
 
@@ -102,7 +102,7 @@ Cartridge::Cartridge(const std::string& filename)
             for (int i = 0; i < chrBanks; i++) {
                 std::vector<uint8_t> tmp;
                 tmp.resize(bankSize);
-                ifs.read((char*)tmp.data(), bankSize);
+                ifs.read((char *)tmp.data(), bankSize);
                 chrROM->addBank(i, tmp);
                 printf(".");
             }
@@ -112,37 +112,46 @@ Cartridge::Cartridge(const std::string& filename)
             prgRAM.resize(prgRamSize);
         } else if (filetype == 2) {
         }
-        
 
         valid = true;
 
         switch (mapperNum) {
-            case 0:
-                mapper = std::make_shared<Mapper000>(prgBanks, chrBanks); break;
-            case 1:
-                mapper = std::make_shared<Mapper001>(prgBanks, chrBanks); break;
-            case 2:
-                mapper = std::make_shared<Mapper002>(prgBanks, chrBanks); break;
-            case 3:
-                mapper = std::make_shared<Mapper003>(prgBanks, chrBanks); break;
-            case 4:
-                mapper = std::make_shared<Mapper004>(prgBanks, chrBanks); break;
-            case 7:
-                mapper = std::make_shared<Mapper007>(prgBanks, chrBanks); break;
-            case 11:
-                mapper = std::make_shared<Mapper011>(prgBanks, chrBanks); break;
-            case 12:
-            case 13:
-                mapper = std::make_shared<Mapper013>(prgBanks, chrBanks); break;
-            case 33:
-                mapper = std::make_shared<Mapper033>(prgBanks, chrBanks); break;
-            case 66:
-                mapper = std::make_shared<Mapper066>(prgBanks, chrBanks); break;
-            default:
-                printf("ERROR! Mapper %d is not implemented!\n", mapperNum);
-                mapper = nullptr; 
-                valid = false;
-                break;
+        case 0:
+            mapper = std::make_shared<Mapper000>(prgBanks, chrBanks);
+            break;
+        case 1:
+            mapper = std::make_shared<Mapper001>(prgBanks, chrBanks);
+            break;
+        case 2:
+            mapper = std::make_shared<Mapper002>(prgBanks, chrBanks);
+            break;
+        case 3:
+            mapper = std::make_shared<Mapper003>(prgBanks, chrBanks);
+            break;
+        case 4:
+            mapper = std::make_shared<Mapper004>(prgBanks, chrBanks);
+            break;
+        case 7:
+            mapper = std::make_shared<Mapper007>(prgBanks, chrBanks);
+            break;
+        case 11:
+            mapper = std::make_shared<Mapper011>(prgBanks, chrBanks);
+            break;
+        case 12:
+        case 13:
+            mapper = std::make_shared<Mapper013>(prgBanks, chrBanks);
+            break;
+        case 33:
+            mapper = std::make_shared<Mapper033>(prgBanks, chrBanks);
+            break;
+        case 66:
+            mapper = std::make_shared<Mapper066>(prgBanks, chrBanks);
+            break;
+        default:
+            printf("ERROR! Mapper %d is not implemented!\n", mapperNum);
+            mapper = nullptr;
+            valid = false;
+            break;
         }
 
         if (valid) {
@@ -160,7 +169,6 @@ Cartridge::Cartridge(const std::string& filename)
                     exit(1);
                 }
             }
-
 
             printf("\n");
             printf("\tFilename:  %s\n", filename.c_str());
@@ -192,9 +200,9 @@ Cartridge::~Cartridge()
 Cartridge::Mirror Cartridge::getMirrorType()
 {
     int tmp;
-    
+
     if (mapper->getMirrorType(tmp)) {
-        mirrorType = (Cartridge::Mirror) tmp;
+        mirrorType = (Cartridge::Mirror)tmp;
     }
 
     return mirrorType;
@@ -243,6 +251,14 @@ bool Cartridge::cpuWrite(uint16_t addr, uint8_t data)
     return false;
 }
 
+void Cartridge::romOverwrite(uint16_t addr, uint8_t data)
+{
+    uint32_t mapped_addr = 0;
+    if (mapper->cpuWrite(addr, mapped_addr)) {
+        mapper->romOverwrite(addr, data);
+    }
+}
+
 bool Cartridge::ppuRead(uint16_t addr, uint8_t &data)
 {
     uint32_t mapped_addr = 0;
@@ -263,10 +279,9 @@ bool Cartridge::ppuWrite(uint16_t addr, uint8_t data)
         //printf("writing to CHR ROM?!?! addr = %04X  data = %02X\n", addr, data);
         //chrROM[mapped_addr] = data;
         return true;
-    } else if(mapper->ppuWriteData(addr, data)) {
+    } else if (mapper->ppuWriteData(addr, data)) {
         return true;
     } else {
         return false;
     }
 }
-

@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include "../mapper.h"
+#include <vector>
 
 class Mapper004 : public Mapper
 {
@@ -25,6 +25,7 @@ public:
     bool ppuWrite(uint16_t addr, uint32_t &mapped_addr) override;
     bool ppuWriteData(uint16_t addr, uint8_t data) override;
     bool getMirrorType(int &data) override { return false; };
+    void romOverwrite(uint16_t addr, uint8_t data) override{};
     void reset() override;
 
     int implementationStatus() override { return MI_DEVELOPMENT; };

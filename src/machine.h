@@ -27,6 +27,10 @@ public:
     void cpuWrite(uint16_t addr, uint8_t data);
     uint8_t cpuRead(uint16_t addr, bool readonly = false);
 
+    // Read and write for Memory Editor
+    void editorCpuWrite(const uint8_t *data, size_t address, uint8_t input);
+    uint8_t editorCpuRead(const uint8_t *data, size_t address);
+
     void insertCartridge(const std::shared_ptr<Cartridge> &cartridge);
     void reset();
     void clock();

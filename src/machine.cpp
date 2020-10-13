@@ -38,6 +38,18 @@ uint8_t Machine::cpuRead(uint16_t addr, bool readonly)
     return data;
 }
 
+uint8_t Machine::editorCpuRead(const uint8_t *data, size_t address)
+{
+    return this->cpuRead(address, true);
+}
+
+void Machine::editorCpuWrite(const uint8_t *data, size_t address, uint8_t input)
+{
+    if (address < 0x2000) {
+        cpuRam[address & 0x07FF] = input;
+    }
+}
+
 void Machine::reset()
 {
     // TODO: reset mapper!!

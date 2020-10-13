@@ -18,6 +18,7 @@
 
 #include "imgui/imgui-SFML.h"
 #include "imgui/imgui.h"
+#include "imgui/imgui_memory_editor.h"
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
@@ -36,9 +37,10 @@ bool cfgDisplayHelp = false;
 bool cfgDisplayPPU = false;
 bool cfgDisplayMapper = false;
 
-// this is silly, move into Nessy class?!
+// this is silly? move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
 Logger l;
+MemoryEditor memoryEditor;
 
 // from OLC
 std::string hex(uint32_t n, uint8_t d)
@@ -185,6 +187,22 @@ public:
             drawString(ramx, ramy, s);
             ramy += cSize;
         }
+    }
+
+    ImU8 testRamRead(const ImU8 *data, size_t offset)
+    {
+        return nes->cpuRead(offset);
+    }
+
+    void showMemoryEditor()
+    {
+        uint8_t data[0xFFFF];
+
+        // for (int i = 0; i < 0xFFFF; i++) {
+        //     data[i] = nes->cpuRead(i);
+        // }
+
+        memoryEditor.DrawWindow("Memory Editor", data, 0x10000);
     }
 
     void drawCPU()
@@ -517,28 +535,28 @@ public:
                         break;
 
                     // UI
-                    case sf::Keyboard::F1:
+                    case sf::Keyboard::F10:
                         cfgDisplayHelp = !cfgDisplayHelp;
                         break;
-                    case sf::Keyboard::Num1:
-                        cfgDisplayRam = !cfgDisplayRam;
-                        break;
-                    case sf::Keyboard::Num2:
+                    case sf::Keyboard::F1:
                         cfgDisplayCpu = !cfgDisplayCpu;
                         break;
-                    case sf::Keyboard::Num3:
-                        cfgDisplayMapper = !cfgDisplayMapper;
+                    case sf::Keyboard::F2:
+                        cfgDisplayRam = !cfgDisplayRam;
                         break;
-                    case sf::Keyboard::Num4:
+                    case sf::Keyboard::F3:
                         cfgDisplayDisasm = !cfgDisplayDisasm;
                         break;
-                    case sf::Keyboard::Num5:
+                    case sf::Keyboard::F4:
+                        cfgDisplayMapper = !cfgDisplayMapper;
+                        break;
+                    case sf::Keyboard::F5:
                         cfgDisplayPPU = !cfgDisplayPPU;
                         break;
-                    case sf::Keyboard::Num9:
+                    case sf::Keyboard::F8:
                         targetFPS -= 5;
                         break;
-                    case sf::Keyboard::Num0:
+                    case sf::Keyboard::F9:
                         targetFPS += 5;
                         break;
                     case sf::Keyboard::P:
@@ -618,13 +636,14 @@ public:
                 ImGui::Text("i - irq");
                 ImGui::Text("n - nmi");
                 ImGui::Text("r - reset");
-                ImGui::Text("1 - show memory editor");
-                ImGui::Text("2 - show cpu status");
-                ImGui::Text("3 - show mapper status");
-                ImGui::Text("4 - show disassembly");
-                ImGui::Text("5 - show ppu status");
-                ImGui::Text("9 - decrease fps");
-                ImGui::Text("0 - increase fps");
+                ImGui::Text("F1 - show cpu status");
+                ImGui::Text("F2 - show memory editor");
+                ImGui::Text("F3 - show disassembly");
+                ImGui::Text("F4 - show mapper status");
+                ImGui::Text("F5 - show ppu status");
+                ImGui::Text("F8 - decrease fps");
+                ImGui::Text("F9 - increase fps");
+                ImGui::Text("F10 - show this help");
                 ImGui::Text("esc - quit");
                 ImGui::Text(" ");
                 ImGui::Text("controller 1:");
@@ -639,8 +658,9 @@ public:
 
             // Draw RAM
             if (cfgDisplayRam) {
-                drawRAM(x + 10, 12, 0x0000, 16, 16);
-                drawRAM(x + 10, 320, ram2start, 16, 16);
+                // drawRAM(x + 10, 12, 0x0000, 16, 16);
+                // drawRAM(x + 10, 320, ram2start, 16, 16);
+                showMemoryEditor();
             }
 
             x += 264;
@@ -719,6 +739,7 @@ int main(int argc, char *argv[])
     // SFML
 
     NessyApplication nessy(TheNES, argv[1], breakpoint, breakpointAddress);
+    memoryEditor.AttachMachine(TheNES);
 
     if (nessy.construct(1900, 960, 3, 3)) {
         printf("[ Starting Emulation     ]\n");

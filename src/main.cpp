@@ -632,6 +632,11 @@ public:
 
             ImGui::DragFloat("Scale NES Screen", &NESScale, 0.05f);
             ImGui::Checkbox("Show window decorations on NES screen", &cfgDisplayNESWindowDecorations);
+            ImGui::Checkbox("Show CPU info", &cfgDisplayCpu);
+            ImGui::Checkbox("Show memory editor", &cfgDisplayRam);
+            ImGui::Checkbox("Show disassembler", &cfgDisplayDisasm);
+            ImGui::Checkbox("Show mapper info", &cfgDisplayMapper);
+            ImGui::Checkbox("Show PPU Nametables", &cfgDisplayPPU);
 
             if (ImGui::ColorEdit3("Background color", color)) {
                 bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);

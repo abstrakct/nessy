@@ -30,6 +30,8 @@
 using namespace std;
 
 // Configuration
+// TODO: structure better!
+// TODO: config file
 bool cfgDisplayRam = false;
 bool cfgDisplayDisasm = false;
 bool cfgDisplayCpu = false;
@@ -37,6 +39,7 @@ bool cfgDisplayHelp = false;
 bool cfgDisplayPPU = false;
 bool cfgDisplayMapper = false;
 bool cfgDisplayNES = true;
+bool cfgDisplayNESWindowDecorations = true;
 
 // this is silly? move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
@@ -357,9 +360,10 @@ public:
 
                     nes->ppu.frame_complete = false;
 
-                    if (cfgDisplayDisasm)
+                    if (cfgDisplayDisasm) {
                         //disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
                         disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+                    }
                 }
             }
 
@@ -611,7 +615,8 @@ public:
             if (cfgDisplayNES) {
                 ImVec2 size = ImVec2(256 * NESScale, 240 * NESScale);
 
-                ImGui::Begin("NES");
+                ImGuiWindowFlags flags = cfgDisplayNESWindowDecorations ? ImGuiWindowFlags_None : ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize;
+                ImGui::Begin("NES", NULL, flags);
 
                 nesTex.update(nes->ppu.GetNesScreen());
                 ImGui::Image(nesScreen, size);
@@ -626,6 +631,7 @@ public:
             ImGui::Begin("Options"); // begin window
 
             ImGui::DragFloat("Scale NES Screen", &NESScale, 0.05f);
+            ImGui::Checkbox("Show window decorations on NES screen", &cfgDisplayNESWindowDecorations);
 
             if (ImGui::ColorEdit3("Background color", color)) {
                 bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);

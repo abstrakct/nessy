@@ -47,6 +47,8 @@ void Machine::editorCpuWrite(const uint8_t *data, size_t address, uint8_t input)
 {
     if (address < 0x2000) {
         cpuRam[address & 0x07FF] = input;
+    } else if (address >= 0x2000 && address < 0x4000) {
+        ppu.cpuWrite(address, input);
     }
 }
 

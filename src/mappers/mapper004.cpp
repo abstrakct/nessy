@@ -1,5 +1,5 @@
-#include <iostream>
 #include "mapper004.h"
+#include <iostream>
 
 Mapper004::Mapper004(uint8_t p, uint8_t c) : Mapper(p, c)
 {
@@ -16,15 +16,15 @@ Mapper004::~Mapper004()
 
 std::vector<std::string> Mapper004::getInfoStrings()
 {
-    if (updateInfo)
-    {
-        char line[50];
+    if (updateInfo) {
+        // char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 004");
-        //sprintf(line, "CHR BANK: %d", chrBank);
-        //infoString.push_back(std::string(line));
+        infoString.push_back("not fully implemented");
+        // sprintf(line, "CHR BANK: %d", chrBank);
+        // infoString.push_back(std::string(line));
 
         updateInfo = false;
     }
@@ -55,8 +55,7 @@ void Mapper004::apply()
 bool Mapper004::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         return true;
     }
     return false;
@@ -69,8 +68,7 @@ bool Mapper004::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper004::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000 && addr < 0xA000)
-    {
+    if (addr >= 0x8000 && addr < 0xA000) {
         return true;
     }
 

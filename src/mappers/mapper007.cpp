@@ -1,5 +1,5 @@
-#include <iostream>
 #include "mapper007.h"
+#include <iostream>
 
 // CPU $8000 - $FFFF: 32 KB switchable PRG ROM bank
 //
@@ -23,16 +23,19 @@ Mapper007::~Mapper007()
 
 std::vector<std::string> Mapper007::getInfoStrings()
 {
-    if (updateInfo)
-    {
+    if (updateInfo) {
         char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 007");
-        sprintf(line, "PRG BANK: %d", prgBank);
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
+        infoString.push_back(line);
+        infoString.push_back("PRG Bank offset: 0x8000");
+        infoString.push_back("PRG Bank size:   0x8000");
+        sprintf(line, "PRG Bank:        %d", prgBank);
         infoString.push_back(std::string(line));
-        sprintf(line, "VRAM BANK: %d", vramBank);
+        sprintf(line, "VRAM Bank:       %d", vramBank);
         infoString.push_back(std::string(line));
 
         updateInfo = false;
@@ -66,8 +69,7 @@ void Mapper007::apply()
 bool Mapper007::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         //mapped_addr = (addr - 0x8000) + (prgBank * 0x8000);
         return true;
     }
@@ -81,8 +83,7 @@ bool Mapper007::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper007::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         prgBank = data & 0b00000111; // last 3 bits select bank. Could also be written as & 0x07
         vramBank = (data & 0b00010000) >> 4;
 
@@ -125,8 +126,7 @@ bool Mapper007::ppuReadData(uint16_t addr, uint8_t &data)
     //    return true;
     //}
 
-    if (addr < 0x2000)
-    {
+    if (addr < 0x2000) {
         data = vram[addr];
         return true;
     }
@@ -160,8 +160,7 @@ bool Mapper007::ppuWriteData(uint16_t addr, uint8_t data)
     //    return true;
     //}
 
-    if (addr < 0x2000)
-    {
+    if (addr < 0x2000) {
         vram[addr] = data;
     }
 

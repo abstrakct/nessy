@@ -1,5 +1,5 @@
-#include <iostream>
 #include "mapper003.h"
+#include <iostream>
 
 Mapper003::Mapper003(uint8_t p, uint8_t c) : Mapper(p, c)
 {
@@ -13,14 +13,17 @@ Mapper003::~Mapper003()
 
 std::vector<std::string> Mapper003::getInfoStrings()
 {
-    if (updateInfo)
-    {
+    if (updateInfo) {
         char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 003");
-        sprintf(line, "CHR BANK: %d", chrBank);
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
+        infoString.push_back(line);
+        infoString.push_back("CHR Bank offset: 0x1000");
+        infoString.push_back("CHR Bank size:   0x1000");
+        sprintf(line, "CHR Bank:    %d", chrBank);
         infoString.push_back(std::string(line));
 
         updateInfo = false;
@@ -50,8 +53,7 @@ void Mapper003::apply()
 bool Mapper003::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         return true;
     }
     return false;
@@ -64,14 +66,10 @@ bool Mapper003::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper003::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000)
-    {
-        if (chrBanks > 4)
-        {
+    if (addr >= 0x8000) {
+        if (chrBanks > 4) {
             chrBank = data;
-        }
-        else
-        {
+        } else {
             chrBank = (data & 0x3);
         }
 

@@ -17,14 +17,14 @@ Mapper004::~Mapper004()
 std::vector<std::string> Mapper004::getInfoStrings()
 {
     if (updateInfo) {
-        // char line[50];
+        char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 004");
-        infoString.push_back("not fully implemented");
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
+        infoString.push_back(line);
         // sprintf(line, "CHR BANK: %d", chrBank);
-        // infoString.push_back(std::string(line));
 
         updateInfo = false;
     }

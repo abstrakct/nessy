@@ -1,6 +1,6 @@
-#include <iostream>
 #include "mapper033.h"
 #include "../cartridge.h"
+#include <iostream>
 
 Mapper033::Mapper033(uint16_t p, uint16_t c) : Mapper(p, c)
 {
@@ -12,16 +12,17 @@ Mapper033::~Mapper033()
 
 std::vector<std::string> Mapper033::getInfoStrings()
 {
-    if (updateInfo)
-    {
+    if (updateInfo) {
         char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 033");
-        sprintf(line, "PRG BANK @ $8000: %d", prgBank[0]);
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
         infoString.push_back(std::string(line));
-        sprintf(line, "PRG BANK @ $A000: %d", prgBank[1]);
+        sprintf(line, "PRG Bank @ $8000: %d", prgBank[0]);
+        infoString.push_back(std::string(line));
+        sprintf(line, "PRG Bank @ $A000: %d", prgBank[1]);
         infoString.push_back(std::string(line));
         sprintf(line, " 2K CHR  @ $0000: %d", chrBank[0]);
         infoString.push_back(std::string(line));
@@ -82,8 +83,7 @@ bool Mapper033::getMirrorType(int &data)
 bool Mapper033::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         return true;
     }
 
@@ -97,10 +97,8 @@ bool Mapper033::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper033::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000 && addr < 0xC000)
-    {
-        switch (addr & 0xA003)
-        {
+    if (addr >= 0x8000 && addr < 0xC000) {
+        switch (addr & 0xA003) {
         case 0x8000:
             //printf("%02X written to $8000\n", data);
             mirror = data & 0x40;

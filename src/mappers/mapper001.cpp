@@ -22,6 +22,8 @@ std::vector<std::string> Mapper001::getInfoStrings()
         infoString.clear();
 
         infoString.push_back("MAPPER 001");
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
+        infoString.push_back(line);
 
         if (prgMode <= 1) {
             infoString.push_back("PRGROM: Switch 32K @ $8000");

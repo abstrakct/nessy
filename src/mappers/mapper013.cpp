@@ -1,5 +1,5 @@
-#include <iostream>
 #include "mapper013.h"
+#include <iostream>
 
 Mapper013::Mapper013(uint8_t p, uint8_t c) : Mapper(p, c)
 {
@@ -15,14 +15,17 @@ Mapper013::~Mapper013()
 
 std::vector<std::string> Mapper013::getInfoStrings()
 {
-    if (updateInfo)
-    {
+    if (updateInfo) {
         char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 013");
-        sprintf(line, "CHR BANK @ $1000: %d", chrBank);
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
+        infoString.push_back(line);
+        infoString.push_back("CHR Bank offset: 0x1000");
+        infoString.push_back("CHR Bank size:   0x1000");
+        sprintf(line, "CHR BANK:        %d", chrBank);
         infoString.push_back(std::string(line));
 
         updateInfo = false;
@@ -44,8 +47,7 @@ void Mapper013::reset()
 bool Mapper013::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         return true;
     }
 
@@ -59,8 +61,7 @@ bool Mapper013::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper013::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         chrBank = (data & 0x3);
         vram->setBank(0x1000, chrBank);
         //printf("chr bank set to %d (%d)\n", chrBank, data);
@@ -78,8 +79,7 @@ bool Mapper013::ppuRead(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper013::ppuReadData(uint16_t addr, uint8_t &data)
 {
-    if (addr < 0x2000)
-    {
+    if (addr < 0x2000) {
         //printf("VRAM READ addr %04X\n", addr);
         data = vram->read(addr);
         return true;
@@ -94,8 +94,7 @@ bool Mapper013::ppuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper013::ppuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr < 0x2000)
-    {
+    if (addr < 0x2000) {
         //printf("VRAM WRITE %04X %02X\n", addr, data);
         vram->write(addr, data);
         return true;

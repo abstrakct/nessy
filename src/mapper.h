@@ -6,9 +6,9 @@
 
 #include "memory.h"
 
-#define MI_WORKING 0
+#define MI_NOT_WORKING 0
 #define MI_DEVELOPMENT 1
-#define MI_NOT_WORKING 2
+#define MI_WORKING 2
 
 class Mapper
 {
@@ -44,6 +44,8 @@ public:
     {
         chrROM = p;
     };
+
+    const char *implementationStatusDescription(int i);
 
     // Link back to the Cartridge
     //std::shared_ptr<Cartridge> cart;

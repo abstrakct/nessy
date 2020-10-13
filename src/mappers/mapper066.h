@@ -28,6 +28,7 @@ public:
 
     void apply();
 
-    int implementationStatus() override { return MI_WORKING; };
+    // TODO: buggy! noe med mirroring?!
+    int implementationStatus() override { return MI_DEVELOPMENT; };
     std::vector<std::string> getInfoStrings() override;
 };

@@ -159,11 +159,13 @@ Cartridge::Cartridge(const std::string &filename)
             mapper->setChrROM(chrROM);
             mapper->reset();
 
-            if (mapper && mapper->implementationStatus()) {
+            if (mapper && mapper->implementationStatus() >= 0) {
                 if (mapper->implementationStatus() == MI_DEVELOPMENT) {
-                    printf("\tWARNING: Emulation of mapper %d is IN DEVELOPMENT!\n", mapperNum);
+                    printf("\tWARNING: Emulation of mapper %d is reported as IN DEVELOPMENT!\n", mapperNum);
                 } else if (mapper->implementationStatus() == MI_NOT_WORKING) {
-                    printf("\tWARNING: Emulation of mapper %d is NOT WORKING!\n", mapperNum);
+                    printf("\tWARNING: Emulation of mapper %d is reported as NOT WORKING!\n", mapperNum);
+                } else if (mapper->implementationStatus() == MI_WORKING) {
+                    printf("\tEmulation of mapper %d is reported as working - continuing.\n", mapperNum);
                 } else {
                     printf("ERROR: Emulation of mapper %d is not implemented!\n", mapperNum);
                     exit(1);

@@ -1,5 +1,5 @@
-#include <iostream>
 #include "mapper066.h"
+#include <iostream>
 
 Mapper066::Mapper066(uint8_t p, uint8_t c) : Mapper(p, c)
 {
@@ -22,13 +22,14 @@ void Mapper066::reset()
 
 std::vector<std::string> Mapper066::getInfoStrings()
 {
-    if (updateInfo)
-    {
+    if (updateInfo) {
         char line[50];
 
         infoString.clear();
 
         infoString.push_back("MAPPER 066");
+        sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
+        infoString.push_back(std::string(line));
         sprintf(line, "PRG BANK: %d", selectedPrgBank);
         infoString.push_back(std::string(line));
         sprintf(line, "CHR BANK: %d", selectedChrBank);
@@ -53,8 +54,7 @@ void Mapper066::apply()
 bool Mapper066::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)
 {
     prgram = false;
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         return true;
     }
     return false;
@@ -67,8 +67,7 @@ bool Mapper066::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 
 bool Mapper066::cpuWriteData(uint16_t addr, uint8_t data)
 {
-    if (addr >= 0x8000)
-    {
+    if (addr >= 0x8000) {
         selectedChrBank = data & 0b00000011;
         selectedPrgBank = (data & 0b00110000) >> 4;
 

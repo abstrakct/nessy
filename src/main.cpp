@@ -40,6 +40,7 @@ bool cfgDisplayPPU = false;
 bool cfgDisplayMapper = false;
 bool cfgDisplayNES = true;
 bool cfgDisplayNESWindowDecorations = true;
+bool cfgDisassemblyFollowPC = true;
 
 // this is silly? move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
@@ -86,8 +87,7 @@ private:
 
 public:
     std::shared_ptr<Machine> nes;
-    DisassemblyType disasm;
-    Disassembler disassembler;
+
     std::string appName, nesFilename;
     uint16_t ram2start = 0x8000;
     bool debugmode, runmode = false;
@@ -97,6 +97,10 @@ public:
     uint8_t selectedPalette = 0;
 
     std::shared_ptr<Cartridge> cart;
+
+    DisassemblyType disasm;
+    Disassembler disassembler;
+    std::vector<DisassemblyLine> disassemblyData;
 
     NessyApplication(std::shared_ptr<Machine> m, std::string filename, bool _breakpoint, int _breakpointAddress, bool d = false)
     {
@@ -258,7 +262,22 @@ public:
 
         // int liney = (lines >> 1) * cSize + y;
 
+        // TODO: disassembles everything on each frame -- FIX!
+        // auto disasm = disassembler.get(0x8000, 0xFFFF);
+
         ImGui::Begin("Disassembly", NULL, ImGuiWindowFlags_HorizontalScrollbar);
+        for (auto it : disassemblyData) {
+            if (it.address == nes->cpu.pc) {
+                // ImGui::TextColored(sf::Color::Cyan, "%s", next.begin()->begin()->second.c_str());
+                ImGui::TextColored(sf::Color::Cyan, "%04X - %s - %s", it.address, it.hexValue.c_str(), it.instruction.c_str());
+                if (cfgDisassemblyFollowPC) {
+                    ImGui::SetScrollHereY(0.5f); // 0.0f:top, 0.5f:center, 1.0f:bottom
+                }
+            } else {
+                ImGui::Text("%04X - %s - %s", it.address, it.hexValue.c_str(), it.instruction.c_str());
+            }
+        }
+        ImGui::End();
 
         // auto newdisasm = disassembler.get(nes->cpu.pc, nes->cpu.pc + 16);
         // auto it = disasm.find(nes->cpu.pc);
@@ -279,7 +298,6 @@ public:
         //     }
         // }
 
-        ImGui::End();
         // Draw "live" disassembly of next instruction
         // drawString(x, liney, next[nes->cpu.pc], sf::Color::Cyan);
 
@@ -635,7 +653,7 @@ public:
                 ImGui::End();
             }
 
-            // ImGui::ShowDemoWindow();
+            ImGui::ShowDemoWindow();
 
             // Menu
             if (ImGui::BeginMainMenuBar()) {
@@ -662,6 +680,7 @@ public:
             ImGui::Checkbox("Show disassembler", &cfgDisplayDisasm);
             ImGui::Checkbox("Show mapper info", &cfgDisplayMapper);
             ImGui::Checkbox("Show PPU Nametables", &cfgDisplayPPU);
+            ImGui::Checkbox("Disassembler: follow PC", &cfgDisassemblyFollowPC);
 
             if (ImGui::ColorEdit3("Background color", color)) {
                 bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);
@@ -674,11 +693,15 @@ public:
 
             //////// Emulator control window
             ImGui::Begin("Emulator Controls");
-            // Status label
-            if (ImGui::Button("Run/Pause")) {
-                emuRunning = !emuRunning;
-            }
-            if (!emuRunning) {
+            // TODO Status label
+            if (emuRunning) {
+                if (ImGui::Button("Pause emulation")) {
+                    emuRunning = !emuRunning;
+                }
+            } else {
+                if (ImGui::Button("Run")) {
+                    emuRunning = !emuRunning;
+                }
                 ImGui::SameLine();
                 if (ImGui::Button("Step CPU")) {
                     stepCPU();
@@ -775,6 +798,7 @@ public:
         // disasm = nes->cpu.disassemble(0x8000, 0xFFFF);
         printf("[ Preparing Disassembly  ]\n");
         disassembler.disassemble(0x8000, 0xFFFF);
+        disassemblyData = disassembler.get(0x8000, 0xFFFF);
 
         printf("[ Resetting NES          ]\n");
         nes->reset();
@@ -813,7 +837,6 @@ int main(int argc, char *argv[])
     if (nessy.construct(1900, 960, 3, 3)) {
         printf("[ Starting Emulation     ]\n");
         nessy.start();
-
         nessy.mainLoop();
     } else {
         printf("ERROR during application initialization!\n");

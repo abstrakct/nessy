@@ -12,6 +12,7 @@ DisassemblyLine Disassembler::DisassembleLine(uint16_t address)
     uint8_t value = 0, lo = 0, hi = 0;
     std::string instruction;
     std::string extraInfo;
+    std::string hexValue;
 
     auto hex = [](uint32_t n, uint8_t d) {
         std::string s(d, '0');
@@ -20,85 +21,101 @@ DisassemblyLine Disassembler::DisassembleLine(uint16_t address)
         return s;
     };
 
-    // line = addr;
-    // std::string inst = "$" + hex(addr, 4) + ": ";
-    // addr++;
-    // inst += nes->cpu.lookup(opcode).mnemonic + " ";
-
     uint8_t opcode = nes->cpuRead(addr, true);
     instruction = nes->cpu.lookup(opcode).mnemonic;
     auto addrmode = nes->cpu.lookup(opcode).addrmode;
 
+    int bytes = nes->cpu.lookup(opcode).bytes;
+
     if (addrmode == &CPU::Implied) {
         instruction += " ";
+        hexValue = hex(opcode, 2) + "      ";
     } else if (addrmode == &CPU::Immediate) {
-        value = nes->cpuRead(addr, true);
         addr++;
+        value = nes->cpuRead(addr, true);
         instruction += " #$" + hex(value, 2);
+        hexValue = hex(opcode, 2) + " " + hex(value, 2) + "   ";
     } else if (addrmode == &CPU::ZeroPage) {
+        addr++;
         lo = nes->cpuRead(addr, true);
         effective_address = nes->cpu.GetAddrZP(lo);
-        addr++;
         instruction += " $" + hex(lo, 2);
         extraInfo = "$" + hex(effective_address, 4) + " = $" + hex(nes->cpuRead(effective_address), 2);
+        hexValue = hex(opcode, 2) + " " + hex(lo, 2) + "   ";
     } else if (addrmode == &CPU::ZeroPageX) {
+        addr++;
         lo = nes->cpuRead(addr, true);
         effective_address = nes->cpu.GetAddrZPX(lo);
-        addr++;
         instruction += " $" + hex(lo, 2) + ", X";
         extraInfo = "$ " + hex(effective_address, 4) + " = $ " + hex(nes->cpuRead(effective_address), 2);
+        hexValue = hex(opcode, 2) + " " + hex(lo, 2) + "   ";
     } else if (addrmode == &CPU::ZeroPageY) {
+        addr++;
         lo = nes->cpuRead(addr, true);
         effective_address = nes->cpu.GetAddrZPY(lo);
-        addr++;
         instruction += " $" + hex(lo, 2) + ", Y";
         extraInfo = "$ " + hex(effective_address, 4) + " = $ " + hex(nes->cpuRead(effective_address), 2);
+        hexValue = hex(opcode, 2) + " " + hex(lo, 2) + "   ";
     } else if (addrmode == &CPU::IndirectX) {
+        addr++;
         lo = nes->cpuRead(addr, true);
         effective_address = nes->cpu.GetAddrIDX(lo);
-        addr++;
         instruction += " ($" + hex(lo, 2) + ", X)";
         extraInfo = "$ " + hex(effective_address, 4) + " = $ " + hex(nes->cpuRead(effective_address), 2);
+        hexValue = hex(opcode, 2) + " " + hex(lo, 2) + "   ";
     } else if (addrmode == &CPU::IndirectY) {
+        addr++;
         lo = nes->cpuRead(addr, true);
         effective_address = nes->cpu.GetAddrIDY(lo);
-        addr++;
         instruction += " ($" + hex(lo, 2) + ", Y)";
         extraInfo = "$ " + hex(effective_address, 4) + " = $ " + hex(nes->cpuRead(effective_address), 2);
+        hexValue = hex(opcode, 2) + " " + hex(lo, 2) + "   ";
     } else if (addrmode == &CPU::Absolute) {
+        hexValue = hex(opcode, 2) + " ";
+        addr++;
         lo = nes->cpuRead(addr, true);
+        hexValue += hex(lo, 2) + " ";
         addr++;
         hi = nes->cpuRead(addr, true);
-        addr++;
+        hexValue += hex(hi, 2);
         instruction += " $" + hex((uint16_t)(hi << 8) | lo, 4);
     } else if (addrmode == &CPU::AbsoluteX) {
+        hexValue = hex(opcode, 2) + " ";
+        addr++;
         lo = nes->cpuRead(addr, true);
+        hexValue += hex(lo, 2) + " ";
         addr++;
         hi = nes->cpuRead(addr, true);
-        addr++;
+        hexValue += hex(hi, 2);
         instruction += " $" + hex((uint16_t)(hi << 8) | lo, 4) + ", X";
     } else if (addrmode == &CPU::AbsoluteY) {
+        hexValue = hex(opcode, 2) + " ";
+        addr++;
         lo = nes->cpuRead(addr, true);
+        hexValue += hex(lo, 2) + " ";
         addr++;
         hi = nes->cpuRead(addr, true);
-        addr++;
+        hexValue += hex(hi, 2);
         instruction += " $" + hex((uint16_t)(hi << 8) | lo, 4) + ", Y";
     } else if (addrmode == &CPU::Indirect) {
-        lo = nes->cpuRead(addr, true);
+        hexValue = hex(opcode, 2) + " ";
         addr++;
-        hi = nes->cpuRead(addr, true);
+        lo = nes->cpuRead(addr, true);
+        // hi = nes->cpuRead(addr, true);
+        hexValue += hex(lo, 2) + "    ";
         addr++;
         instruction += " ($" + hex((uint16_t)(hi << 8) | lo, 4) + ")";
     } else if (addrmode == &CPU::Relative) {
-        value = nes->cpuRead(addr, true);
         addr++;
+        value = nes->cpuRead(addr, true);
         instruction += " $" + hex(value, 2);
         extraInfo = "$" + hex(addr + (int8_t)value, 4);
+        hexValue = hex(opcode, 2) + " " + hex(value, 2) + "   ";
     } else {
         instruction += "ERROR: Unknown addressing mode!";
     }
 
-    return DisassemblyLine(address, instruction, extraInfo);
+    return DisassemblyLine(address, instruction, extraInfo, hexValue, bytes);
 }
 
 void Disassembler::disassemble(uint16_t address)
@@ -126,12 +143,15 @@ DisassemblyLine &Disassembler::get(uint16_t address)
 std::vector<DisassemblyLine> Disassembler::get(uint16_t start, uint16_t end)
 {
     std::vector<DisassemblyLine> result;
-    for (int address = start; address <= end; address++) {
+    int address = start;
+    while (address <= end) {
         if (disassemblyData.find(address) != disassemblyData.end()) {
             result.push_back(disassemblyData[address]);
+            address += disassemblyData[address].bytes;
         } else {
             disassemblyData[address] = DisassembleLine(address);
             result.push_back(disassemblyData[address]);
+            address += disassemblyData[address].bytes;
         }
     }
 

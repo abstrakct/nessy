@@ -9,13 +9,15 @@
 class DisassemblyLine
 {
 private:
+public:
     uint16_t address;
     std::string instruction;
     std::string extraInfo;
+    std::string hexValue;
+    uint8_t bytes;
 
-public:
     DisassemblyLine(){};
-    DisassemblyLine(uint16_t _address, std::string _instruction, std::string _extraInfo) : address(_address), instruction(_instruction), extraInfo(_extraInfo) {}
+    DisassemblyLine(uint16_t _address, std::string _instruction, std::string _extraInfo, std::string _hex, uint8_t _bytes) : address(_address), instruction(_instruction), extraInfo(_extraInfo), hexValue(_hex), bytes(_bytes) {}
 };
 
 class Disassembler

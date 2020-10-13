@@ -36,6 +36,7 @@ bool cfgDisplayCpu = false;
 bool cfgDisplayHelp = false;
 bool cfgDisplayPPU = false;
 bool cfgDisplayMapper = false;
+bool cfgDisplayNES = true;
 
 // this is silly? move into Nessy class?!
 std::shared_ptr<Machine> TheNES;
@@ -63,7 +64,7 @@ class NessyApplication
 private:
     sf::RenderWindow window;
     //sf::RenderTexture renderTex;
-    sf::Texture nesTex, ppuTex;
+    sf::Texture nesTex, ppuNTTex1, ppuNTTex2;
     sf::Sprite nesScreen, ppuSprite;
     sf::Font sfmlFont;
     sf::Text t;
@@ -122,12 +123,13 @@ public:
         nesTex.create(width, height);
         nesScreen.setTexture(nesTex);
         nesScreen.setTextureRect(sf::Rect(0, 0, 256, 240));
-        nesScreen.setPosition((width / 2) - 256, cSize);
+        // nesScreen.setPosition((width / 2) - 256, cSize);
         nesScreen.scale(scaleX, scaleY);
 
-        ppuTex.create(128, 128);
-        ppuSprite.setTexture(ppuTex);
-        ppuSprite.scale(2.0, 2.0);
+        ppuNTTex1.create(128, 128);
+        ppuNTTex2.create(128, 128);
+        // ppuSprite.setTexture(ppuTex);
+        // ppuSprite.scale(2.0, 2.0);
 
         t.setFillColor(sf::Color::White);
         t.setFont(sfmlFont);
@@ -301,13 +303,20 @@ public:
 
     void drawPPU(int x, int y)
     {
-        ppuTex.update(nes->ppu.GetPatterntable(0, selectedPalette));
-        ppuSprite.setPosition(x, y);
-        window.draw(ppuSprite);
+        // TODO: add slider for scaling
+        // TODO: add palette selector
+        float scale = 2.0;
+        ImVec2 size = ImVec2(128 * scale, 128 * scale);
 
-        ppuTex.update(nes->ppu.GetPatterntable(1, selectedPalette));
-        ppuSprite.setPosition(x + 256 + 16, y);
-        window.draw(ppuSprite);
+        ImGui::Begin("PPU Pattern Tables");
+
+        ppuNTTex1.update(nes->ppu.GetPatterntable(0, selectedPalette));
+        ImGui::Image(ppuNTTex1, size);
+
+        ppuNTTex2.update(nes->ppu.GetPatterntable(1, selectedPalette));
+        ImGui::Image(ppuNTTex2, size);
+
+        ImGui::End();
     }
 
     void mainLoop()
@@ -553,6 +562,9 @@ public:
                     case sf::Keyboard::F5:
                         cfgDisplayPPU = !cfgDisplayPPU;
                         break;
+                    case sf::Keyboard::F7:
+                        cfgDisplayNES = !cfgDisplayNES;
+                        break;
                     case sf::Keyboard::F8:
                         targetFPS -= 5;
                         break;
@@ -619,8 +631,17 @@ public:
             window.clear(bgColor);
 
             // Update and draw NES Screen
-            nesTex.update(nes->ppu.GetNesScreen());
-            window.draw(nesScreen);
+            if (cfgDisplayNES) {
+                float scale = 2.0;
+                ImVec2 size = ImVec2(256 * scale, 240 * scale);
+
+                ImGui::Begin("NES");
+
+                nesTex.update(nes->ppu.GetNesScreen());
+                ImGui::Image(nesScreen, size);
+
+                ImGui::End();
+            }
 
             int x = 10;
 

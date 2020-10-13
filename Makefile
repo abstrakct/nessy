@@ -7,15 +7,16 @@
 # The name of the executable to be created
 BIN_NAME = nessy
 # Compiler used
-CXX = ccache g++
-#CXX = clang
+#CXX = ccache g++
+CXX = clang
 # Extension of source files used in the project
 SRC_EXT = cpp
 # Path to the source directory, relative to the makefile
 SRC_PATH = src
 # General compiler flags
 #COMPILE_FLAGS = -Wall -Wextra -std=c++14 -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function
-COMPILE_FLAGS = -Wall -Wextra -std=c++17 -Wno-unused-parameter -Wno-unused-variable
+#COMPILE_FLAGS = -Wall -Wextra -std=c++17 -Wno-unused-parameter -Wno-unused-variable -Wno-unused-private-field
+COMPILE_FLAGS = -Wall -Wextra -std=c++17 -Wno-unused-parameter -Wno-unused-private-field
 # Additional release-specific flags
 RCOMPILE_FLAGS = -D NDEBUG -O3
 # Additional debug-specific flags

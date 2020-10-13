@@ -77,7 +77,7 @@ private:
 
     int windowWidth, windowHeight;
     float scaleX, scaleY;
-    float NESScale = 1.0, PPUNTScale = 1.0;
+    float NESScale = 2.0, PPUNTScale = 1.0;
     int cSize = 18;
 
     bool running = false, emuRunning = false;
@@ -324,13 +324,42 @@ public:
         ImGui::End();
     }
 
+    void stepCPU()
+    {
+        do {
+            nes->clock();
+        } while (!nes->cpu.complete());
+
+        do {
+            nes->clock();
+        } while (nes->cpu.complete());
+
+        if (cfgDisplayDisasm)
+            disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+    }
+
+    void stepFrame()
+    {
+        do {
+            nes->clock();
+        } while (!nes->ppu.frame_complete);
+
+        do {
+            nes->clock();
+        } while (!nes->cpu.complete());
+
+        nes->ppu.frame_complete = false;
+
+        if (cfgDisplayDisasm)
+            disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+    }
+
     void mainLoop()
     {
         auto time1 = std::chrono::system_clock::now();
         auto time2 = std::chrono::system_clock::now();
         float residualTime = 0.0f, elapsed = 0.0f;
 
-        char windowTitle[255] = "ImGui + NESsy!";
         float color[3] = {0.f, 0.f, 0.f};
         sf::Clock deltaClock;
         sf::Color bgColor;
@@ -371,6 +400,8 @@ public:
                 ImGui::SFML::ProcessEvent(event);
                 if (event.type == sf::Event::Closed)
                     running = false;
+                if (event.type == sf::Event::KeyPressed && event.key.control && event.key.code == sf::Keyboard::Q)
+                    running = false;
                 if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
                     running = false;
                 if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space)
@@ -379,31 +410,11 @@ public:
                 if (!emuRunning) {
                     if (event.type == sf::Event::KeyPressed) {
                         if (event.key.code == sf::Keyboard::S) {
-                            do {
-                                nes->clock();
-                            } while (!nes->cpu.complete());
-
-                            do {
-                                nes->clock();
-                            } while (nes->cpu.complete());
-
-                            if (cfgDisplayDisasm)
-                                disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+                            stepCPU();
                         }
 
                         if (event.key.code == sf::Keyboard::F) {
-                            do {
-                                nes->clock();
-                            } while (!nes->ppu.frame_complete);
-
-                            do {
-                                nes->clock();
-                            } while (!nes->cpu.complete());
-
-                            nes->ppu.frame_complete = false;
-
-                            if (cfgDisplayDisasm)
-                                disasm = nes->cpu.disassemble(nes->cpu.pc - 0x20, nes->cpu.pc + 0x20);
+                            stepFrame();
                         }
                     }
                 }
@@ -626,6 +637,20 @@ public:
 
             // ImGui::ShowDemoWindow();
 
+            // Menu
+            if (ImGui::BeginMainMenuBar()) {
+                if (ImGui::BeginMenu("Menu")) {
+                    if (ImGui::MenuItem("Open ROM", "Ctrl+O")) {
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Quit", "Ctrl+Q")) {
+                        running = false;
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMainMenuBar();
+            }
+
             //////// Options window
             // TODO: hotkey to toggle showing or not
             ImGui::Begin("Options"); // begin window
@@ -646,6 +671,24 @@ public:
 
             ImGui::End();
             //////// END options window
+
+            //////// Emulator control window
+            ImGui::Begin("Emulator Controls");
+            // Status label
+            if (ImGui::Button("Run/Pause")) {
+                emuRunning = !emuRunning;
+            }
+            if (!emuRunning) {
+                ImGui::SameLine();
+                if (ImGui::Button("Step CPU")) {
+                    stepCPU();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Step frame")) {
+                    stepFrame();
+                }
+            }
+            ImGui::End();
 
             window.clear(bgColor);
 

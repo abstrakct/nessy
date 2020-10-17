@@ -8,6 +8,7 @@
 BIN_NAME = nessy
 # Compiler used
 #CXX = ccache g++
+#CXX = g++
 CXX = clang
 # Extension of source files used in the project
 SRC_EXT = cpp

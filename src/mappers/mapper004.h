@@ -9,6 +9,14 @@ private:
     uint8_t reg[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     std::vector<uint8_t> vram;
 
+    bool irqActive = false;
+    bool irqEnable = false;
+    bool irqUpdate = false;
+    uint16_t irqCounter = 0;
+    uint16_t irqReload = 0;
+    uint8_t command = 0;
+    bool chrAddrSel, prgAddrSel;
+
     // Debug info
     std::vector<std::string> infoString = {};
     bool updateInfo = true;
@@ -26,6 +34,11 @@ public:
     bool ppuWriteData(uint16_t addr, uint8_t data) override;
     bool getMirrorType(int &data) override { return false; };
     void romOverwrite(uint16_t addr, uint8_t data) override{};
+
+    bool irqState() override;
+    void irqClear() override;
+    void scanline() override;
+
     void reset() override;
 
     int implementationStatus() override { return MI_DEVELOPMENT; };

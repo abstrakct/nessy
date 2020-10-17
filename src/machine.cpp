@@ -98,6 +98,12 @@ void Machine::clock()
         cpu.nmi();
     }
 
+    // Has mapper/cartridge requested IRQ?
+    if (cart->getMapper()->irqState()) {
+        cart->getMapper()->irqClear();
+        cpu.irq();
+    }
+
     systemClockCounter++;
 }
 

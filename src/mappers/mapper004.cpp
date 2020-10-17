@@ -24,6 +24,12 @@ std::vector<std::string> Mapper004::getInfoStrings()
         infoString.push_back("MAPPER 004");
         sprintf(line, "Mapper emulation status: %s", implementationStatusDescription(this->implementationStatus()));
         infoString.push_back(line);
+        sprintf(line, "Command: %d", command);
+        infoString.push_back(line);
+        sprintf(line, "chraddrsel: %d", chrAddrSel);
+        infoString.push_back(line);
+        sprintf(line, "prgaddrsel: %d", prgAddrSel);
+        infoString.push_back(line);
         // sprintf(line, "CHR BANK: %d", chrBank);
 
         updateInfo = false;
@@ -69,6 +75,30 @@ bool Mapper004::cpuWrite(uint16_t addr, uint32_t &mapped_addr)
 bool Mapper004::cpuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x8000 && addr < 0xA000) {
+        if (addr == 0x8000) {
+            // CPxxxNNN
+            // C = CHR address select
+            // P = PRG address select
+            // N = command number
+            command = data & 0x7;
+            prgAddrSel = data & 0x40;
+            chrAddrSel = data & 0x80;
+        } else if (addr == 0x8001) {
+            // data = page number for command
+            // activates command selected
+        } else if (addr == 0xA000) {
+            // mirroring select
+        } else if (addr == 0xA001) {
+            // saveram toggle
+        } else if (addr == 0xC000) {
+            irqCounter = data;
+        } else if (addr == 0xC001) {
+            // irq latch register
+        } else if (addr == 0xE000) {
+            // irq ctrl register 0
+        } else if (addr == 0xE001) {
+            // irq ctrl register 1
+        }
         return true;
     }
 
@@ -104,4 +134,17 @@ bool Mapper004::ppuWriteData(uint16_t addr, uint8_t data)
     //    return true;
     //}
     return false;
+}
+
+bool Mapper004::irqState()
+{
+    return false;
+}
+
+void Mapper004::irqClear()
+{
+}
+
+void Mapper004::scanline()
+{
 }

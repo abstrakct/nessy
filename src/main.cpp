@@ -265,11 +265,14 @@ public:
         // TODO: disassembles everything on each frame -- FIX!
         // auto disasm = disassembler.get(0x8000, 0xFFFF);
 
+        // TODO: disassemble current/next instruction
+        // TODO: filter?
+
         ImGui::Begin("Disassembly", NULL, ImGuiWindowFlags_HorizontalScrollbar);
         for (auto it : disassemblyData) {
             if (it.address == nes->cpu.pc) {
                 // ImGui::TextColored(sf::Color::Cyan, "%s", next.begin()->begin()->second.c_str());
-                ImGui::TextColored(sf::Color::Cyan, "%04X - %s - %s", it.address, it.hexValue.c_str(), it.instruction.c_str());
+                ImGui::TextColored(sf::Color::Yellow, "%04X - %s - %s", it.address, it.hexValue.c_str(), it.instruction.c_str());
                 if (cfgDisassemblyFollowPC) {
                     ImGui::SetScrollHereY(0.5f); // 0.0f:top, 0.5f:center, 1.0f:bottom
                 }
@@ -653,7 +656,7 @@ public:
                 ImGui::End();
             }
 
-            ImGui::ShowDemoWindow();
+            // ImGui::ShowDemoWindow();
 
             // Menu
             if (ImGui::BeginMainMenuBar()) {

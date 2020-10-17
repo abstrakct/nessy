@@ -38,6 +38,10 @@ public:
     void reset();
 
     std::vector<std::string> getMapperInfo();
+    std::shared_ptr<Mapper> getMapper()
+    {
+        return mapper;
+    };
 
 private:
     std::shared_ptr<BankedMemory> prgROM;

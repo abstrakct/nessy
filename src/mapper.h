@@ -30,6 +30,11 @@ public:
     virtual void reset() = 0; // Reset anything in the mapper
 
     virtual bool getMirrorType(int &data) = 0;
+
+    virtual bool irqState();
+    virtual void irqClear();
+    virtual void scanline();
+
     virtual std::vector<std::string> getInfoStrings() = 0;
 
     // What is the status of the emulator's implementation of this mapper?

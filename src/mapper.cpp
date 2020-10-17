@@ -16,6 +16,19 @@ Mapper::~Mapper()
 {
 }
 
+bool Mapper::irqState()
+{
+    return false;
+}
+
+void Mapper::irqClear()
+{
+}
+
+void Mapper::scanline()
+{
+}
+
 const char *Mapper::implementationStatusDescription(int i)
 {
     return ImplementationStatusDescriptionStrings[i];

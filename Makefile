@@ -22,6 +22,8 @@ COMPILE_FLAGS = -Wall -Wextra -std=c++17 -Wno-unused-parameter -Wno-unused-priva
 RCOMPILE_FLAGS = -D NDEBUG -O3
 # Additional debug-specific flags
 DCOMPILE_FLAGS = -g -ggdb -D DEBUG_ON -D DEVELOPMENT_MODE
+# Debug specific flags with profiling  
+#DCOMPILE_FLAGS = -g -pg -ggdb -D DEBUG_ON -D DEVELOPMENT_MODE
 # Add additional include paths
 INCLUDES = -I $(SRC_PATH)/ -I $(SRC_PATH)/../include -I $(SRC_PATH)/../lib
 # General linker settings
@@ -32,7 +34,8 @@ LINK_FLAGS = -Llib -Wl,-rpath=lib -lsfml-graphics -lsfml-window -lsfml-system -l
 # Additional release-specific linker settings
 RLINK_FLAGS = 
 # Additional debug-specific linker settings
-DLINK_FLAGS = 
+DLINK_FLAGS =
+#DLINK_FLAGS = -pg
 # Destination directory, like a jail or mounted system
 DESTDIR = /
 # Install path (bin/ is appended automatically)

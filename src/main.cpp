@@ -682,7 +682,7 @@ public:
             ImGui::Checkbox("Show memory editor", &cfgDisplayRam);
             ImGui::Checkbox("Show disassembler", &cfgDisplayDisasm);
             ImGui::Checkbox("Show mapper info", &cfgDisplayMapper);
-            ImGui::Checkbox("Show PPU Nametables", &cfgDisplayPPU);
+            ImGui::Checkbox("Show PPU Pattern Tables", &cfgDisplayPPU);
             ImGui::Checkbox("Disassembler: follow PC", &cfgDisassemblyFollowPC);
 
             if (ImGui::ColorEdit3("Background color", color)) {

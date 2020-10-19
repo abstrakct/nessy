@@ -148,6 +148,7 @@ sf::Image &PPU::GetPatterntable(uint8_t i, uint8_t palette)
                     sfmlPatterntable[i].setPixel(
                         (tileX * 8) + (7 - col),
                         (tileY * 8) + row,
+                        // sfmlPalette[ppuRead(0x3F00 + (palette << 2) + pixel)]);
                         GetColorFromPaletteRam(palette, pixel));
                 }
             }
@@ -202,76 +203,76 @@ void PPU::loadSprites()
 
 void PPU::clock()
 {
-    auto IncrementScrollX = [&]() {
-        if (mask.renderBackground || mask.renderSprites) {
-            if (vramAddress.coarseX == 31) {
-                vramAddress.coarseX = 0;
-                vramAddress.nametableX = ~vramAddress.nametableX;
-            } else {
-                vramAddress.coarseX++;
-            }
-        }
-    };
+    // auto IncrementScrollX = [&]() {
+    //     if (mask.renderBackground || mask.renderSprites) {
+    //         if (vramAddress.coarseX == 31) {
+    //             vramAddress.coarseX = 0;
+    //             vramAddress.nametableX = ~vramAddress.nametableX;
+    //         } else {
+    //             vramAddress.coarseX++;
+    //         }
+    //     }
+    // };
 
-    auto IncrementScrollY = [&]() {
-        if (mask.renderBackground || mask.renderSprites) {
-            if (vramAddress.fineY < 7) {
-                vramAddress.fineY++;
-            } else {
-                vramAddress.fineY = 0;
-                if (vramAddress.coarseY == 29) {
-                    vramAddress.coarseY = 0;
-                    vramAddress.nametableY = ~vramAddress.nametableY;
-                } else if (vramAddress.coarseY == 31) {
-                    vramAddress.coarseY = 0;
-                } else {
-                    vramAddress.coarseY++;
-                }
-            }
-        }
-    };
+    // auto IncrementScrollY = [&]() {
+    //     if (mask.renderBackground || mask.renderSprites) {
+    //         if (vramAddress.fineY < 7) {
+    //             vramAddress.fineY++;
+    //         } else {
+    //             vramAddress.fineY = 0;
+    //             if (vramAddress.coarseY == 29) {
+    //                 vramAddress.coarseY = 0;
+    //                 vramAddress.nametableY = ~vramAddress.nametableY;
+    //             } else if (vramAddress.coarseY == 31) {
+    //                 vramAddress.coarseY = 0;
+    //             } else {
+    //                 vramAddress.coarseY++;
+    //             }
+    //         }
+    //     }
+    // };
 
-    auto TransferAddressX = [&]() {
-        if (mask.renderBackground || mask.renderSprites) {
-            vramAddress.nametableX = tramAddress.nametableX;
-            vramAddress.coarseX = tramAddress.coarseX;
-        }
-    };
+    // auto TransferAddressX = [&]() {
+    //     if (mask.renderBackground || mask.renderSprites) {
+    //         vramAddress.nametableX = tramAddress.nametableX;
+    //         vramAddress.coarseX = tramAddress.coarseX;
+    //     }
+    // };
 
-    auto TransferAddressY = [&]() {
-        if (mask.renderBackground || mask.renderSprites) {
-            vramAddress.nametableY = tramAddress.nametableY;
-            vramAddress.coarseY = tramAddress.coarseY;
-            vramAddress.fineY = tramAddress.fineY;
-        }
-    };
+    // auto TransferAddressY = [&]() {
+    //     if (mask.renderBackground || mask.renderSprites) {
+    //         vramAddress.nametableY = tramAddress.nametableY;
+    //         vramAddress.coarseY = tramAddress.coarseY;
+    //         vramAddress.fineY = tramAddress.fineY;
+    //     }
+    // };
 
-    auto LoadBackgroundShifters = [&]() {
-        bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLo;
-        bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileHi;
-        bgShifterAttribLo = (bgShifterAttribLo & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
-        bgShifterAttribHi = (bgShifterAttribHi & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
-    };
+    // auto LoadBackgroundShifters = [&]() {
+    //     bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLo;
+    //     bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileHi;
+    //     bgShifterAttribLo = (bgShifterAttribLo & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
+    //     bgShifterAttribHi = (bgShifterAttribHi & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
+    // };
 
-    auto UpdateShifters = [&]() {
-        if (mask.renderBackground) {
-            bgShifterPatternLo <<= 1;
-            bgShifterPatternHi <<= 1;
-            bgShifterAttribLo <<= 1;
-            bgShifterAttribHi <<= 1;
-        }
+    // auto UpdateShifters = [&]() {
+    //     if (mask.renderBackground) {
+    //         bgShifterPatternLo <<= 1;
+    //         bgShifterPatternHi <<= 1;
+    //         bgShifterAttribLo <<= 1;
+    //         bgShifterAttribHi <<= 1;
+    //     }
 
-        if (mask.renderSprites && cycle >= 1 && cycle < 258) {
-            for (int i = 0; i < spriteCount; i++) {
-                if (spriteScanline[i].x > 0) {
-                    spriteScanline[i].x--;
-                } else {
-                    spriteShifterLo[i] <<= 1;
-                    spriteShifterHi[i] <<= 1;
-                }
-            }
-        }
-    };
+    //     if (mask.renderSprites && cycle >= 1 && cycle < 258) {
+    //         for (int i = 0; i < spriteCount; i++) {
+    //             if (spriteScanline[i].x > 0) {
+    //                 spriteScanline[i].x--;
+    //             } else {
+    //                 spriteShifterLo[i] <<= 1;
+    //                 spriteShifterHi[i] <<= 1;
+    //             }
+    //         }
+    //     }
+    // };
 
     if (scanline >= -1 && scanline < 240) {
         if (scanline == 0 && cycle == 0) {
@@ -327,11 +328,33 @@ void PPU::clock()
 
         // Load Background data
         if ((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
-            UpdateShifters();
+            // UpdateShifters();
+            // Update shifters
+            if (mask.renderBackground) {
+                bgShifterPatternLo <<= 1;
+                bgShifterPatternHi <<= 1;
+                bgShifterAttribLo <<= 1;
+                bgShifterAttribHi <<= 1;
+            }
+
+            if (mask.renderSprites && cycle >= 1 && cycle < 258) {
+                for (int i = 0; i < spriteCount; i++) {
+                    if (spriteScanline[i].x > 0) {
+                        spriteScanline[i].x--;
+                    } else {
+                        spriteShifterLo[i] <<= 1;
+                        spriteShifterHi[i] <<= 1;
+                    }
+                }
+            }
 
             switch ((cycle - 1) % 8) {
             case 0:
-                LoadBackgroundShifters();
+                // LoadBackgroundShifters();
+                bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLo;
+                bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileHi;
+                bgShifterAttribLo = (bgShifterAttribLo & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
+                bgShifterAttribHi = (bgShifterAttribHi & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
                 bgNextTileId = ppuRead(0x2000 | (vramAddress.reg & 0x0FFF));
                 break;
             case 2:
@@ -350,18 +373,49 @@ void PPU::clock()
                 bgNextTileHi = ppuRead((ctrl.bgPatternTable << 12) + ((uint16_t)bgNextTileId << 4) + (vramAddress.fineY) + 8);
                 break;
             case 7:
-                IncrementScrollX();
+                // IncrementScrollX();
+                if (mask.renderBackground || mask.renderSprites) {
+                    if (vramAddress.coarseX == 31) {
+                        vramAddress.coarseX = 0;
+                        vramAddress.nametableX = ~vramAddress.nametableX;
+                    } else {
+                        vramAddress.coarseX++;
+                    }
+                }
                 break;
             }
         }
 
         if (cycle == 256) {
-            IncrementScrollY();
+            // IncrementScrollY();
+            if (mask.renderBackground || mask.renderSprites) {
+                if (vramAddress.fineY < 7) {
+                    vramAddress.fineY++;
+                } else {
+                    vramAddress.fineY = 0;
+                    if (vramAddress.coarseY == 29) {
+                        vramAddress.coarseY = 0;
+                        vramAddress.nametableY = ~vramAddress.nametableY;
+                    } else if (vramAddress.coarseY == 31) {
+                        vramAddress.coarseY = 0;
+                    } else {
+                        vramAddress.coarseY++;
+                    }
+                }
+            }
         }
 
         if (cycle == 257) {
-            LoadBackgroundShifters();
-            TransferAddressX();
+            // LoadBackgroundShifters();
+            bgShifterPatternLo = (bgShifterPatternLo & 0xFF00) | bgNextTileLo;
+            bgShifterPatternHi = (bgShifterPatternHi & 0xFF00) | bgNextTileHi;
+            bgShifterAttribLo = (bgShifterAttribLo & 0xFF00) | ((bgNextTileAttrib & 0b01) ? 0xFF : 0x00);
+            bgShifterAttribHi = (bgShifterAttribHi & 0xFF00) | ((bgNextTileAttrib & 0b10) ? 0xFF : 0x00);
+            // TransferAddressX();
+            if (mask.renderBackground || mask.renderSprites) {
+                vramAddress.nametableX = tramAddress.nametableX;
+                vramAddress.coarseX = tramAddress.coarseX;
+            }
         }
 
         if (cycle == 338 || cycle == 340)
@@ -392,7 +446,12 @@ void PPU::clock()
 
         if (scanline == -1 && cycle >= 280 && cycle < 305) {
             // End of vblank period, reset Y address
-            TransferAddressY();
+            // TransferAddressY();
+            if (mask.renderBackground || mask.renderSprites) {
+                vramAddress.nametableY = tramAddress.nametableY;
+                vramAddress.coarseY = tramAddress.coarseY;
+                vramAddress.fineY = tramAddress.fineY;
+            }
         }
 
         // SPRITE STUFF
@@ -608,6 +667,7 @@ void PPU::clock()
     // SFML
     if ((cycle - 1) >= 0 && scanline >= 0)
         nesScreen.setPixel(cycle - 1, scanline, GetColorFromPaletteRam(palette, pixel));
+    // nesScreen.setPixel(cycle - 1, scanline, sfmlPalette[ppuRead(0x3F00 + (palette << 2) + pixel)]);
 
     //if (((sprPixel & 0x03) && front) || (bgPixel))
     //    sprScreen.SetPixel(x, scanline, GetColorFromPaletteRam(palette, pixel));
@@ -764,6 +824,7 @@ void PPU::cpuWrite(uint16_t addr, uint8_t data)
 }
 
 // THIS IS A BIT MESSY
+// and probably not very efficient - optimize!
 uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
 {
     // char out[100];

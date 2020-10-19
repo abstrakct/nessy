@@ -144,7 +144,7 @@ private:
         operand = a;
         return 0;
     }
-
+    // TODO: why do these have return values?
     inline uint8_t Immediate()
     {
         address = pc++;

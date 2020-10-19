@@ -133,7 +133,7 @@ inline sf::Color &PPU::GetColorFromPaletteRam(uint8_t palette, uint8_t pixel)
     return sfmlPalette[ppuRead(0x3F00 + (palette << 2) + pixel)];
 }
 
-sf::Image &PPU::GetPatterntable(uint8_t i, uint8_t palette)
+const sf::Image &PPU::GetPatterntable(uint8_t i, uint8_t palette)
 {
     for (uint16_t tileY = 0; tileY < 16; tileY++) {
         for (uint16_t tileX = 0; tileX < 16; tileX++) {

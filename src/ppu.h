@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <cstdint>
+#include <memory>
 
 #include <SFML/Graphics.hpp>
 
@@ -62,8 +62,7 @@ class PPU
 {
 private:
     /* Sprite buffer (taken from LaiNES) */
-    struct SpriteBuffer
-    {
+    struct SpriteBuffer {
         uint8_t id;    // Index in OAM.
         uint8_t x;     // X position.
         uint8_t y;     // Y position.
@@ -88,8 +87,7 @@ private:
     // uint8_t lo = 0, hi = 0;
     bool flip = false;
 
-    union
-    {
+    union {
         struct
         {
             uint8_t nametableX : 1;
@@ -105,8 +103,7 @@ private:
         uint8_t reg;
     } ctrl; // $2000
 
-    union
-    {
+    union {
         struct
         {
             uint8_t grayscale : 1;
@@ -122,8 +119,7 @@ private:
         uint8_t reg;
     } mask; // $2001
 
-    union
-    {
+    union {
         struct
         {
             uint8_t unused : 5;
@@ -135,8 +131,7 @@ private:
         uint8_t reg;
     } status; // $2002
 
-    union loopyRegister
-    {
+    union loopyRegister {
         struct
         {
             uint16_t coarseX : 5;
@@ -166,8 +161,7 @@ private:
     uint16_t bgShifterAttribHi = 0;
 
     // Sprite data
-    struct ObjectAttributeEntry
-    {
+    struct ObjectAttributeEntry {
         uint8_t y;
         uint8_t id;
         uint8_t attr;
@@ -212,8 +206,8 @@ public:
     // SFML stuff
     sf::Color sfmlPalette[0x40];
     sf::Color &GetColorFromPaletteRam(uint8_t palette, uint8_t pixel);
-    sf::Image &GetNesScreen() { return nesScreen; };
-    sf::Image &GetPatterntable(uint8_t i, uint8_t palette);
+    const sf::Image &GetNesScreen() { return nesScreen; };
+    const sf::Image &GetPatterntable(uint8_t i, uint8_t palette);
 
     // OAM stuff
     uint8_t oamAddr = 0;

@@ -37,11 +37,12 @@ public:
 
     void reset();
 
+    std::shared_ptr<Mapper> mapper;
     std::vector<std::string> getMapperInfo();
-    std::shared_ptr<Mapper> getMapper()
-    {
-        return mapper;
-    };
+    // std::shared_ptr<Mapper> getMapper()
+    // {
+    //     return mapper;
+    // };
 
 private:
     std::shared_ptr<BankedMemory> prgROM;
@@ -52,6 +53,5 @@ private:
     uint16_t firstBank, lastBank;
     bool valid = false;
 
-    std::shared_ptr<Mapper> mapper;
     Cartridge::Mirror mirrorType = HORIZONTAL;
 };

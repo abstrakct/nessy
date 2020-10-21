@@ -1,4 +1,5 @@
 #pragma once
+#include "../cartridge.h"
 #include "../mapper.h"
 #include <vector>
 
@@ -14,8 +15,9 @@ private:
     bool irqUpdate = false;
     uint16_t irqCounter = 0;
     uint16_t irqReload = 0;
-    uint8_t command = 0;
-    bool chrAddrSel, prgAddrSel;
+    uint8_t targetRegister = 0;
+    bool chrInversion, prgBankMode;
+    Cartridge::Mirror mirror;
 
     // Debug info
     std::vector<std::string> infoString = {};
@@ -32,7 +34,11 @@ public:
     bool ppuReadData(uint16_t addr, uint8_t &data) override;
     bool ppuWrite(uint16_t addr, uint32_t &mapped_addr) override;
     bool ppuWriteData(uint16_t addr, uint8_t data) override;
-    bool getMirrorType(int &data) override { return false; };
+    bool getMirrorType(int &data) override
+    {
+        data = mirror;
+        return true;
+    };
     void romOverwrite(uint16_t addr, uint8_t data) override{};
 
     bool irqState() override;

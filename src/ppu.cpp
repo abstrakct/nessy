@@ -275,7 +275,7 @@ void PPU::clock()
     // };
 
     if (scanline >= -1 && scanline < 240) {
-        if (scanline == 0 && cycle == 0) {
+        if (scanline == 0 && cycle == 0 && oddFrame && (mask.renderBackground || mask.renderSprites)) {
             cycle = 1; // "odd frame" cycle skip
         }
 
@@ -674,6 +674,13 @@ void PPU::clock()
 
     cycle++;
 
+    if (mask.renderBackground || mask.renderSprites) {
+        if (cycle == 260 && scanline < 240) {
+            // TODO: maybe add flag to see if the cart has anything useful to contribute here.
+            cart->mapper->scanline();
+        }
+    }
+
     // One scanline done
     if (cycle >= 341) {
         cycle = 0;
@@ -681,6 +688,7 @@ void PPU::clock()
         if (scanline >= 261) {
             scanline = -1;
             frame_complete = true;
+            oddFrame = !oddFrame;
         }
     }
 }
@@ -836,7 +844,7 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         //data = vramBuffer;
         //sprintf(out, "[ppuRead] addr: %04X  data: %02X  vramBuffer: %02X", addr, data, vramBuffer);
         //l.w(out);
-    } else if (addr < 0x2000) {
+    } else if (addr > 0 && addr < 0x2000) {
         // If the cartridge can't handle this address
         data = patterntable[(addr & 0x1000) >> 12][addr & 0x0FFF];
     } else if (addr >= 0x2000 && addr <= 0x3EFF) {
@@ -882,7 +890,7 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         printf("suspicious ppu read from addr %04x\n", addr);
         */
     } else {
-        data = vramBuffer;
+        // data = vramBuffer;
     }
 
     return data;

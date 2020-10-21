@@ -10,7 +10,7 @@
       "request": "launch",
       //   "program": "${fileDirname}/${fileBasenameNoExtension}",
       "program": "${workspaceFolder}/bin/debug/nessy",
-      "args": ["rom/smb.nes"],
+      "args": ["rom/smb3.nes"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

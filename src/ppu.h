@@ -200,7 +200,7 @@ public:
     void ConnectMachine(Machine *n) { nes = n; }
 
     bool nmiOccurred = false;
-
+    bool oddFrame = false;
     bool frame_complete = false;
 
     // SFML stuff

@@ -99,10 +99,10 @@ void Machine::clock()
     }
 
     // Has mapper/cartridge requested IRQ?
-    // if (cart->getMapper()->irqState()) {
-    //     cart->getMapper()->irqClear();
-    //     cpu.irq();
-    // }
+    if (cart->mapper->irqState()) {
+        cart->mapper->irqClear();
+        cpu.irq();
+    }
 
     systemClockCounter++;
 }

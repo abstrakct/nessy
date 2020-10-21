@@ -51,6 +51,7 @@ uint8_t BankedMemory::read(uint16_t addr)
         if (addr >= it.second.first && addr <= it.second.second) {
             addr -= it.second.first;
             ret = bankData[it.first][addr];
+            // printf("read %02X from %04X in bank %02X\n", ret, addr, it.first);
         }
     }
 

@@ -37,9 +37,12 @@ bool cfgDisplayDisasm = false;
 bool cfgDisplayCpu = false;
 bool cfgDisplayHelp = false;
 bool cfgDisplayPPU = false;
+bool cfgDisplayPPUPatternTables = false;
+bool cfgDisplayPPUOAM = false;
 bool cfgDisplayMapper = false;
 bool cfgDisplayNES = true;
 bool cfgDisplayNESWindowDecorations = true;
+bool cfgDisplayMemoryMap = true;
 bool cfgDisassemblyFollowPC = true;
 
 // this is silly? move into Nessy class?!
@@ -68,7 +71,7 @@ class NessyApplication
 private:
     sf::RenderWindow window;
     //sf::RenderTexture renderTex;
-    sf::Texture nesTex, ppuNTTex1, ppuNTTex2;
+    sf::Texture nesTex, ppuNTTex1, ppuNTTex2, ppuOAMTex;
     sf::Sprite nesScreen, ppuSprite;
     sf::Font sfmlFont;
     sf::Text t;
@@ -78,7 +81,7 @@ private:
 
     int windowWidth, windowHeight;
     float scaleX, scaleY;
-    float NESScale = 2.0, PPUNTScale = 1.0;
+    float NESScale = 2.0, PPUNTScale = 1.0, PPUOAMScale = 2.0;
     int cSize = 18;
 
     bool running = false, emuRunning = false;
@@ -136,6 +139,7 @@ public:
 
         ppuNTTex1.create(128, 128);
         ppuNTTex2.create(128, 128);
+        ppuOAMTex.create(512, 128);
         // ppuSprite.setTexture(ppuTex);
         // ppuSprite.scale(2.0, 2.0);
 
@@ -326,7 +330,21 @@ public:
         // }
     }
 
-    void drawPPU(int x, int y)
+    void drawPPU()
+    {
+        nes->ppu.UpdatePPUInfo();
+        ImGui::Begin("PPU Info");
+        ImGui::Text("Base nametable address: %04X", nes->ppu.info.nametableBaseAddress);
+        ImGui::Text("VRAM increment: %d", nes->ppu.info.vramInc);
+        ImGui::Text("Sprite PT address (8x8 mode): %04X", nes->ppu.info.spritePatternTableAddress8x8);
+        ImGui::Text("Background PT address: %04X", nes->ppu.info.bgPatternTableAddress);
+        ImGui::Text("Sprite size: %s", nes->ppu.info.spriteSize ? "8x16" : "8x8");
+        ImGui::Text("NMI enabled: %s", nes->ppu.info.nmi ? "yes" : "no");
+        ImGui::Text("OAM address: %04X", nes->ppu.info.oamAddress);
+        ImGui::End();
+    }
+
+    void drawPPUPatternTables(int x, int y)
     {
         // TODO: add palette selector
         ImVec2 size = ImVec2(128 * PPUNTScale, 128 * PPUNTScale);
@@ -340,12 +358,72 @@ public:
         ImGui::Image(ppuNTTex1, size);
 
         ppuNTTex2.update(nes->ppu.GetPatterntable(1, selectedPalette));
+        ImGui::SameLine();
         ImGui::Image(ppuNTTex2, size);
 
         ImGui::End();
     }
 
-    void stepCPU()
+    void drawPPUOAM()
+    {
+        // ImVec2 size = ImVec2(128 * PPUNTScale, 128 * PPUNTScale);
+        ImVec2 size = ImVec2(512 * PPUOAMScale, 128 * PPUOAMScale);
+        ImGui::Begin("PPU OAM");
+
+        // ImGui::SliderFloat("Scale", &PPUNTScale, 0.00f, 8.0f);
+        ImGui::DragFloat("Scale", &PPUOAMScale, 0.05f, 0.0f, 8.0f);
+
+        ppuOAMTex.update(nes->ppu.GetOAM(selectedPalette));
+        ImGui::Image(ppuOAMTex, size);
+
+        ImGui::End();
+    }
+
+    void drawMemoryMap()
+    {
+        // std::map<uint16_t, std::pair<uint32_t, uint32_t>> prgBanks = nes->cart->getPrgROM()->getBankInfo();
+        // std::map<uint16_t, std::pair<uint32_t, uint32_t>> chrBanks = nes->cart->getChrROM()->getBankInfo();
+        struct BankInfo prg = nes->cart->getPrgROM()->getBankInfo();
+        struct BankInfo chr = nes->cart->getChrROM()->getBankInfo();
+        ImGui::Begin("Memory Map");
+        ImGui::Text("PRG ROM");
+        for (int i = 0; i < prg.mappable; i++) {
+            // if (prg.banks[i].mapped)
+            ImGui::Text("%04X - Bank %02X", prg.banks[i].startAddress, prg.banks[i].num);
+        }
+        ImGui::Text("CHR ROM");
+        for (int i = 0; i < chr.mappable; i++) {
+            // if (chr.banks[i].mapped)
+            ImGui::Text("%04X - Bank %02X", chr.banks[i].startAddress, chr.banks[i].num);
+        }
+        // for (uint32_t i = 0x8000; i < (prg.bankNum * prg.bankSize); i += prg.bankSize) {
+        //     for (auto it = prg.banks.begin(); it != prg.banks.end(); ++it) {
+        //         if (it->second.first == i) {
+        //             ImGui::Text("%04X: %d", it->second.first, it->first);
+        //         }
+        //     }
+        // }
+        // ImGui::Text("");
+        // ImGui::Text("CHR ROM");
+        // for (uint32_t i = 0x0000; i < (chr.bankNum * chr.bankSize); i += chr.bankSize) {
+        //     for (auto it = chr.banks.begin(); it != chr.banks.end(); ++it) {
+        //         if (it->second.first == i) {
+        //             ImGui::Text("%04X: %02X", it->second.first, it->first);
+        //         } else {
+        //             // ImGui::Text("Unmapped: %d", it->first);
+        //         }
+        //     }
+        // }
+        // uint16_t bank = it.first;
+        // uint32_t startAddress = it.second.first;
+        // if (startAddress != 0xFFFFFFFF) {
+        //     ImGui::Text("%04X: %d", startAddress, bank);
+        // }
+        ImGui::End();
+    }
+
+    void
+    stepCPU()
     {
         do {
             nes->clock();
@@ -682,7 +760,10 @@ public:
             ImGui::Checkbox("Show memory editor", &cfgDisplayRam);
             ImGui::Checkbox("Show disassembler", &cfgDisplayDisasm);
             ImGui::Checkbox("Show mapper info", &cfgDisplayMapper);
-            ImGui::Checkbox("Show PPU Pattern Tables", &cfgDisplayPPU);
+            ImGui::Checkbox("Show PPU info", &cfgDisplayPPU);
+            ImGui::Checkbox("Show PPU Pattern Tables", &cfgDisplayPPUPatternTables);
+            ImGui::Checkbox("Show PPU OAM", &cfgDisplayPPUOAM);
+            ImGui::Checkbox("Show Memory Map", &cfgDisplayMemoryMap);
             ImGui::Checkbox("Disassembler: follow PC", &cfgDisassemblyFollowPC);
 
             if (ImGui::ColorEdit3("Background color", color)) {
@@ -772,9 +853,21 @@ public:
             if (cfgDisplayDisasm)
                 drawDisasm();
 
-            // Draw PPU
+            // Draw PPU status
             if (cfgDisplayPPU)
-                drawPPU(20, 650);
+                drawPPU();
+
+            // Draw PPU Pattern Tables
+            if (cfgDisplayPPUPatternTables)
+                drawPPUPatternTables(20, 650);
+
+            // Draw PPU OAM
+            if (cfgDisplayPPUOAM)
+                drawPPUOAM();
+
+            // Display Memory Map
+            if (cfgDisplayMemoryMap)
+                drawMemoryMap();
 
             ImGui::SFML::Render(window);
             // Display the window

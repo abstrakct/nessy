@@ -41,6 +41,7 @@ PPU::PPU()
     nesScreen.create(340, 260, sf::Color::Black);
     sfmlPatterntable[0].create(128, 128, sf::Color::Black);
     sfmlPatterntable[1].create(128, 128, sf::Color::Black);
+    sfmlOAM.create(512, 128, sf::Color::Black);
 
     // set PPU to power-up state
     ctrl.reg = 0;
@@ -128,6 +129,18 @@ PPU::~PPU()
 {
 }
 
+void PPU::UpdatePPUInfo()
+{
+    info.nametableBaseAddress = 0x2000 + ((ctrl.reg & 0x3) * 0x400);
+    info.vramInc = ctrl.incrementMode ? 32 : 1;
+    info.spritePatternTableAddress8x8 = ctrl.reg & 0x08 ? 0x1000 : 0x0000;
+    info.bgPatternTableAddress = ctrl.reg & 0x10 ? 0x1000 : 0x0000;
+    info.spriteSize = ctrl.spriteSize;
+    info.nmi = ctrl.enableNmi;
+
+    info.oamAddress = oamAddr;
+}
+
 inline sf::Color &PPU::GetColorFromPaletteRam(uint8_t palette, uint8_t pixel)
 {
     return sfmlPalette[ppuRead(0x3F00 + (palette << 2) + pixel)];
@@ -156,6 +169,11 @@ const sf::Image &PPU::GetPatterntable(uint8_t i, uint8_t palette)
     }
 
     return sfmlPatterntable[i];
+}
+
+const sf::Image &PPU::GetOAM(uint8_t palette)
+{
+    return sfmlOAM;
 }
 
 void PPU::evaluateSprites()
@@ -853,14 +871,16 @@ uint8_t PPU::ppuRead(uint16_t addr, bool readOnly)
         // Read from nametables
         uint8_t mirrortype = cart->getMirrorType();
         if (mirrortype == Cartridge::HORIZONTAL) {
-            //printf("horizontal mirroring\n");
-            if (addr < 0x2800)
+            // printf("horizontal mirroring\n");
+            if (addr < 0x2800) {
                 // probably data -> vramBuffer
                 data = nametable[0][addr & 0x03FF];
-            else
+                // printf("Read %02X from nametable 0, address %04X\n", data, addr & 0x03FF);
+            } else {
                 data = nametable[1][addr & 0x03FF];
+            }
         } else if (mirrortype == Cartridge::VERTICAL) {
-            //printf("vertical mirroring\n");
+            // printf("vertical mirroring\n");
             if ((addr & 0x07FF) >= 0x400)
                 data = nametable[1][addr & 0x03FF];
             else
@@ -903,7 +923,7 @@ void PPU::ppuWrite(uint16_t addr, uint8_t data)
 
     //printf("ppuWrite: addr %04X  data %02X\n", addr, data);
 
-    //if (addr <= 0x3EFF)
+    // if (addr <= 0x3EFF)
     //    vramBuffer = data;
 
     if (cart->ppuWrite(addr, data)) {

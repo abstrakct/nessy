@@ -39,6 +39,19 @@ class Machine;
 #define PPUSTAT_SPRITE_HIT (1 << 6)
 #define PPUSTAT_VBLANK (1 << 7)
 
+struct PPUInfo {
+    // CTRL reg
+    uint16_t nametableBaseAddress;
+    uint8_t vramInc;
+    uint16_t spritePatternTableAddress8x8;
+    uint16_t bgPatternTableAddress;
+    uint8_t spriteSize;
+    bool nmi;
+
+    // OAM
+    uint8_t oamAddress;
+};
+
 /* OAM
  * Byte 0 = Y position of top of sprite ($EF - $FF = invisible)
  * Byte 1 = Tile index number.
@@ -183,6 +196,7 @@ private:
     // SFML Output
     sf::Image nesScreen;
     sf::Image sfmlPatterntable[2];
+    sf::Image sfmlOAM;
 
     // Inline functions
     inline int spriteHeight()
@@ -202,12 +216,15 @@ public:
     bool nmiOccurred = false;
     bool oddFrame = false;
     bool frame_complete = false;
+    struct PPUInfo info;
 
     // SFML stuff
     sf::Color sfmlPalette[0x40];
     sf::Color &GetColorFromPaletteRam(uint8_t palette, uint8_t pixel);
     const sf::Image &GetNesScreen() { return nesScreen; };
+    void UpdatePPUInfo();
     const sf::Image &GetPatterntable(uint8_t i, uint8_t palette);
+    const sf::Image &GetOAM(uint8_t palette);
 
     // OAM stuff
     uint8_t oamAddr = 0;

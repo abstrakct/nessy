@@ -63,14 +63,17 @@ std::vector<std::string> Mapper001::getInfoStrings()
 
 void Mapper001::reset()
 {
+    prgROM->setMappable(2);
+    chrROM->setMappable(2);
+
     if (prgROM) {
-        prgROM->setBank(0x8000, 0);
-        prgROM->setBank(0xC000, lastBank);
+        prgROM->setBank(0x8000, 0, 0);
+        prgROM->setBank(0xC000, lastBank, 1);
     }
 
     if (chrROM) {
-        chrROM->setBank(0x0000, 0);
-        chrROM->setBank(0x0000, 1);
+        chrROM->setBank(0x0000, 0, 0);
+        chrROM->setBank(0x0000, 1, 1);
     }
 }
 
@@ -79,26 +82,26 @@ void Mapper001::apply()
     // PRG ROM
     uint8_t mode = (reg[0] & 0b1100) >> 2;
     if (mode == 0x3) {
-        prgROM->setBank(0x8000, reg[3] & 0xF);
-        prgROM->setBank(0xC000, lastBank);
+        prgROM->setBank(0x8000, reg[3] & 0xF, 0);
+        prgROM->setBank(0xC000, lastBank, 1);
     } else if (mode == 0x2) {
-        prgROM->setBank(0x8000, 0);
-        prgROM->setBank(0xC000, reg[3] & 0xF);
+        prgROM->setBank(0x8000, 0, 0);
+        prgROM->setBank(0xC000, reg[3] & 0xF, 1);
     } else if (mode < 0x2) {
-        prgROM->setBank(0x8000, (reg[3] >> 1) + 0);
-        prgROM->setBank(0xC000, (reg[3] >> 1) + 1);
+        prgROM->setBank(0x8000, (reg[3] >> 1) + 0, 0);
+        prgROM->setBank(0xC000, (reg[3] >> 1) + 1, 1);
     }
 
     // CHR ROM
     uint8_t fourKMode = (reg[0] & 0x10);
     if (fourKMode) {
         // Switch 2 separate 4 KB banks
-        chrROM->setBank(0x0000, reg[1] & 0x1F);
-        chrROM->setBank(0x1000, reg[2] & 0x1F);
+        chrROM->setBank(0x0000, reg[1] & 0x1F, 0);
+        chrROM->setBank(0x1000, reg[2] & 0x1F, 0);
     } else {
         // Switch 1 8 KB bank
-        chrROM->setBank(0x0000, ((reg[1] >> 1) << 1) + 0);
-        chrROM->setBank(0x1000, ((reg[1] >> 1) << 1) + 1);
+        chrROM->setBank(0x0000, ((reg[1] >> 1) << 1) + 0, 0);
+        chrROM->setBank(0x1000, ((reg[1] >> 1) << 1) + 1, 1);
     }
 
     updateInfo = true;

@@ -44,10 +44,13 @@ std::vector<std::string> Mapper033::getInfoStrings()
 
 void Mapper033::reset()
 {
-    prgROM->setBank(0x8000, 0);
-    prgROM->setBank(0xA000, 1);
-    prgROM->setBank(0xC000, prgBanks - 2);
-    prgROM->setBank(0xE000, prgBanks - 1);
+    prgROM->setMappable(4);
+    prgROM->setBank(0x8000, 0, 0);
+    prgROM->setBank(0xA000, 1, 1);
+    prgROM->setBank(0xC000, prgBanks - 2, 2);
+    prgROM->setBank(0xE000, prgBanks - 1, 3);
+
+    chrROM->setMappable(8);
 
     updateInfo = true;
 }
@@ -55,23 +58,23 @@ void Mapper033::reset()
 void Mapper033::apply()
 {
     // 8K PRG ROM Banks
-    prgROM->setBank(0x8000, prgBank[0]);
-    prgROM->setBank(0xA000, prgBank[1]);
+    prgROM->setBank(0x8000, prgBank[0], 0);
+    prgROM->setBank(0xA000, prgBank[1], 1);
 
     //printf("Set prgbank @ $8000 to %d\n", prgBank[0]);
     //printf("Set prgbank @ $A000 to %d\n", prgBank[1]);
 
     // 2K CHR ROM Banks
-    chrROM->setBank(0x0000, (chrBank[0] * 2));
-    chrROM->setBank(0x0400, (chrBank[0] * 2) + 1);
-    chrROM->setBank(0x0800, (chrBank[1] * 2));
-    chrROM->setBank(0x0C00, (chrBank[1] * 2) + 1);
+    chrROM->setBank(0x0000, (chrBank[0] * 2), 0);
+    chrROM->setBank(0x0400, (chrBank[0] * 2) + 1, 1);
+    chrROM->setBank(0x0800, (chrBank[1] * 2), 2);
+    chrROM->setBank(0x0C00, (chrBank[1] * 2) + 1, 3);
 
     // 1K CHR ROM Banks
-    chrROM->setBank(0x1000, chrBank[2]);
-    chrROM->setBank(0x1400, chrBank[3]);
-    chrROM->setBank(0x1800, chrBank[4]);
-    chrROM->setBank(0x1C00, chrBank[5]);
+    chrROM->setBank(0x1000, chrBank[2], 4);
+    chrROM->setBank(0x1400, chrBank[3], 5);
+    chrROM->setBank(0x1800, chrBank[4], 6);
+    chrROM->setBank(0x1C00, chrBank[5], 7);
 }
 
 bool Mapper033::getMirrorType(int &data)

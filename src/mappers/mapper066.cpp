@@ -13,11 +13,13 @@ Mapper066::~Mapper066()
 
 void Mapper066::reset()
 {
-    prgROM->setBank(0x8000, 0);
-    prgROM->setBank(0xC000, 1);
+    prgROM->setMappable(2);
+    prgROM->setBank(0x8000, 0, 0);
+    prgROM->setBank(0xC000, 1, 1);
 
-    chrROM->setBank(0x0000, 0);
-    chrROM->setBank(0x1000, 1);
+    chrROM->setMappable(2);
+    chrROM->setBank(0x0000, 0, 0);
+    chrROM->setBank(0x1000, 1, 1);
 }
 
 std::vector<std::string> Mapper066::getInfoStrings()
@@ -42,11 +44,11 @@ std::vector<std::string> Mapper066::getInfoStrings()
 
 void Mapper066::apply()
 {
-    prgROM->setBank(0x8000, (selectedPrgBank * 2) + 0);
-    prgROM->setBank(0xC000, (selectedPrgBank * 2) + 1);
+    prgROM->setBank(0x8000, (selectedPrgBank * 2) + 0, 0);
+    prgROM->setBank(0xC000, (selectedPrgBank * 2) + 1, 1);
 
-    chrROM->setBank(0x0000, (selectedChrBank * 2) + 0);
-    chrROM->setBank(0x1000, (selectedChrBank * 2) + 1);
+    chrROM->setBank(0x0000, (selectedChrBank * 2) + 0, 0);
+    chrROM->setBank(0x1000, (selectedChrBank * 2) + 1, 1);
 
     updateInfo = true;
 }

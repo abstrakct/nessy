@@ -10,11 +10,14 @@ Mapper000::~Mapper000()
 
 void Mapper000::reset()
 {
+    prgROM->setMappable(1);
+    chrROM->setMappable(1);
+
     prgROM->setBank(0x8000, 0);
-    prgROM->setBank(0xC000, 1);
+    // prgROM->setBank(0xC000, 1);
 
     chrROM->setBank(0x0000, 0);
-    chrROM->setBank(0x1000, 1);
+    // chrROM->setBank(0x1000, 1);
 }
 
 bool Mapper000::cpuRead(uint16_t addr, uint32_t &mapped_addr, bool &prgram)

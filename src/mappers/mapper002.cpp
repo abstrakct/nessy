@@ -14,7 +14,6 @@
 
 Mapper002::Mapper002(uint8_t p, uint8_t c) : Mapper(p, c)
 {
-    // Set offset to first byte of the last bank.
     lastBank = p - 1;
 
     // 8K VRAM (CHR RAM)
@@ -47,8 +46,9 @@ std::vector<std::string> Mapper002::getInfoStrings()
 
 void Mapper002::reset()
 {
-    prgROM->setBank(0x8000, 0);
-    prgROM->setBank(0xC000, lastBank);
+    prgROM->setMappable(2);
+    prgROM->setBank(0x8000, 0, 0);
+    prgROM->setBank(0xC000, lastBank, 1);
 
     updateInfo = true;
 }
@@ -72,7 +72,7 @@ bool Mapper002::cpuWriteData(uint16_t addr, uint8_t data)
 {
     if (addr >= 0x8000) {
         selectedBank = data & 0b00000111; // last 3 bits select bank. Could also be written as & 0x07
-        prgROM->setBank(0x8000, selectedBank);
+        prgROM->setBank(0x8000, selectedBank, 0);
 
         updateInfo = true;
 

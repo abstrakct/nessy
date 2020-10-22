@@ -3,10 +3,11 @@
 
 Mapper013::Mapper013(uint8_t p, uint8_t c) : Mapper(p, c)
 {
-    vram = std::make_shared<BankedMemory>(4, 0x1000, true);
     chrBank = 1;
-    vram->setBank(0x0000, 0);
-    vram->setBank(0x1000, chrBank);
+    vram = std::make_shared<BankedMemory>("VRAM", 4, 0x1000, true);
+    vram->setMappable(2);
+    vram->setBank(0x0000, 0, 0);
+    vram->setBank(0x1000, chrBank, 1);
 }
 
 Mapper013::~Mapper013()
@@ -35,11 +36,12 @@ std::vector<std::string> Mapper013::getInfoStrings()
 
 void Mapper013::reset()
 {
-    prgROM->setBank(0x8000, 0);
-    prgROM->setBank(0xC000, 1);
+    prgROM->setMappable(2);
+    prgROM->setBank(0x8000, 0, 0);
+    prgROM->setBank(0xC000, 1, 1);
 
-    vram->setBank(0x0000, 0);
-    vram->setBank(0x1000, 1);
+    vram->setBank(0x0000, 0, 0);
+    vram->setBank(0x1000, 1, 1);
 
     updateInfo = true;
 }

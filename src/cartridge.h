@@ -39,6 +39,8 @@ public:
 
     std::shared_ptr<Mapper> mapper;
     std::vector<std::string> getMapperInfo();
+    std::shared_ptr<BankedMemory> getPrgROM() { return prgROM; };
+    std::shared_ptr<BankedMemory> getChrROM() { return chrROM; };
     // std::shared_ptr<Mapper> getMapper()
     // {
     //     return mapper;

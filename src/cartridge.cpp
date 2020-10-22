@@ -66,24 +66,26 @@ Cartridge::Cartridge(const std::string &filename)
             // TODO: ask mapper what bank size it wants
             if (mapperNum == 4 || mapperNum == 33)
                 bankSize = 0x2000;
+            if (mapperNum == 0)
+                bankSize = 0x8000;
 
             prgBanks = (header.prg_rom_chunks * defaultPrgBankSize) / bankSize;
-            prgROM = std::make_shared<BankedMemory>(prgBanks, bankSize);
+            prgROM = std::make_shared<BankedMemory>("PRG ROM", prgBanks, bankSize);
 
-            printf("\n\tLoading %d PRG ROM banks of size 0x%04X", prgBanks, bankSize);
-            for (int i = 0; i < prgBanks; i++) {
-                std::vector<uint8_t> tmp;
-                tmp.resize(bankSize);
-                ifs.read((char *)tmp.data(), bankSize);
-                prgROM->addBank(i, tmp);
+            printf("\n\tLoading %d PRG ROM banks of size 0x%04X (%d bytes)", prgBanks, bankSize, prgBanks * bankSize);
+            // for (int i = 0; i < prgBanks; i++) {
+            std::vector<uint8_t> tmp;
+            tmp.resize(bankSize * prgBanks);
+            ifs.read((char *)tmp.data(), bankSize * prgBanks);
+            prgROM->addData(tmp);
 
-                printf(".");
+            // printf(".");
 
-                // Special "workaround" for games with only 1 bank of prg rom
-                if (prgBanks == 1 && (mapperNum == 0 || mapperNum == 3)) {
-                    prgROM->addBank(1, tmp);
-                }
-            }
+            // Special "workaround" for games with only 1 bank of prg rom
+            // if (prgBanks == 1 && (mapperNum == 0 || mapperNum == 3)) {
+            //     prgROM->addBank(1, tmp);
+            // }
+            // }
             printf("\n");
 
             const int defaultChrBankSize = 0x2000;
@@ -92,20 +94,24 @@ Cartridge::Cartridge(const std::string &filename)
             // TODO: ask mapper what bank size it wants
             if (mapperNum == 4 || mapperNum == 33)
                 bankSize = 0x400;
+            else if (mapperNum == 0)
+                bankSize = 0x2000;
             else
                 bankSize = 0x1000;
 
             chrBanks = (header.chr_rom_chunks * defaultChrBankSize) / bankSize;
-            chrROM = std::make_shared<BankedMemory>(chrBanks, bankSize);
+            chrROM = std::make_shared<BankedMemory>("CHR ROM", chrBanks, bankSize);
 
-            printf("\tLoading %d CHR ROM banks of size 0x%04X", chrBanks, bankSize);
-            for (int i = 0; i < chrBanks; i++) {
-                std::vector<uint8_t> tmp;
-                tmp.resize(bankSize);
-                ifs.read((char *)tmp.data(), bankSize);
-                chrROM->addBank(i, tmp);
-                printf(".");
-            }
+            printf("\tLoading %d CHR ROM banks of size 0x%04X (%d bytes)", chrBanks, bankSize, chrBanks * bankSize);
+            // for (int i = 0; i < chrBanks; i++) {
+            // std::vector<uint8_t> tmp;
+            tmp.resize(bankSize * chrBanks);
+            // ifs.read((char *)tmp.data(), bankSize);
+            // chrROM->addBank(i, tmp);
+            ifs.read((char *)tmp.data(), bankSize * chrBanks);
+            chrROM->addData(tmp);
+            // printf(".");
+            // }
             printf("\n");
 
             prgRamSize = header.prg_ram_size ? (header.prg_ram_size * 0x2000) : 0x2000;

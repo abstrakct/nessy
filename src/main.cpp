@@ -391,6 +391,7 @@ public:
             // if (prg.banks[i].mapped)
             ImGui::Text("%04X - Bank %02X", prg.banks[i].startAddress, prg.banks[i].num);
         }
+        ImGui::Text("");
         ImGui::Text("CHR ROM");
         for (int i = 0; i < chr.mappable; i++) {
             // if (chr.banks[i].mapped)

@@ -37,16 +37,24 @@ Cartridge::Cartridge(const std::string &filename)
     }
 
     if (ifs.is_open()) {
-        // TODO: check first 4 bytes
         ifs.read((char *)&header, sizeof(header_struct));
+
+        if (header.name[0] != 0x4E || header.name[1] != 0x45 || header.name[2] != 0x53 || header.name[3] != 0x1A) {
+            printf("ERROR ERROR ERROR - This does not look like an NES ROM file!!!!!\n");
+        }
 
         if (header.mapper1 & 0x04) // then 512 bytes of trainer data
             ifs.seekg(512, std::ios_base::cur);
 
         mapperNum = (header.mapper1 >> 4) | ((header.mapper2 >> 4) << 4);
 
+        if (header.mapper1 & 0x02) {
+            printf("Cartridge contains battery-backed RAM!\n");
+        }
+
         if (header.mapper1 & 0x08) {
             mirrorType = FOUR_SCREEN;
+            printf("Four-screen VRAM!\n");
         } else {
             mirrorType = (header.mapper1 & 0x01) ? VERTICAL : HORIZONTAL;
         }

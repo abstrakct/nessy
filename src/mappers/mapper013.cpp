@@ -3,11 +3,17 @@
 
 Mapper013::Mapper013(uint8_t p, uint8_t c) : Mapper(p, c)
 {
-    chrBank = 1;
-    vram = std::make_shared<BankedMemory>("VRAM", 4, 0x1000, true);
-    vram->setMappable(2);
+    chrBank = 7;
+    vram = std::make_shared<BankedMemory>("VRAM", 8, 0x0400, true);
+    vram->setMappable(8);
     vram->setBank(0x0000, 0, 0);
-    vram->setBank(0x1000, chrBank, 1);
+    vram->setBank(0x0400, 1, 1);
+    vram->setBank(0x0800, 2, 2);
+    vram->setBank(0x0C00, 3, 3);
+    vram->setBank(0x1000, chrBank - 3, 4);
+    vram->setBank(0x1400, chrBank - 2, 5);
+    vram->setBank(0x1800, chrBank - 1, 6);
+    vram->setBank(0x1C00, chrBank, 7);
 }
 
 Mapper013::~Mapper013()
@@ -41,7 +47,13 @@ void Mapper013::reset()
     prgROM->setBank(0xC000, 1, 1);
 
     vram->setBank(0x0000, 0, 0);
-    vram->setBank(0x1000, 1, 1);
+    vram->setBank(0x0400, 1, 1);
+    vram->setBank(0x0800, 2, 2);
+    vram->setBank(0x0C00, 3, 3);
+    vram->setBank(0x1000, chrBank - 3, 4);
+    vram->setBank(0x1400, chrBank - 2, 5);
+    vram->setBank(0x1800, chrBank - 1, 6);
+    vram->setBank(0x1C00, chrBank, 7);
 
     updateInfo = true;
 }

@@ -28,32 +28,50 @@ std::vector<std::string> Mapper001::getInfoStrings()
         if (prgMode <= 1) {
             infoString.push_back("PRGROM: Switch 32K @ $8000");
             sprintf(line, "Selected bank: %d", reg[3] >> 1);
-            infoString.push_back(std::string(line));
+            infoString.push_back(line);
         } else if (prgMode == 2) {
             infoString.push_back("PRGROM: Switch 16K @ $C000");
             sprintf(line, "Selected bank: %d", reg[3] & 0xF);
-            infoString.push_back(std::string(line));
+            infoString.push_back(line);
         } else if (prgMode == 3) {
             infoString.push_back("PRGROM: Switch 16K @ $8000");
             sprintf(line, "Selected bank: %d", reg[3] & 0xF);
-            infoString.push_back(std::string(line));
+            infoString.push_back(line);
         }
 
         if (chrBanks > 0) {
             if (chrMode == 0) {
                 infoString.push_back("CHRROM: Switch 1 x 8K Bank");
                 sprintf(line, "Selected bank: %d", reg[1] >> 1);
-                infoString.push_back(std::string(line));
+                infoString.push_back(line);
             } else if (chrMode == 1) {
                 infoString.push_back("CHRROM: Switch 2 x 4K Banks");
                 sprintf(line, "Bank @ $0000: %d", reg[1] & 0x1F);
-                infoString.push_back(std::string(line));
+                infoString.push_back(line);
                 sprintf(line, "Bank @ $1000: %d", reg[2] & 0x1F);
-                infoString.push_back(std::string(line));
+                infoString.push_back(line);
             }
         } else {
             infoString.push_back("No CHR ROM on cart");
         }
+
+        int mirror;
+        getMirrorType(mirror);
+        switch (mirror) {
+        case 0:
+            sprintf(line, "Mirroring: one-screen lo");
+            break;
+        case 1:
+            sprintf(line, "Mirroring: one-screen hi");
+            break;
+        case 2:
+            sprintf(line, "Mirroring: vertical");
+            break;
+        case 3:
+            sprintf(line, "Mirroring: horizontal");
+            break;
+        }
+        infoString.push_back(line);
 
         updateInfo = false;
     }

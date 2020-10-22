@@ -8,7 +8,6 @@ Mapper004::Mapper004(uint8_t p, uint8_t c) : Mapper(p, c)
     vram.resize(0x2000);
 
     lastBank = p - 1;
-    // reg[0] = 0;
 }
 
 Mapper004::~Mapper004()
@@ -57,17 +56,17 @@ void Mapper004::reset()
     irqCounter = 0;
     irqReload = 0;
 
+    prgROM->setMappable(4);
+    chrROM->setMappable(8);
+
+    prgROM->setBank(0x8000, 0, 0);
+    prgROM->setBank(0xA000, 1, 1);
+    prgROM->setBank(0xC000, lastBank - 1, 2);
+    prgROM->setBank(0xE000, lastBank, 3);
+
     for (int i = 0; i < 8; i++) {
         chrROM->setBank(i * 0x400, 0);
     }
-
-    prgROM->setBank(0x8000, 0);
-    prgROM->setBank(0xA000, 1);
-    prgROM->setBank(0xC000, lastBank - 1);
-    prgROM->setBank(0xE000, lastBank);
-
-    //chrROM->setBank(0x0000, 0);
-    //chrROM->setBank(0x1000, 1);
 
     updateInfo = true;
 }
@@ -75,33 +74,33 @@ void Mapper004::reset()
 void Mapper004::apply()
 {
     if (prgBankMode) {
-        prgROM->setBank(0x8000, lastBank - 1);
-        prgROM->setBank(0xA000, reg[7] & 0x3F);
-        prgROM->setBank(0xC000, reg[6] & 0x3F);
+        prgROM->setBank(0x8000, lastBank - 1, 0);
+        prgROM->setBank(0xA000, reg[7] & 0x3F, 1);
+        prgROM->setBank(0xC000, reg[6] & 0x3F, 2);
     } else {
-        prgROM->setBank(0x8000, reg[6] & 0x3F);
-        prgROM->setBank(0xA000, reg[7] & 0x3F);
-        prgROM->setBank(0xC000, lastBank - 1);
+        prgROM->setBank(0x8000, reg[6] & 0x3F, 0);
+        prgROM->setBank(0xA000, reg[7] & 0x3F, 1);
+        prgROM->setBank(0xC000, lastBank - 1, 2);
     }
 
     if (chrInversion) {
-        chrROM->setBank(0x0000, reg[2]);
-        chrROM->setBank(0x0400, reg[3]);
-        chrROM->setBank(0x0800, reg[4]);
-        chrROM->setBank(0x0C00, reg[5]);
-        chrROM->setBank(0x1000, (reg[0] & 0xFE));
-        chrROM->setBank(0x1400, (reg[0] & 0xFE) + 1);
-        chrROM->setBank(0x1800, (reg[1] & 0xFE));
-        chrROM->setBank(0x1C00, (reg[1] & 0xFE) + 1);
+        chrROM->setBank(0x0000, reg[2], 0);
+        chrROM->setBank(0x0400, reg[3], 1);
+        chrROM->setBank(0x0800, reg[4], 2);
+        chrROM->setBank(0x0C00, reg[5], 3);
+        chrROM->setBank(0x1000, (reg[0] & 0xFE), 4);
+        chrROM->setBank(0x1400, (reg[0] & 0xFE) + 1, 5);
+        chrROM->setBank(0x1800, (reg[1] & 0xFE), 6);
+        chrROM->setBank(0x1C00, (reg[1] & 0xFE) + 1, 7);
     } else {
-        chrROM->setBank(0x0000, (reg[0] & 0xFE));
-        chrROM->setBank(0x0400, (reg[0] & 0xFE) + 1);
-        chrROM->setBank(0x0800, (reg[1] & 0xFE));
-        chrROM->setBank(0x0C00, (reg[1] & 0xFE) + 1);
-        chrROM->setBank(0x1000, reg[2]);
-        chrROM->setBank(0x1400, reg[3]);
-        chrROM->setBank(0x1800, reg[4]);
-        chrROM->setBank(0x1C00, reg[5]);
+        chrROM->setBank(0x0000, (reg[0] & 0xFE), 0);
+        chrROM->setBank(0x0400, (reg[0] & 0xFE) + 1, 1);
+        chrROM->setBank(0x0800, (reg[1] & 0xFE), 2);
+        chrROM->setBank(0x0C00, (reg[1] & 0xFE) + 1, 3);
+        chrROM->setBank(0x1000, reg[2], 4);
+        chrROM->setBank(0x1400, reg[3], 5);
+        chrROM->setBank(0x1800, reg[4], 6);
+        chrROM->setBank(0x1C00, reg[5], 7);
     }
 
     updateInfo = true;

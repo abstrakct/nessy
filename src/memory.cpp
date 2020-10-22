@@ -1,23 +1,30 @@
 #include "memory.h"
 
-BankedMemory::BankedMemory(uint16_t _bankNum, uint32_t _bankSize, bool initialize)
+#include <algorithm>
+#include <string>
+#include <vector>
+
+BankedMemory::BankedMemory(std::string _name, uint16_t _bankNum, uint32_t _bankSize, int _mappable, bool initialize)
 {
+    name = _name;
     bankNum = _bankNum;
     bankSize = _bankSize;
-
-    // Initialize with sane defaults
-    //bank[0] = { 0x8000, 0xBFFF };
-    //bank[1] = { 0xC000, 0xFFFF };
+    mappable = _mappable;
 
     if (initialize) {
         for (int i = 0; i < bankNum; i++) {
-            bankData[i].resize(bankSize);
+            // bankData[i].resize(bankSize);
         }
     }
 }
 
 BankedMemory::~BankedMemory()
 {
+}
+
+void BankedMemory::addData(std::vector<uint8_t> _data)
+{
+    data = _data;
 }
 
 void BankedMemory::addBank(uint16_t n, std::vector<uint8_t> _data)
@@ -27,46 +34,58 @@ void BankedMemory::addBank(uint16_t n, std::vector<uint8_t> _data)
         exit(1);
     }
 
-    bankData[n] = _data;
+    // bankData[n] = _data;
+    // banks[n].data = _data;
 }
 
-void BankedMemory::setBank(uint16_t startAddress, uint16_t bankNum, bool mirror)
+void BankedMemory::setBank(uint16_t startAddress, uint16_t newBank, int override, bool mirror)
 {
-    if (!mirror) {
-        for (auto &it : bank) {
-            if (it.second.first == startAddress && it.second.second == (startAddress + bankSize - 1)) {
-                it.second = {0xFFFFFFFF, 0xFFFFFFFF};
-            }
-        }
-    }
-    bank[bankNum] = {startAddress, startAddress + bankSize - 1};
+    int mappedBank = 0;
+    if (override >= 0)
+        mappedBank = override;
+    else if (mappable > 1)
+        mappedBank = (startAddress / bankSize);
+    bankMap[mappedBank].startAddress = startAddress;
+    bankMap[mappedBank].endAddress = startAddress + bankSize - 1;
+    bankMap[mappedBank].offset = newBank * bankSize;
+    bankMap[mappedBank].bankNum = newBank;
+
+    // printf("%s: Mapped bank %02X [%d] to addresses %04X - %04X (offset = %06X)\n", name.c_str(), newBank, mappedBank, bankMap[mappedBank].startAddress, bankMap[mappedBank].endAddress, bankMap[mappedBank].offset);
 }
 
 // TODO: optimize?!
 uint8_t BankedMemory::read(uint16_t addr)
 {
-    uint8_t ret = 0;
-
-    for (auto it : bank) {
-        if (addr >= it.second.first && addr <= it.second.second) {
-            addr -= it.second.first;
-            ret = bankData[it.first][addr];
-            // printf("read %02X from %04X in bank %02X\n", ret, addr, it.first);
+    for (int i = 0; i < mappable; i++) {
+        if (addr >= bankMap[i].startAddress && addr <= bankMap[i].endAddress) {
+            return data[bankMap[i].offset + (addr - bankMap[i].startAddress)];
         }
     }
-
-    return ret;
+    return 0;
 }
 
 void BankedMemory::write(uint16_t addr, uint8_t data)
 {
-    printf("writing %02X to %04X\n", data, addr);
-    for (auto it : bank) {
-        if (addr >= it.second.first && addr <= it.second.second) {
-            addr -= it.second.first;
-            bankData[it.first][addr] = data;
-        }
+    printf("writing %02X to %04X ????????????\n", data, addr);
+    // for (auto it : bank) {
+    //     if (addr >= it.second.first && addr <= it.second.second) {
+    //         addr -= it.second.first;
+    //         bankData[it.first][addr] = data;
+    //     }
+    // }
+}
+
+struct BankInfo BankedMemory::getBankInfo()
+{
+    struct BankInfo ret;
+    ret.bankNum = bankNum;
+    ret.bankSize = bankSize;
+    ret.mappable = mappable;
+    for (int i = 0; i < mappable; i++) {
+        ret.banks[i].startAddress = bankMap[i].startAddress;
+        ret.banks[i].num = bankMap[i].bankNum;
     }
+    return ret;
 }
 
 //uint8_t& operator[](std::size_t addr)

@@ -519,12 +519,26 @@ public:
                     }
                 }
 
-                Controller::Button b;
+                Controller::Button b = Controller::Button::Down;
                 if (event.type == sf::Event::JoystickMoved) {
                     // TODO: FIX THIS!
                     // maybe getAxisPosition is better?
+                    
+                    /*
+                    switch(event.joystickMove.axis) {
+                        case sf::Joystick::Axis::Z: printf("Z axis\n"); break;
+                        case sf::Joystick::Axis::R: printf("R axis\n"); break;
+                        case sf::Joystick::Axis::U: printf("U axis\n"); break;
+                        case sf::Joystick::Axis::V: printf("V axis\n"); break;
+                        default: printf("Axis ??? --- %d\n", event.joystickMove.axis); break;
+                    }
+                    */
+                    // LR axis 6, UD axis 7
+                    
                     //printf("Joystick moved: %f\n", event.joystickMove.position);
-                    if (event.joystickMove.axis == sf::Joystick::Axis::X) {
+                    //if (event.joystickMove.axis == sf::Joystick::Axis::X) {
+                    if (event.joystickMove.axis == 6) {
+                        //printf("Joystick X axis moved: %f\n", event.joystickMove.position);
                         if (event.joystickMove.position < 0) {
                             nes->controller[0].pressButton(Controller::Button::Left);
                             nes->controller[0].releaseButton(Controller::Button::Right);
@@ -532,6 +546,7 @@ public:
                             //nes->controller[0].releaseButton(Controller::Button::Down);
                             b = Controller::Button::Left;
                         }
+
                         if (event.joystickMove.position > 0) {
                             nes->controller[0].pressButton(Controller::Button::Right);
                             nes->controller[0].releaseButton(Controller::Button::Left);
@@ -539,8 +554,15 @@ public:
                             //nes->controller[0].releaseButton(Controller::Button::Down);
                             b = Controller::Button::Right;
                         }
+
+                        if (event.joystickMove.position == 0) {
+                            nes->controller[0].releaseButton(Controller::Button::Left);
+                            nes->controller[0].releaseButton(Controller::Button::Right);
+                        }
                     }
-                    if (event.joystickMove.axis == sf::Joystick::Axis::Y) {
+                    //if (event.joystickMove.axis == sf::Joystick::Axis::Y) {
+                    if (event.joystickMove.axis == 7) {
+                        //printf("Joystick Y axis moved: %f\n", event.joystickMove.position);
                         if (event.joystickMove.position < 0) {
                             nes->controller[0].pressButton(Controller::Button::Up);
                             //nes->controller[0].releaseButton(Controller::Button::Left);
@@ -548,36 +570,42 @@ public:
                             nes->controller[0].releaseButton(Controller::Button::Down);
                             b = Controller::Button::Up;
                         }
+
                         if (event.joystickMove.position > 0) {
                             nes->controller[0].pressButton(Controller::Button::Down);
                             //nes->controller[0].releaseButton(Controller::Button::Left);
                             //nes->controller[0].releaseButton(Controller::Button::Right);
                             nes->controller[0].releaseButton(Controller::Button::Up);
                             b = Controller::Button::Down;
+                        } 
+
+                        if (event.joystickMove.position == 0) {
+                            nes->controller[0].releaseButton(Controller::Button::Up);
+                            nes->controller[0].releaseButton(Controller::Button::Down);
                         }
                     }
-                    if (event.joystickMove.position == 0) {
-                        nes->controller[0].releaseButton(b);
+                    //if (event.joystickMove.position == 0) {
+                        //nes->controller[0].releaseButton(b);
                         //        nes->controller[0].releaseButton(Controller::Button::Left);
                         //        nes->controller[0].releaseButton(Controller::Button::Right);
                         //        nes->controller[0].releaseButton(Controller::Button::Up);
                         //        nes->controller[0].releaseButton(Controller::Button::Down);
-                    }
+                    //}
                 }
 
                 if (event.type == sf::Event::JoystickButtonReleased) {
                     //printf("Joystick button %d pressed\n", event.joystickButton.button);
                     switch (event.joystickButton.button) {
-                    case 0: // B
+                    case 2: // B
                         nes->controller[0].releaseButton(Controller::Button::B);
                         break;
-                    case 1: // A
+                    case 0: // A
                         nes->controller[0].releaseButton(Controller::Button::A);
                         break;
-                    case 8: // Select
+                    case 6: // Select
                         nes->controller[0].releaseButton(Controller::Button::Select);
                         break;
-                    case 9: // Start
+                    case 7: // Start
                         nes->controller[0].releaseButton(Controller::Button::Start);
                         break;
                     }
@@ -586,16 +614,16 @@ public:
                 if (event.type == sf::Event::JoystickButtonPressed) {
                     //printf("Joystick button %d pressed\n", event.joystickButton.button);
                     switch (event.joystickButton.button) {
-                    case 0: // B
+                    case 2: // B
                         nes->controller[0].pressButton(Controller::Button::B);
                         break;
-                    case 1: // A
+                    case 0: // A
                         nes->controller[0].pressButton(Controller::Button::A);
                         break;
-                    case 8: // Select
+                    case 6: // Select
                         nes->controller[0].pressButton(Controller::Button::Select);
                         break;
-                    case 9: // Start
+                    case 7: // Start
                         nes->controller[0].pressButton(Controller::Button::Start);
                         break;
                     }

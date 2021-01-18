@@ -766,6 +766,7 @@ public:
             ImGui::Checkbox("Show PPU OAM", &cfgDisplayPPUOAM);
             ImGui::Checkbox("Show Memory Map", &cfgDisplayMemoryMap);
             ImGui::Checkbox("Disassembler: follow PC", &cfgDisassemblyFollowPC);
+            // TODO: show controller state
 
             if (ImGui::ColorEdit3("Background color", color)) {
                 bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);

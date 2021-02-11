@@ -66,7 +66,12 @@ uint8_t BankedMemory::read(uint16_t addr)
 
 void BankedMemory::write(uint16_t addr, uint8_t data)
 {
-    printf("writing %02X to %04X ????????????\n", data, addr);
+    printf("writing %02X to ROM address %04X\n", data, addr);
+    for (int i = 0; i < mappable; i++) {
+        if (addr >= bankMap[i].startAddress && addr <= bankMap[i].endAddress) {
+            this->data[bankMap[i].offset + (addr - bankMap[i].startAddress)] = data;
+        }
+    }
     // for (auto it : bank) {
     //     if (addr >= it.second.first && addr <= it.second.second) {
     //         addr -= it.second.first;

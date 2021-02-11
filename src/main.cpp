@@ -21,6 +21,7 @@
 #include "imgui/imgui_memory_editor.h"
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Window.hpp>
 
 #include "logger.h"
@@ -81,7 +82,7 @@ private:
 
     int windowWidth, windowHeight;
     float scaleX, scaleY;
-    float NESScale = 2.0, PPUNTScale = 1.0, PPUOAMScale = 2.0;
+    float NESScale = 3.0, PPUNTScale = 1.0, PPUOAMScale = 2.0;
     int cSize = 18;
 
     bool running = false, emuRunning = false;
@@ -523,7 +524,7 @@ public:
                 if (event.type == sf::Event::JoystickMoved) {
                     // TODO: FIX THIS!
                     // maybe getAxisPosition is better?
-                    
+
                     /*
                     switch(event.joystickMove.axis) {
                         case sf::Joystick::Axis::Z: printf("Z axis\n"); break;
@@ -534,7 +535,7 @@ public:
                     }
                     */
                     // LR axis 6, UD axis 7
-                    
+
                     //printf("Joystick moved: %f\n", event.joystickMove.position);
                     //if (event.joystickMove.axis == sf::Joystick::Axis::X) {
                     if (event.joystickMove.axis == 6) {
@@ -577,7 +578,7 @@ public:
                             //nes->controller[0].releaseButton(Controller::Button::Right);
                             nes->controller[0].releaseButton(Controller::Button::Up);
                             b = Controller::Button::Down;
-                        } 
+                        }
 
                         if (event.joystickMove.position == 0) {
                             nes->controller[0].releaseButton(Controller::Button::Up);
@@ -585,11 +586,11 @@ public:
                         }
                     }
                     //if (event.joystickMove.position == 0) {
-                        //nes->controller[0].releaseButton(b);
-                        //        nes->controller[0].releaseButton(Controller::Button::Left);
-                        //        nes->controller[0].releaseButton(Controller::Button::Right);
-                        //        nes->controller[0].releaseButton(Controller::Button::Up);
-                        //        nes->controller[0].releaseButton(Controller::Button::Down);
+                    //nes->controller[0].releaseButton(b);
+                    //        nes->controller[0].releaseButton(Controller::Button::Left);
+                    //        nes->controller[0].releaseButton(Controller::Button::Right);
+                    //        nes->controller[0].releaseButton(Controller::Button::Up);
+                    //        nes->controller[0].releaseButton(Controller::Button::Down);
                     //}
                 }
 

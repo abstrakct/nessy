@@ -46,12 +46,14 @@ When the program is running, you must click "Run" in the "Emulator controls" win
 * l = controller 1 A
 * tab = controller 1 Select
 * enter = controller 1 Start
-* F1 = display help (not guaranteed to be helpful)
-* 1 = display RAM (use up/down/pageup/pagedown to select different pages of RAM to look at)
-* 2 = display CPU debug info / status
-* 3 = display Mapper debug info / status
-* 4 = display disassembly
-* 5 = display PPU debug info / status
+
+* F10 = display help (not guaranteed to be helpful, but quite accurate)
+* F1 = display CPU debug info / status
+* F2 = display RAM viewer/editor
+* F3 = display disassembly
+* F4 = display Mapper debug info / status
+* F5 = display PPU debug info / status
+
 * r = reset NES
 * i = force IRQ
 * n = force NMI

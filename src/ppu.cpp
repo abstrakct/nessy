@@ -683,8 +683,10 @@ void PPU::clock()
     }
 
     // SFML
-    if ((cycle - 1) >= 0 && scanline >= 0)
+    if ((cycle - 1) >= 0 && scanline >= 0 && scanline < 260) {
+        // printf("cycle %d scanline %d\n", cycle - 1, scanline);
         nesScreen.setPixel(cycle - 1, scanline, GetColorFromPaletteRam(palette, pixel));
+    }
     // nesScreen.setPixel(cycle - 1, scanline, sfmlPalette[ppuRead(0x3F00 + (palette << 2) + pixel)]);
 
     //if (((sprPixel & 0x03) && front) || (bgPixel))

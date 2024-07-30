@@ -32,6 +32,9 @@ I have only compiled it on Linux, but SFML is used for graphics, input, etc., so
 ## How to build/run
 On Arch Linux, install the sfml package, and build the project with 'make debug' or 'make release'
 
+Then run it with './nessy <rom file>'
+When the program is running, you must click "Run" in the "Emulator controls" window to start running the emulator.
+
 ## Keys (for now you need to edit the source code to change these...)
 * esc = quit
 * space = start/stop emulation
